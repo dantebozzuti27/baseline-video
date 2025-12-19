@@ -15,6 +15,12 @@ export default function Home() {
             Coach sign in
           </a>
           <a
+            href="/coach"
+            className="rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-medium text-white"
+          >
+            Coach dashboard
+          </a>
+          <a
             href="/player"
             className="rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-medium text-white"
           >
