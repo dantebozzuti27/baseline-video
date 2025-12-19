@@ -1,10 +1,24 @@
-## Baseline Video (fresh start)
+## Baseline Video
 
-Minimal Next.js app intended to deploy cleanly on Vercel.
+Coaching app MVP (Next.js App Router + Prisma/Postgres + NextAuth).
 
-### Local dev
+### Local setup
 - `npm install`
-- `npm run dev`
+- Copy `env.example` → `.env` and fill values
 
-### Deploy
-Connect the GitHub repo to Vercel and deploy.
+### Supabase (recommended setup)
+Use **two connection strings**:
+- **`DATABASE_URL`**: Supabase Transaction Pooler (runtime / serverless)
+- **`DIRECT_URL`**: Supabase Direct Connection (migrations)
+
+To avoid clobbering an existing `public` schema, append `?schema=baseline` to both URLs.
+
+### Migrations
+Create/apply migrations locally (dev):
+- `npm run prisma:migrate`
+
+Apply migrations in production (CI/Vercel manual step):
+- `npm run prisma:deploy`
+
+### Run
+- `npm run dev`

@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // For Supabase/Vercel: use a direct (non-pooler) connection for migrations.
+  // Supabase provides a "Direct connection" string; set it as DIRECT_URL.
+  directUrl = env("DIRECT_URL")
+}
+
+// -----------------------------
+// Auth (NextAuth Prisma Adapter)
+// -----------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts  Account[]
+  sessions  Session[]
+  coach     Coach?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// -----------------------------
+// Product entities (mandatory)
+// -----------------------------
+
+model Coach {
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  name           String
+  email          String  @unique
+  authProviderId String? // optional external/provider id
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  players Player[]
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PlayerStatus {
+  active
+  inactive
+}
+
+model Player {
+  id      String       @id @default(cuid())
+  coachId String
+  name    String
+  email   String?
+  status  PlayerStatus @default(active)
+
+  coach   Coach              @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+  tokens  PlayerAccessToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coachId])
+}
+
+model Lesson {
+  id       String   @id @default(cuid())
+  coachId  String
+  playerId String
+  date     DateTime
+  category String
+  notes    String?
+
+  coach  Coach  @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  media  MediaAsset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coachId])
+  @@index([playerId])
+  @@index([coachId, playerId, date])
+}
+
+enum MediaType {
+  video
+  image
+}
+
+model MediaAsset {
+  id                     String   @id @default(cuid())
+  lessonId               String
+  type                   MediaType
+  googleDriveFileId      String
+  googleDriveWebViewLink String
+  mirroredObjectStoreUrl String?
+  durationSeconds        Int?
+
+  lesson    Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  mirrorJob MirrorJob?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([lessonId])
+  @@index([googleDriveFileId])
+}
+
+enum MirrorJobStatus {
+  queued
+  processing
+  done
+  failed
+}
+
+model MirrorJob {
+  id           String          @id @default(cuid())
+  mediaAssetId String          @unique
+  status       MirrorJobStatus @default(queued)
+  attempts     Int             @default(0)
+  lastError    String?
+
+  mediaAsset MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model PlayerAccessToken {
+  id        String    @id @default(cuid())
+  playerId  String
+  tokenHash String
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+  @@index([revokedAt])
+}
+
+

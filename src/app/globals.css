@@ -2,8 +2,17 @@
   color-scheme: light;
 }
 
+@import "tailwindcss";
+
 html,
 body {
+  height: 100%;
+}
+
+body {
   margin: 0;
-  padding: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+    Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: #0b1220;
+  color: #e6edf7;
 }
