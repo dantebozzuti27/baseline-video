@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { AddMediaForm } from "@/components/media-form";
 import { signIn, signOut, useSession } from "next-auth/react";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   params: { id: string };
 };
