@@ -2,7 +2,9 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { Account, NextAuthOptions } from "next-auth";
 import type { JWT } from "next-auth/jwt";
+import type { NextRequest } from "next/server";
 
+// Return explicit handler functions to satisfy Next.js route handler typing.
 const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -46,7 +48,19 @@ const authOptions: NextAuthOptions = {
   },
 };
 
-const handler = NextAuth(authOptions);
+const auth = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ nextauth: string[] }> },
+) {
+  return auth.auth(req, ctx);
+}
+
+export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ nextauth: string[] }> },
+) {
+  return auth.auth(req, ctx);
+}
 
