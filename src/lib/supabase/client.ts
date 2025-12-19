@@ -1,6 +1,6 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 
-let browserClient: ReturnType<typeof createSupabaseClient> | null = null;
+let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,8 +15,10 @@ export function createClient() {
   }
 
   // Reuse a single client in the browser to avoid multiple GoTrueClient warnings.
+  // IMPORTANT: createBrowserClient uses cookie-based storage by default in the browser, which
+  // keeps SSR (server) auth in sync and prevents "sign in loop" redirects.
   if (!browserClient) {
-    browserClient = createSupabaseClient(url, anonKey, {
+    browserClient = createBrowserClient(url, anonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
