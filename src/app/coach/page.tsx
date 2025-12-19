@@ -213,255 +213,256 @@ export default function CoachPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
-      <header className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-          Coach workspace
-        </p>
-        <h1 className="text-2xl font-bold">Player timelines</h1>
-        <p className="text-sm text-zinc-600">
-          Create a coach, add players, then create lessons. Data is live from the
-          API (no mocks).
-        </p>
-      </header>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            Step 1 — Coach
-          </p>
-          <div className="mt-2 flex flex-col gap-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              API token (bearer)
-            </label>
-            <input
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Paste coach token"
-              value={token}
-              onChange={(e) => {
-                const t = e.target.value;
-                setToken(t);
-                if (typeof window !== "undefined") {
-                  localStorage.setItem("coachToken", t);
-                }
-              }}
-            />
-          </div>
-          <div className="mt-2 flex flex-col gap-2">
-            <input
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Name"
-              value={newCoach.name}
-              onChange={(e) => setNewCoach({ ...newCoach, name: e.target.value })}
-            />
-            <input
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Email"
-              value={newCoach.email}
-              onChange={(e) =>
-                setNewCoach({ ...newCoach, email: e.target.value })
-              }
-            />
-            <input
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Auth provider id (e.g., auth0|user)"
-              value={newCoach.authProviderId}
-              onChange={(e) =>
-                setNewCoach({ ...newCoach, authProviderId: e.target.value })
-              }
-            />
-            <button
-              className="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white"
-              onClick={handleCreateCoach}
-            >
-              Create coach
-            </button>
-          </div>
-          <div className="mt-4">
+    <main className="min-h-screen bg-gradient-to-b from-zinc-50 to-white">
+      <div className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-12">
+        <header className="rounded-3xl bg-white/80 p-7 shadow-[0_20px_80px_-40px_rgba(0,0,0,0.25)] backdrop-blur">
+          <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              Coaches
+              Coach workspace
             </p>
-            <div className="mt-2 space-y-1">
-              {coaches.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => refreshData(c.id)}
-                  className={`flex w-full justify-between rounded-md border px-3 py-2 text-left text-sm ${
-                    coachId === c.id ? "border-blue-500 bg-blue-50" : ""
-                  }`}
-                >
-                  <span>{c.name}</span>
-                  <span className="text-xs text-zinc-500">select</span>
-                </button>
-              ))}
-              {coaches.length === 0 && (
-                <p className="text-sm text-zinc-500">No coaches yet.</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            Step 2 — Players
-          </p>
-          <div className="mt-2 flex flex-col gap-2">
-            <input
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Name"
-              value={newPlayer.name}
-              onChange={(e) =>
-                setNewPlayer({ ...newPlayer, name: e.target.value })
-              }
-            />
-            <input
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Email (optional)"
-              value={newPlayer.email}
-              onChange={(e) =>
-                setNewPlayer({ ...newPlayer, email: e.target.value })
-              }
-            />
-            <button
-              className="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white"
-              onClick={handleCreatePlayer}
-              disabled={!coachId}
-            >
-              Create player
-            </button>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              Players
+            <h1 className="text-3xl font-semibold text-zinc-900">
+              Run your roster with calm controls
+            </h1>
+            <p className="text-sm text-zinc-600">
+              Authenticate once, then add coaches, players, and lessons with focused, low-noise forms.
             </p>
-            <div className="mt-2 space-y-1">
-              {players.map((p) => (
-                <div
-                  key={p.id}
-                  className="rounded-md border px-3 py-2 text-sm text-zinc-700"
-                >
-                  {p.name}
-                  <p className="text-xs text-zinc-500">{p.email || "—"}</p>
-                </div>
-              ))}
-              {players.length === 0 && (
-                <p className="text-sm text-zinc-500">No players yet.</p>
-              )}
-            </div>
           </div>
-        </div>
+        </header>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-            Step 3 — Lessons
-          </p>
-          <div className="mt-2 flex flex-col gap-2">
-            <select
-              className="rounded-md border px-3 py-2 text-sm"
-              value={newLesson.playerId}
-              onChange={(e) =>
-                setNewLesson({ ...newLesson, playerId: e.target.value })
-              }
-            >
-              <option value="">Select player</option>
-              {players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
-              className="rounded-md border px-3 py-2 text-sm"
-              value={newLesson.date}
-              onChange={(e) =>
-                setNewLesson({ ...newLesson, date: e.target.value })
-              }
-            />
-            <input
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Category (e.g., Hitting)"
-              value={newLesson.category}
-              onChange={(e) =>
-                setNewLesson({ ...newLesson, category: e.target.value })
-              }
-            />
-            <textarea
-              className="rounded-md border px-3 py-2 text-sm"
-              placeholder="Notes"
-              value={newLesson.notes}
-              onChange={(e) =>
-                setNewLesson({ ...newLesson, notes: e.target.value })
-              }
-            />
-            <button
-              className="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white"
-              onClick={handleCreateLesson}
-              disabled={!coachId}
-            >
-              Create lesson
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Lessons</h2>
-          {loading && <p className="text-xs text-zinc-500">Loading…</p>}
-        </div>
-        {sortedLessons.map((lesson) => (
-          <article
-            key={lesson.id}
-            className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                  {lesson.category}
-                </p>
-                <h2 className="text-lg font-semibold">
-                  {players.find((p) => p.id === lesson.playerId)?.name ??
-                    "Player"}{" "}
-                  — {new Date(lesson.date).toLocaleDateString()}
-                </h2>
+        <section className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                Access
+              </p>
+              <div className="mt-3 space-y-2">
+                <label className="text-xs font-medium text-zinc-500">API token</label>
+                <input
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                  placeholder="Paste coach token"
+                  value={token}
+                  onChange={(e) => {
+                    const t = e.target.value;
+                    setToken(t);
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("coachToken", t);
+                    }
+                  }}
+                />
               </div>
-              <a
-                href={`/lessons/${lesson.id}`}
-                className="text-sm font-medium text-blue-700 hover:underline"
+            </div>
+
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                Create coach
+              </p>
+              <input
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                placeholder="Name"
+                value={newCoach.name}
+                onChange={(e) => setNewCoach({ ...newCoach, name: e.target.value })}
+              />
+              <input
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                placeholder="Email"
+                value={newCoach.email}
+                onChange={(e) => setNewCoach({ ...newCoach, email: e.target.value })}
+              />
+              <input
+                className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                placeholder="Auth provider id (e.g., auth0|user)"
+                value={newCoach.authProviderId}
+                onChange={(e) => setNewCoach({ ...newCoach, authProviderId: e.target.value })}
+              />
+              <button
+                className="w-full rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg"
+                onClick={handleCreateCoach}
               >
-                Open lesson
-              </a>
+                Save coach
+              </button>
             </div>
-            <p className="mt-2 text-sm text-zinc-700">
-              {lesson.notes || "No notes yet."}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {lesson.media.map((m) => (
-                <span
-                  key={m.id}
-                  className="inline-flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                Coaches
+              </p>
+              <div className="mt-3 space-y-2">
+                {coaches.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => refreshData(c.id)}
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition ${
+                      coachId === c.id ? "border-blue-500 bg-blue-50" : "border-zinc-200 bg-white"
+                    }`}
+                  >
+                    <span className="font-medium text-zinc-900">{c.name}</span>
+                    <span className="text-xs text-zinc-500">Select</span>
+                  </button>
+                ))}
+                {coaches.length === 0 && (
+                  <p className="text-sm text-zinc-500">No coaches yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                    Players
+                  </p>
+                  <p className="text-sm text-zinc-600">
+                    Add players under the selected coach.
+                  </p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                    placeholder="Player name"
+                    value={newPlayer.name}
+                    onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
+                  />
+                  <input
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                    placeholder="Email (optional)"
+                    value={newPlayer.email}
+                    onChange={(e) => setNewPlayer({ ...newPlayer, email: e.target.value })}
+                  />
+                </div>
+                <button
+                  className="w-full rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
+                  onClick={handleCreatePlayer}
+                  disabled={!coachId}
                 >
-                  {m.type} •{" "}
-                  {m.mirroredObjectStoreUrl ? "mirrored" : "drive-only"}
-                  {m.durationSeconds ? ` • ${m.durationSeconds}s` : ""}
-                </span>
-              ))}
-              {lesson.media.length === 0 && (
-                <span className="text-xs text-zinc-500">
-                  No media registered yet.
-                </span>
-              )}
+                  Save player
+                </button>
+                <div className="mt-2 grid gap-2 md:grid-cols-2">
+                  {players.map((p) => (
+                    <div
+                      key={p.id}
+                      className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-800"
+                    >
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-xs text-zinc-500">{p.email || "—"}</div>
+                    </div>
+                  ))}
+                  {players.length === 0 && (
+                    <p className="text-sm text-zinc-500">No players yet.</p>
+                  )}
+                </div>
+              </div>
             </div>
-          </article>
-        ))}
-        {sortedLessons.length === 0 && (
-          <p className="text-sm text-zinc-500">
-            No lessons yet. Create a coach, add a player, then add a lesson.
-          </p>
-        )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-      </section>
+
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                    Lessons
+                  </p>
+                  <p className="text-sm text-zinc-600">
+                    Create a lesson for a player under this coach.
+                  </p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <select
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                    value={newLesson.playerId}
+                    onChange={(e) => setNewLesson({ ...newLesson, playerId: e.target.value })}
+                  >
+                    <option value="">Select player</option>
+                    {players.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="date"
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                    value={newLesson.date}
+                    onChange={(e) => setNewLesson({ ...newLesson, date: e.target.value })}
+                  />
+                  <input
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-sm"
+                    placeholder="Category (e.g., Hitting)"
+                    value={newLesson.category}
+                    onChange={(e) => setNewLesson({ ...newLesson, category: e.target.value })}
+                  />
+                  <textarea
+                    className="rounded-xl border border-zinc-200 px-3 py-2 text-sm md:col-span-2"
+                    placeholder="Notes"
+                    value={newLesson.notes}
+                    onChange={(e) => setNewLesson({ ...newLesson, notes: e.target.value })}
+                  />
+                </div>
+                <button
+                  className="w-full rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50"
+                  onClick={handleCreateLesson}
+                  disabled={!coachId}
+                >
+                  Save lesson
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-zinc-900">Lessons</h2>
+                {loading && <p className="text-xs text-zinc-500">Loading…</p>}
+              </div>
+              {sortedLessons.map((lesson) => (
+                <article
+                  key={lesson.id}
+                  className="rounded-xl border border-zinc-200 p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                        {lesson.category}
+                      </p>
+                      <h3 className="text-lg font-semibold text-zinc-900">
+                        {players.find((p) => p.id === lesson.playerId)?.name ?? "Player"} —{" "}
+                        {new Date(lesson.date).toLocaleDateString()}
+                      </h3>
+                    </div>
+                    <a
+                      href={`/lessons/${lesson.id}`}
+                      className="text-sm font-medium text-blue-700 hover:underline"
+                    >
+                      Open
+                    </a>
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-700">
+                    {lesson.notes || "No notes yet."}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {lesson.media.map((m) => (
+                      <span
+                        key={m.id}
+                        className="inline-flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700"
+                      >
+                        {m.type} • {m.mirroredObjectStoreUrl ? "mirrored" : "drive-only"}
+                        {m.durationSeconds ? ` • ${m.durationSeconds}s` : ""}
+                      </span>
+                    ))}
+                    {lesson.media.length === 0 && (
+                      <span className="text-xs text-zinc-500">No media registered yet.</span>
+                    )}
+                  </div>
+                </article>
+              ))}
+              {sortedLessons.length === 0 && (
+                <p className="text-sm text-zinc-500">
+                  No lessons yet. Create a coach, add a player, then add a lesson.
+                </p>
+              )}
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
