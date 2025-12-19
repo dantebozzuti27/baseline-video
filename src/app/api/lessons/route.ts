@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { lessonCreateSchema } from "@/lib/validation";
 import { getSession } from "@/lib/session";
 
-async function getCoachFromSession() {
-  const session = await getSession();
+async function getCoachFromSession(req: NextRequest) {
+  const session = await getSession(req);
   if (!session?.user?.email) return null;
   return prisma.coach.findUnique({
     where: { email: session.user.email },
@@ -13,7 +13,7 @@ async function getCoachFromSession() {
 }
 
 export async function GET(req: NextRequest) {
-  const coach = await getCoachFromSession();
+  const coach = await getCoachFromSession(req);
   if (!coach) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const coach = await getCoachFromSession();
+  const coach = await getCoachFromSession(req);
   if (!coach) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

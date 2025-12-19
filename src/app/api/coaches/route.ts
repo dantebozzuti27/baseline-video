@@ -4,15 +4,20 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { coachCreateSchema } from "@/lib/validation";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const session = await getSession(req);
+  if (!session?.user?.email) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const coaches = await prisma.coach.findMany({
+    where: { email: session.user.email },
     orderBy: { createdAt: "desc" },
   });
   return Response.json({ coaches });
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getSession();
+  const session = await getSession(req);
   if (!session?.user?.email) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }

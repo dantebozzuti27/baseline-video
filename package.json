@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
     "prisma:generate": "prisma generate",
@@ -12,6 +13,9 @@
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "worker:mirror": "tsx scripts/mirror-worker.ts"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@prisma/client": "^6.4.0",

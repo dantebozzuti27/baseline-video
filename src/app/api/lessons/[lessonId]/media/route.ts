@@ -9,7 +9,7 @@ export async function POST(
   context: { params: Promise<{ lessonId: string }> },
 ) {
   const { lessonId } = await context.params;
-  const session = await getSession();
+  const session = await getSession(req);
   if (!session?.user?.email) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
