@@ -56,6 +56,13 @@ export default async function CoachDashboard() {
     });
     coachId = coach.id;
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const isDb =
+      msg.includes("Can't reach database server") ||
+      msg.includes("P1001") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT");
+
     return (
       <main className="min-h-screen px-5 py-10">
         <div className="mx-auto max-w-3xl space-y-4">
@@ -63,10 +70,36 @@ export default async function CoachDashboard() {
             <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
               Coach
             </p>
-            <h1 className="mt-2 text-2xl font-semibold">Not authorized</h1>
+            <h1 className="mt-2 text-2xl font-semibold">
+              {isDb ? "Database connection error" : "Not authorized"}
+            </h1>
             <p className="mt-2 text-sm text-white/70">
-              {e instanceof Error ? e.message : "You are not authorized as a coach."}
+              {isDb
+                ? "The app can't connect to your Supabase Postgres database. Check Vercel env vars (DATABASE_URL / DIRECT_URL) and Supabase network restrictions."
+                : msg || "You are not authorized as a coach."}
             </p>
+            {isDb ? (
+              <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4 text-xs text-white/70">
+                <p className="font-semibold text-white">Fix checklist</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>
+                    Set <span className="font-semibold">DATABASE_URL</span> to the Supabase{" "}
+                    <span className="font-semibold">Transaction Pooler</span> connection string (recommended for serverless).
+                  </li>
+                  <li>
+                    Set <span className="font-semibold">DIRECT_URL</span> to the Supabase{" "}
+                    <span className="font-semibold">Direct</span> connection string (for migrations).
+                  </li>
+                  <li>
+                    If using the <span className="font-semibold">baseline</span> schema, append{" "}
+                    <span className="font-semibold">?schema=baseline</span> to both URLs.
+                  </li>
+                  <li>
+                    Ensure Supabase has no restrictive DB network rules blocking Vercel.
+                  </li>
+                </ul>
+              </div>
+            ) : null}
           </header>
           <Link
             href="/player"
