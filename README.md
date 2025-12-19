@@ -1,6 +1,6 @@
 ## Baseline Video
 
-Coaching app MVP (Next.js App Router + Prisma/Postgres + NextAuth).
+Coaching app MVP (Next.js App Router + Prisma/Postgres + Supabase Auth).
 
 ### Local setup
 - `npm install`

@@ -1,14 +1,34 @@
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 
 export async function getCoachFromRequest(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  const userId = (token as any)?.userId as string | undefined;
-  if (!userId) return null;
+  // req is kept for API compatibility, but Supabase auth is cookie-based.
+  void req;
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+  if (!user) return null;
 
-  return prisma.coach.findUnique({ where: { userId } });
+  const authUserId = user.id;
+  const email = user.email ?? null;
+  const name =
+    (user.user_metadata as any)?.full_name ||
+    (user.user_metadata as any)?.name ||
+    (email ? email.split("@")[0] : "Coach");
+
+  const existing = await prisma.coach.findUnique({ where: { authUserId } });
+  if (existing) return existing;
+
+  // Create a coach record on first successful sign-in.
+  return prisma.coach.create({
+    data: {
+      authUserId,
+      name,
+      email: email || `${authUserId}@example.invalid`,
+    },
+  });
 }
 
 export async function requireCoach(req: NextRequest) {
