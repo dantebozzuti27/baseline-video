@@ -1,14 +1,26 @@
 import { NextRequest } from "next/server";
 
-import { requireCoach } from "@/lib/auth";
 import { mirrorJobSchema } from "@/lib/validation";
+import { getSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Accepts a mirroring job request. In production this would enqueue a background
  * worker to pull from Google Drive and push to object storage.
  */
 export async function POST(req: NextRequest) {
-  await requireCoach(req);
+  const session = await getSession();
+  if (!session?.user?.email) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const coach = await prisma.coach.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
+  });
+  if (!coach) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const json = await req.json();
   const parsed = mirrorJobSchema.safeParse(json);
 

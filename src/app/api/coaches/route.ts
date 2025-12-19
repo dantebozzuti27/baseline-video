@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-import { requireAuth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { coachCreateSchema } from "@/lib/validation";
 
@@ -12,8 +12,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  // Allow only authenticated callers (admin can gate token issuance separately)
-  await requireAuth(req);
+  const session = await getSession();
+  if (!session?.user?.email) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const json = await req.json();
   const parsed = coachCreateSchema.safeParse(json);
   if (!parsed.success) {
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
   const coach = await prisma.coach.create({
     data: {
       name: parsed.data.name,
-      email: parsed.data.email,
+      email: session.user.email,
       authProviderId: parsed.data.authProviderId,
     },
   });

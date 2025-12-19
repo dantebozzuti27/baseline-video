@@ -1,15 +1,26 @@
 import { NextRequest } from "next/server";
 
-import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { mediaCreateSchema } from "@/lib/validation";
+import { getSession } from "@/lib/session";
 
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ lessonId: string }> },
 ) {
   const { lessonId } = await context.params;
-  const coachAuth = await requireCoach(req);
+  const session = await getSession();
+  if (!session?.user?.email) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const coach = await prisma.coach.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
+  });
+  if (!coach) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const json = await req.json();
   const parsed = mediaCreateSchema.safeParse(json);
 
@@ -28,7 +39,7 @@ export async function POST(
   if (!lesson) {
     return Response.json({ error: "Lesson not found" }, { status: 404 });
   }
-  if (lesson.coachId !== coachAuth.id) {
+  if (lesson.coachId !== coach.id) {
     return Response.json(
       { error: "Forbidden: coach mismatch" },
       { status: 403 },

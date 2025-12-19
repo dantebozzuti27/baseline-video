@@ -1,31 +1,27 @@
 import { NextRequest } from "next/server";
 
-import { requireAuth, requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { lessonCreateSchema } from "@/lib/validation";
+import { getSession } from "@/lib/session";
+
+async function getCoachFromSession() {
+  const session = await getSession();
+  if (!session?.user?.email) return null;
+  return prisma.coach.findUnique({
+    where: { email: session.user.email },
+  });
+}
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAuth(req);
+  const coach = await getCoachFromSession();
+  if (!coach) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { searchParams } = new URL(req.url);
-  const coachId = searchParams.get("coachId");
   const playerId = searchParams.get("playerId");
 
-  // auth checks
-  if (auth.role === "coach") {
-    if (coachId && coachId !== auth.id) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else if (auth.role === "player") {
-    if (!playerId) {
-      return Response.json({ error: "playerId required for player role" }, { status: 400 });
-    }
-    if (playerId !== auth.id) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
-  }
-
   const where = {
-    ...(coachId ? { coachId } : {}),
+    coachId: coach.id,
     ...(playerId ? { playerId } : {}),
   };
 
@@ -41,7 +37,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const coachAuth = await requireCoach(req);
+  const coach = await getCoachFromSession();
+  if (!coach) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const json = await req.json();
   const parsed = lessonCreateSchema.safeParse(json);
   if (!parsed.success) {
@@ -51,13 +50,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (parsed.data.coachId !== coachAuth.id) {
-    return Response.json({ error: "Forbidden: coach mismatch" }, { status: 403 });
-  }
-
   const lesson = await prisma.lesson.create({
     data: {
-      coachId: parsed.data.coachId,
+      coachId: coach.id,
       playerId: parsed.data.playerId,
       date: new Date(parsed.data.date),
       category: parsed.data.category,

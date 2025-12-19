@@ -1,35 +1,30 @@
 import { NextRequest } from "next/server";
 
-import { requireAuth, requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { playerCreateSchema } from "@/lib/validation";
+import { getSession } from "@/lib/session";
+
+async function getCoachIdFromSession() {
+  const session = await getSession();
+  if (!session?.user?.email) return null;
+  const coach = await prisma.coach.findUnique({
+    where: { email: session.user.email },
+  });
+  return coach?.id ?? null;
+}
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAuth(req);
-  const { searchParams } = new URL(req.url);
-  const coachId = searchParams.get("coachId");
-  const playerId = searchParams.get("playerId");
-
-  // Authorization: coaches can view their players; players can view self
-  if (auth.role === "coach") {
-    if (coachId && coachId !== auth.id) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
-  } else if (auth.role === "player") {
-    if (playerId && playerId !== auth.id) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
-    if (!playerId) {
-      return Response.json({ error: "playerId required for player role" }, { status: 400 });
-    }
+  const coachId = await getCoachIdFromSession();
+  if (!coachId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const { searchParams } = new URL(req.url);
+  const playerId = searchParams.get("playerId");
 
   const where =
     playerId != null
-      ? { id: playerId }
-      : coachId != null
-        ? { coachId }
-        : {};
+      ? { id: playerId, coachId }
+      : { coachId };
 
   const players = await prisma.player.findMany({
     where,
@@ -40,7 +35,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const coachAuth = await requireCoach(req);
+  const coachId = await getCoachIdFromSession();
+  if (!coachId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const json = await req.json();
   const parsed = playerCreateSchema.safeParse(json);
   if (!parsed.success) {
@@ -50,13 +48,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (parsed.data.coachId !== coachAuth.id) {
-    return Response.json({ error: "Forbidden: coach mismatch" }, { status: 403 });
-  }
-
   const player = await prisma.player.create({
     data: {
-      coachId: parsed.data.coachId,
+      coachId,
       name: parsed.data.name,
       email: parsed.data.email ?? undefined,
       status: parsed.data.status,
