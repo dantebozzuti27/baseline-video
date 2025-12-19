@@ -8,9 +8,12 @@ export async function getAuthUser() {
   return data.user ?? null;
 }
 
-export async function requireAuthUser() {
+export async function requireAuthUser(redirectTo?: string) {
   const user = await getAuthUser();
-  if (!user) redirect("/auth/signin");
+  if (!user) {
+    const to = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/";
+    redirect(`/auth/signin?redirectTo=${encodeURIComponent(to)}`);
+  }
   return user;
 }
 

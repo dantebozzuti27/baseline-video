@@ -18,6 +18,18 @@ export default function SignInPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const redirectTo = useMemo(() => {
+    try {
+      const url = new URL(window.location.href);
+      const v = url.searchParams.get("redirectTo") || "/";
+      // only allow internal paths
+      if (!v.startsWith("/") || v.startsWith("//")) return "/";
+      return v;
+    } catch {
+      return "/";
+    }
+  }, []);
+
   async function signInWithGoogle() {
     setBusy(true);
     setMessage(null);
@@ -26,7 +38,9 @@ export default function SignInPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(
+            redirectTo,
+          )}`,
         },
       });
       if (error) setMessage(error.message);
@@ -61,7 +75,7 @@ export default function SignInPage() {
             ? "Check your email to confirm your account, then sign in."
             : "Signed in. Redirecting…",
         );
-        window.location.href = "/";
+        window.location.href = redirectTo;
       }
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Failed to sign in");

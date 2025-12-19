@@ -57,7 +57,7 @@ export default async function LessonDetailPage(props: {
   params: Promise<{ lessonId: string }>;
 }) {
   const { lessonId } = await props.params;
-  const user = await requireAuthUser();
+  const user = await requireAuthUser(`/lessons/${lessonId}`);
   const email = user.email ?? null;
   const actor = await getLessonActorForUser({ userId: user.id, email });
   if (!actor) redirect("/auth/signin");

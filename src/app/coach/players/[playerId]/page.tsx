@@ -52,7 +52,7 @@ export default async function CoachPlayerPage(props: {
   params: Promise<{ playerId: string }>;
 }) {
   const { playerId } = await props.params;
-  const user = await requireAuthUser();
+  const user = await requireAuthUser(`/coach/players/${playerId}`);
   const email = user.email ?? null;
   const name =
     (user.user_metadata as any)?.full_name ||

@@ -7,7 +7,7 @@ import { requireAuthUser } from "@/lib/auth-user";
 export const dynamic = "force-dynamic";
 
 export default async function PlayerPage() {
-  const user = await requireAuthUser();
+  const user = await requireAuthUser("/player");
   const email = user.email ?? null;
   if (!email) {
     return (

@@ -40,7 +40,7 @@ async function createPlayerAction(formData: FormData) {
 }
 
 export default async function CoachDashboard() {
-  const user = await requireAuthUser();
+  const user = await requireAuthUser("/coach");
   const email = user.email ?? null;
   const name =
     (user.user_metadata as any)?.full_name ||

@@ -7,6 +7,11 @@ import { getLessonActorForUser } from "@/lib/lesson-access";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const redirectToRaw = url.searchParams.get("redirectTo") || "";
+  const redirectTo =
+    redirectToRaw.startsWith("/") && !redirectToRaw.startsWith("//")
+      ? redirectToRaw
+      : null;
 
   if (code) {
     const supabase = await createClient();
@@ -16,6 +21,10 @@ export async function GET(request: Request) {
     const { data } = await supabase.auth.getUser();
     const user = data.user;
     if (user) {
+      if (redirectTo) {
+        return NextResponse.redirect(new URL(redirectTo, request.url));
+      }
+
       // If already a coach, go to /coach.
       const coach = await prisma.coach.findUnique({
         where: { authUserId: user.id },
