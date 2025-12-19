@@ -1,17 +1,30 @@
 -- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
+CREATE SCHEMA IF NOT EXISTS "baseline";
+SET search_path = "baseline";
 
 -- CreateEnum
-CREATE TYPE "PlayerStatus" AS ENUM ('active', 'inactive');
+DO $$ BEGIN
+  CREATE TYPE "PlayerStatus" AS ENUM ('active', 'inactive');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "MediaType" AS ENUM ('video', 'image');
+DO $$ BEGIN
+  CREATE TYPE "MediaType" AS ENUM ('video', 'image');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "MirrorJobStatus" AS ENUM ('queued', 'processing', 'done', 'failed');
+DO $$ BEGIN
+  CREATE TYPE "MirrorJobStatus" AS ENUM ('queued', 'processing', 'done', 'failed');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateTable
-CREATE TABLE "User" (
+CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "email" TEXT,
@@ -24,7 +37,7 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
-CREATE TABLE "Account" (
+CREATE TABLE IF NOT EXISTS "Account" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -42,7 +55,7 @@ CREATE TABLE "Account" (
 );
 
 -- CreateTable
-CREATE TABLE "Session" (
+CREATE TABLE IF NOT EXISTS "Session" (
     "id" TEXT NOT NULL,
     "sessionToken" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -52,14 +65,14 @@ CREATE TABLE "Session" (
 );
 
 -- CreateTable
-CREATE TABLE "VerificationToken" (
+CREATE TABLE IF NOT EXISTS "VerificationToken" (
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
-CREATE TABLE "Coach" (
+CREATE TABLE IF NOT EXISTS "Coach" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -72,7 +85,7 @@ CREATE TABLE "Coach" (
 );
 
 -- CreateTable
-CREATE TABLE "Player" (
+CREATE TABLE IF NOT EXISTS "Player" (
     "id" TEXT NOT NULL,
     "coachId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -85,7 +98,7 @@ CREATE TABLE "Player" (
 );
 
 -- CreateTable
-CREATE TABLE "Lesson" (
+CREATE TABLE IF NOT EXISTS "Lesson" (
     "id" TEXT NOT NULL,
     "coachId" TEXT NOT NULL,
     "playerId" TEXT NOT NULL,
@@ -99,7 +112,7 @@ CREATE TABLE "Lesson" (
 );
 
 -- CreateTable
-CREATE TABLE "MediaAsset" (
+CREATE TABLE IF NOT EXISTS "MediaAsset" (
     "id" TEXT NOT NULL,
     "lessonId" TEXT NOT NULL,
     "type" "MediaType" NOT NULL,
@@ -114,7 +127,7 @@ CREATE TABLE "MediaAsset" (
 );
 
 -- CreateTable
-CREATE TABLE "MirrorJob" (
+CREATE TABLE IF NOT EXISTS "MirrorJob" (
     "id" TEXT NOT NULL,
     "mediaAssetId" TEXT NOT NULL,
     "status" "MirrorJobStatus" NOT NULL DEFAULT 'queued',
@@ -127,7 +140,7 @@ CREATE TABLE "MirrorJob" (
 );
 
 -- CreateTable
-CREATE TABLE "PlayerAccessToken" (
+CREATE TABLE IF NOT EXISTS "PlayerAccessToken" (
     "id" TEXT NOT NULL,
     "playerId" TEXT NOT NULL,
     "tokenHash" TEXT NOT NULL,
@@ -138,86 +151,167 @@ CREATE TABLE "PlayerAccessToken" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE INDEX "Account_userId_idx" ON "Account"("userId");
+CREATE INDEX IF NOT EXISTS "Account_userId_idx" ON "Account"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Session"("sessionToken");
+CREATE UNIQUE INDEX IF NOT EXISTS "Session_sessionToken_key" ON "Session"("sessionToken");
 
 -- CreateIndex
-CREATE INDEX "Session_userId_idx" ON "Session"("userId");
+CREATE INDEX IF NOT EXISTS "Session_userId_idx" ON "Session"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
+CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_token_key" ON "VerificationToken"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
+CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Coach_userId_key" ON "Coach"("userId");
+CREATE UNIQUE INDEX IF NOT EXISTS "Coach_userId_key" ON "Coach"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Coach_email_key" ON "Coach"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "Coach_email_key" ON "Coach"("email");
 
 -- CreateIndex
-CREATE INDEX "Player_coachId_idx" ON "Player"("coachId");
+CREATE INDEX IF NOT EXISTS "Player_coachId_idx" ON "Player"("coachId");
 
 -- CreateIndex
-CREATE INDEX "Lesson_coachId_idx" ON "Lesson"("coachId");
+CREATE INDEX IF NOT EXISTS "Lesson_coachId_idx" ON "Lesson"("coachId");
 
 -- CreateIndex
-CREATE INDEX "Lesson_playerId_idx" ON "Lesson"("playerId");
+CREATE INDEX IF NOT EXISTS "Lesson_playerId_idx" ON "Lesson"("playerId");
 
 -- CreateIndex
-CREATE INDEX "Lesson_coachId_playerId_date_idx" ON "Lesson"("coachId", "playerId", "date");
+CREATE INDEX IF NOT EXISTS "Lesson_coachId_playerId_date_idx" ON "Lesson"("coachId", "playerId", "date");
 
 -- CreateIndex
-CREATE INDEX "MediaAsset_lessonId_idx" ON "MediaAsset"("lessonId");
+CREATE INDEX IF NOT EXISTS "MediaAsset_lessonId_idx" ON "MediaAsset"("lessonId");
 
 -- CreateIndex
-CREATE INDEX "MediaAsset_googleDriveFileId_idx" ON "MediaAsset"("googleDriveFileId");
+CREATE INDEX IF NOT EXISTS "MediaAsset_googleDriveFileId_idx" ON "MediaAsset"("googleDriveFileId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "MirrorJob_mediaAssetId_key" ON "MirrorJob"("mediaAssetId");
+CREATE UNIQUE INDEX IF NOT EXISTS "MirrorJob_mediaAssetId_key" ON "MirrorJob"("mediaAssetId");
 
 -- CreateIndex
-CREATE INDEX "MirrorJob_status_createdAt_idx" ON "MirrorJob"("status", "createdAt");
+CREATE INDEX IF NOT EXISTS "MirrorJob_status_createdAt_idx" ON "MirrorJob"("status", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "PlayerAccessToken_playerId_idx" ON "PlayerAccessToken"("playerId");
+CREATE INDEX IF NOT EXISTS "PlayerAccessToken_playerId_idx" ON "PlayerAccessToken"("playerId");
 
 -- CreateIndex
-CREATE INDEX "PlayerAccessToken_revokedAt_idx" ON "PlayerAccessToken"("revokedAt");
+CREATE INDEX IF NOT EXISTS "PlayerAccessToken_revokedAt_idx" ON "PlayerAccessToken"("revokedAt");
 
 -- AddForeignKey
-ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'Account_userId_fkey'
+      AND conrelid = '"baseline"."Account"'::regclass
+  ) THEN
+    ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'Session_userId_fkey'
+      AND conrelid = '"baseline"."Session"'::regclass
+  ) THEN
+    ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Coach" ADD CONSTRAINT "Coach_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'Coach_userId_fkey'
+      AND conrelid = '"baseline"."Coach"'::regclass
+  ) THEN
+    ALTER TABLE "Coach" ADD CONSTRAINT "Coach_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Player" ADD CONSTRAINT "Player_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "Coach"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'Player_coachId_fkey'
+      AND conrelid = '"baseline"."Player"'::regclass
+  ) THEN
+    ALTER TABLE "Player" ADD CONSTRAINT "Player_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "Coach"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "Coach"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'Lesson_coachId_fkey'
+      AND conrelid = '"baseline"."Lesson"'::regclass
+  ) THEN
+    ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "Coach"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "Player"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'Lesson_playerId_fkey'
+      AND conrelid = '"baseline"."Lesson"'::regclass
+  ) THEN
+    ALTER TABLE "Lesson" ADD CONSTRAINT "Lesson_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "Player"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "MediaAsset" ADD CONSTRAINT "MediaAsset_lessonId_fkey" FOREIGN KEY ("lessonId") REFERENCES "Lesson"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'MediaAsset_lessonId_fkey'
+      AND conrelid = '"baseline"."MediaAsset"'::regclass
+  ) THEN
+    ALTER TABLE "MediaAsset" ADD CONSTRAINT "MediaAsset_lessonId_fkey" FOREIGN KEY ("lessonId") REFERENCES "Lesson"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "MirrorJob" ADD CONSTRAINT "MirrorJob_mediaAssetId_fkey" FOREIGN KEY ("mediaAssetId") REFERENCES "MediaAsset"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'MirrorJob_mediaAssetId_fkey'
+      AND conrelid = '"baseline"."MirrorJob"'::regclass
+  ) THEN
+    ALTER TABLE "MirrorJob" ADD CONSTRAINT "MirrorJob_mediaAssetId_fkey" FOREIGN KEY ("mediaAssetId") REFERENCES "MediaAsset"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "PlayerAccessToken" ADD CONSTRAINT "PlayerAccessToken_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "Player"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'PlayerAccessToken_playerId_fkey'
+      AND conrelid = '"baseline"."PlayerAccessToken"'::regclass
+  ) THEN
+    ALTER TABLE "PlayerAccessToken" ADD CONSTRAINT "PlayerAccessToken_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "Player"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
