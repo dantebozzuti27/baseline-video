@@ -9,7 +9,8 @@ type Mode = "signin" | "signup";
 export const dynamic = "force-dynamic";
 
 export default function SignInPage() {
-  // Create the client only in event handlers (avoids build-time/prerender env errors).
+  // IMPORTANT: don't create Supabase client during render (build/prerender can run this without env).
+  // We create it lazily in event handlers; the client implementation itself is a singleton.
   useMemo(() => null, []);
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");

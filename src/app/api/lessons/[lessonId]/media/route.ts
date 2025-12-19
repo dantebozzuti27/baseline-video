@@ -1,18 +1,32 @@
 import type { NextRequest } from "next/server";
 
 import { prisma } from "@/lib/prisma";
-import { requireCoach } from "@/lib/coach-session";
 import { mediaRegisterSchema } from "@/lib/validation";
+import { createClient } from "@/lib/supabase/server";
+import { getLessonActorForUser } from "@/lib/lesson-access";
 
 export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ lessonId: string }> },
 ) {
-  const coach = await requireCoach(req);
   const { lessonId } = await ctx.params;
 
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const actor = await getLessonActorForUser({
+    userId: user.id,
+    email: user.email ?? null,
+  });
+  if (!actor) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   const lesson = await prisma.lesson.findFirst({
-    where: { id: lessonId, coachId: coach.id },
+    where:
+      actor.role === "coach"
+        ? { id: lessonId, coachId: actor.coachId }
+        : { id: lessonId, playerId: actor.playerId },
   });
   if (!lesson) return Response.json({ error: "Not found" }, { status: 404 });
 
@@ -32,7 +46,7 @@ export async function POST(
     },
   });
 
-  await prisma.mirrorJob.create({
+  await (prisma as any).mirrorJob.create({
     data: {
       mediaAssetId: media.id,
       status: "queued",

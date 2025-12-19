@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
 import { requireAuthUser } from "@/lib/auth-user";
-import { ensureCoachForAuthUser } from "@/lib/coach";
 import { UploadToDrive } from "./UploadToDrive";
+import { getLessonActorForUser } from "@/lib/lesson-access";
 
 export const dynamic = "force-dynamic";
 
@@ -14,19 +14,14 @@ async function registerMediaAction(lessonId: string, formData: FormData) {
 
   const user = await requireAuthUser();
   const email = user.email ?? null;
-  const name =
-    (user.user_metadata as any)?.full_name ||
-    (user.user_metadata as any)?.name ||
-    (email ? email.split("@")[0] : "Coach");
-
-  const coach = await ensureCoachForAuthUser({
-    authUserId: user.id,
-    email,
-    name,
-  });
+  const actor = await getLessonActorForUser({ userId: user.id, email });
+  if (!actor) return;
 
   const lesson = await prisma.lesson.findFirst({
-    where: { id: lessonId, coachId: coach.id },
+    where:
+      actor.role === "coach"
+        ? { id: lessonId, coachId: actor.coachId }
+        : { id: lessonId, playerId: actor.playerId },
   });
   if (!lesson) return;
 
@@ -51,7 +46,7 @@ async function registerMediaAction(lessonId: string, formData: FormData) {
     },
   });
 
-  await prisma.mirrorJob.create({
+  await (prisma as any).mirrorJob.create({
     data: { mediaAssetId: media.id, status: "queued" },
   });
 
@@ -64,35 +59,30 @@ export default async function LessonDetailPage(props: {
   const { lessonId } = await props.params;
   const user = await requireAuthUser();
   const email = user.email ?? null;
-  const name =
-    (user.user_metadata as any)?.full_name ||
-    (user.user_metadata as any)?.name ||
-    (email ? email.split("@")[0] : "Coach");
-
-  const coach = await ensureCoachForAuthUser({
-    authUserId: user.id,
-    email,
-    name,
-  });
+  const actor = await getLessonActorForUser({ userId: user.id, email });
+  if (!actor) redirect("/auth/signin");
 
   const lesson = await prisma.lesson.findFirst({
-    where: { id: lessonId, coachId: coach.id },
+    where:
+      actor.role === "coach"
+        ? { id: lessonId, coachId: actor.coachId }
+        : { id: lessonId, playerId: actor.playerId },
     include: {
       player: true,
       media: { orderBy: { createdAt: "asc" } },
     },
   });
-  if (!lesson) redirect("/coach");
+  if (!lesson) redirect(actor.role === "coach" ? "/coach" : "/player");
 
   return (
     <main className="min-h-screen px-5 py-10">
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="rounded-2xl border border-white/10 bg-white/5 p-6">
           <Link
-            href={`/coach/players/${lesson.playerId}`}
+            href={actor.role === "coach" ? `/coach/players/${lesson.playerId}` : "/player"}
             className="text-sm text-white/70 underline underline-offset-4"
           >
-            ← Back to player
+            ← Back
           </Link>
           <h1 className="mt-3 text-2xl font-semibold">
             {lesson.player.name} — {lesson.category}

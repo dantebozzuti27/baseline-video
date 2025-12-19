@@ -1,5 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+let browserClient: ReturnType<typeof createSupabaseClient> | null = null;
+
 export function createClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -12,13 +14,18 @@ export function createClient() {
     );
   }
 
-  return createSupabaseClient(url, anonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  });
+  // Reuse a single client in the browser to avoid multiple GoTrueClient warnings.
+  if (!browserClient) {
+    browserClient = createSupabaseClient(url, anonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
+  }
+
+  return browserClient;
 }
 
 
