@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuthUser } from "@/lib/auth-user";
 import { ensureCoachForAuthUser } from "@/lib/coach";
+import { UploadToDrive } from "./UploadToDrive";
 
 export const dynamic = "force-dynamic";
 
@@ -102,10 +103,12 @@ export default async function LessonDetailPage(props: {
           <p className="mt-4 text-sm text-white/70">{lesson.notes || "No notes"}</p>
         </header>
 
+        <UploadToDrive lessonId={lesson.id} />
+
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6">
-          <h2 className="text-sm font-semibold">Attach media (metadata for now)</h2>
+          <h2 className="text-sm font-semibold">Attach media (manual fallback)</h2>
           <p className="mt-2 text-xs text-white/60">
-            Next step: direct Drive upload from the browser, then automatic mirroring to R2 for playback.
+            If you already uploaded to Drive elsewhere, paste the file id + webViewLink.
           </p>
           <form
             action={registerMediaAction.bind(null, lesson.id)}
@@ -124,9 +127,7 @@ export default async function LessonDetailPage(props: {
                 placeholder="Duration seconds (≤120)"
                 className="rounded-xl border border-white/15 bg-black/20 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/30"
               />
-              <div className="text-xs text-white/60 self-center">
-                Hard cap: 2 minutes
-              </div>
+              <div className="text-xs text-white/60 self-center">Hard cap: 2 minutes</div>
             </div>
             <input
               name="googleDriveFileId"
