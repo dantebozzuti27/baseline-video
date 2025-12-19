@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
  * worker to pull from Google Drive and push to object storage.
  */
 export async function POST(req: NextRequest) {
-  const session = await getSession();
+  const session = await getSession(req);
   if (!session?.user?.email) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
