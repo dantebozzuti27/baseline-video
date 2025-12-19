@@ -1,7 +1,7 @@
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 import type { Account, NextAuthOptions } from "next-auth";
 import type { JWT } from "next-auth/jwt";
-import NextAuth from "next-auth/next";
-import GoogleProvider from "next-auth/providers/google";
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -25,9 +25,10 @@ const authOptions: NextAuthOptions = {
           access_token?: string;
           refresh_token?: string;
         };
-        token = token as JWT & { accessToken?: string; refreshToken?: string };
-        token.accessToken = acc.access_token;
-        token.refreshToken = acc.refresh_token;
+        const t = token as JWT & { accessToken?: string; refreshToken?: string };
+        t.accessToken = acc.access_token;
+        t.refreshToken = acc.refresh_token;
+        return t;
       }
       return token;
     },
@@ -39,6 +40,9 @@ const authOptions: NextAuthOptions = {
         refreshToken: t.refreshToken,
       };
     },
+  },
+  pages: {
+    signIn: "/auth/signin",
   },
 };
 
