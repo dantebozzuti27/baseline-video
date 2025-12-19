@@ -3,14 +3,14 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-type Params = {
-  params: { lessonId: string };
-};
-
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(
+  _req: NextRequest,
+  context: { params: Promise<{ lessonId: string }> },
+) {
+  const { lessonId } = await context.params;
   const auth = await requireAuth(_req);
   const lesson = await prisma.lesson.findUnique({
-    where: { id: params.lessonId },
+    where: { id: lessonId },
     include: {
       media: true,
       player: true,

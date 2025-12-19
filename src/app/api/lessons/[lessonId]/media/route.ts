@@ -4,11 +4,11 @@ import { requireCoach } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { mediaCreateSchema } from "@/lib/validation";
 
-type Params = {
-  params: { lessonId: string };
-};
-
-export async function POST(req: NextRequest, { params }: Params) {
+export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ lessonId: string }> },
+) {
+  const { lessonId } = await context.params;
   const coachAuth = await requireCoach(req);
   const json = await req.json();
   const parsed = mediaCreateSchema.safeParse(json);
@@ -22,19 +22,22 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   // Ensure lesson belongs to coach
   const lesson = await prisma.lesson.findUnique({
-    where: { id: params.lessonId },
+    where: { id: lessonId },
     select: { coachId: true },
   });
   if (!lesson) {
     return Response.json({ error: "Lesson not found" }, { status: 404 });
   }
   if (lesson.coachId !== coachAuth.id) {
-    return Response.json({ error: "Forbidden: coach mismatch" }, { status: 403 });
+    return Response.json(
+      { error: "Forbidden: coach mismatch" },
+      { status: 403 },
+    );
   }
 
   const media = await prisma.mediaAsset.create({
     data: {
-      lessonId: params.lessonId,
+      lessonId,
       type: parsed.data.type,
       googleDriveFileId: parsed.data.googleDriveFileId,
       googleDriveWebViewLink: parsed.data.googleDriveWebViewLink,
