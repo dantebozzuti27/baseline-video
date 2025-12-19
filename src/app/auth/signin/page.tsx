@@ -20,14 +20,18 @@ export default function SignInPage() {
   async function signInWithGoogle() {
     setBusy(true);
     setMessage(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) setMessage(error.message);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) setMessage(error.message);
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Failed to start Google sign-in");
+    }
     setBusy(false);
   }
 
@@ -36,26 +40,30 @@ export default function SignInPage() {
     setBusy(true);
     setMessage(null);
 
-    const supabase = createClient();
-    const fn =
-      mode === "signup"
-        ? supabase.auth.signUp
-        : supabase.auth.signInWithPassword;
-
-    const { error } = await fn({
-      email,
-      password,
-    } as any);
-
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage(
+    try {
+      const supabase = createClient();
+      const fn =
         mode === "signup"
-          ? "Check your email to confirm your account, then sign in."
-          : "Signed in. Redirecting…",
-      );
-      window.location.href = "/";
+          ? supabase.auth.signUp
+          : supabase.auth.signInWithPassword;
+
+      const { error } = await fn({
+        email,
+        password,
+      } as any);
+
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setMessage(
+          mode === "signup"
+            ? "Check your email to confirm your account, then sign in."
+            : "Signed in. Redirecting…",
+        );
+        window.location.href = "/";
+      }
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : "Failed to sign in");
     }
 
     setBusy(false);
