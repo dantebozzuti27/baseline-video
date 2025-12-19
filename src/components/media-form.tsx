@@ -32,7 +32,7 @@ export function AddMediaForm({ lessonId }: Props) {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : undefined,
         },
         body: JSON.stringify({
           type,

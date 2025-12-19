@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { AddMediaForm } from "@/components/media-form";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 type Props = {
   params: { id: string };
@@ -27,6 +28,7 @@ type LessonResponse = {
 };
 
 export default function LessonDetailPage({ params }: Props) {
+  const session = useSession();
   const [lesson, setLesson] = useState<LessonResponse | null>(null);
   const [token, setToken] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -70,25 +72,26 @@ export default function LessonDetailPage({ params }: Props) {
           Lesson {params.id}
         </p>
         <div className="flex items-center gap-2">
-          <input
-            className="flex-1 rounded-md border px-3 py-2 text-sm"
-            placeholder="Coach API token"
-            value={token}
-            onChange={(e) => {
-              const t = e.target.value;
-              setToken(t);
-              if (typeof window !== "undefined") {
-                localStorage.setItem("coachToken", t);
-              }
-            }}
-          />
-          <button
-            className="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white"
-            onClick={() => setToken(token)}
-            disabled={!token}
-          >
-            Use token
-          </button>
+          {session.status !== "authenticated" ? (
+            <button
+              className="rounded-md bg-blue-700 px-3 py-2 text-sm font-semibold text-white"
+              onClick={() => signIn("google")}
+            >
+              Sign in with Google
+            </button>
+          ) : (
+            <>
+              <span className="text-sm text-zinc-700">
+                Signed in as {session.data?.user?.email ?? "coach"}
+              </span>
+              <button
+                className="rounded-md bg-zinc-200 px-3 py-2 text-sm font-semibold text-zinc-800"
+                onClick={() => signOut()}
+              >
+                Sign out
+              </button>
+            </>
+          )}
         </div>
       </header>
 
