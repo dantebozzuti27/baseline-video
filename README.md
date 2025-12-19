@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Baseline Management — coaching app scaffold
 
-## Getting Started
+Next.js (App Router, TypeScript, Tailwind v4) + Prisma/Postgres baseline for the baseball coaching product described in `../plan`. Branding updated to Baseline Management.
 
-First, run the development server:
+### Run locally
+- `npm install`
+- Add `.env` (see template below)
+- `npx prisma generate && npx prisma migrate dev --name init`
+- `npm run dev`
+- Visit `http://localhost:3000`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Environment
+Create `.env` in `app/`:
+```
+DATABASE_URL="postgresql://user:pass@localhost:5432/putsky"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+R2_ENDPOINT="https://<account>.r2.cloudflarestorage.com"
+R2_BUCKET="..."
+R2_ACCESS_KEY_ID="..."
+R2_SECRET_ACCESS_KEY="..."
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+ADMIN_API_TOKEN="set-a-strong-admin-token"
+R2_PUBLIC_BASE_URL="https://<public-cdn-base>/your-bucket" # used by mirror worker
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Database schema (Prisma)
+Entities: Coach, Player, Lesson, MediaAsset with enforced foreign keys and enums. Source: `prisma/schema.prisma`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### API surface (App Router)
+- `GET /api/players?coachId=&playerId=` — list players (filterable)
+- `POST /api/players` — create player
+- `GET /api/lessons?coachId=&playerId=` — list lessons with media
+- `POST /api/lessons` — create lesson
+- `GET /api/lessons/:lessonId` — lesson detail (coach, player, media)
+- `POST /api/lessons/:lessonId/media` — register uploaded media
+- `POST /api/mirror/enqueue` — accept Drive→object storage mirror jobs (stub queues)
+- `GET /api/coaches` / `POST /api/coaches` — manage coaches
+- `GET/POST /api/auth/tokens` — admin-only bearer token issuance (use header `x-admin-token: $ADMIN_API_TOKEN`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Validation: `src/lib/validation.ts` (zod). DB access: `src/lib/prisma.ts`.
 
-## Learn More
+### Upload + mirroring flow (v1)
+1) Client uploads to Google Drive using the coach’s Drive credentials; returns file id + web view link.  
+2) Client calls `POST /api/lessons/:lessonId/media` to persist metadata.  
+3) Backend enqueues `POST /api/mirror/enqueue` with `googleDriveFileId` (and media id).  
+4) Worker (`npm run worker:mirror`, `scripts/mirror-worker.ts`) streams bytes from Drive to R2/S3 (stubbed), then updates `mirroredObjectStoreUrl`.  
+5) Playback logic prefers `mirroredObjectStoreUrl`; falls back to Drive link.
 
-To learn more about Next.js, take a look at the following resources:
+### Seeds and workers
+- Seed demo data: `npm run seed` (creates demo coach/players/lesson).
+- Mirror worker (stub): `npm run worker:mirror` (marks missing mirrors with a constructed CDN URL).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### UI shells
+- `/` — overview with quick navigation
+- `/coach` — coach lesson timeline placeholder
+- `/player` — player view placeholder
+- `/lessons/[id]` — lesson detail with media registration form
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Notes
+- Video cap enforced via validation (`durationSeconds` max 120).
+- Keep uploads non-blocking; background mirroring only.
+- Add auth + real queue wiring before production use.
