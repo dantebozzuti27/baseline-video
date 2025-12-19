@@ -9,7 +9,7 @@ export default function Home() {
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <a
-            href="/auth/signin"
+            href="/coach"
             className="rounded-xl bg-white px-4 py-3 text-center text-sm font-medium text-black"
           >
             Coach sign in

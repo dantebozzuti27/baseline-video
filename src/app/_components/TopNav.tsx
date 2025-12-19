@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 
 export function TopNav() {
+  const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export function TopNav() {
             </>
           ) : (
             <Link
-              href="/auth/signin"
+              href={`/auth/signin?redirectTo=${encodeURIComponent(pathname || "/")}`}
               className="rounded-lg border border-white/15 px-3 py-1.5 text-white/80 hover:text-white"
             >
               Sign in

@@ -26,11 +26,10 @@ export async function ensureCoachForAuthUser(params: {
     .filter(Boolean);
 
   const normalizedEmail = (email || "").toLowerCase();
-  const hasCoach = await prisma.coach.count().then((n) => n > 0);
   const allowed =
     allowlist.length > 0
       ? Boolean(normalizedEmail && allowlist.includes(normalizedEmail))
-      : !hasCoach; // if no allowlist, only the first coach can be created.
+      : true; // if no allowlist, allow coach creation (MVP/unblocked).
 
   if (!allowed) {
     throw new Error(
