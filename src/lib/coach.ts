@@ -7,16 +7,41 @@ export async function ensureCoachForAuthUser(params: {
 }) {
   const { authUserId, email, name } = params;
 
-  const coach = await prisma.coach.upsert({
-    where: { authUserId },
-    update: {
-      name,
-      ...(email ? { email } : {}),
-    },
-    create: {
+  const existing = await prisma.coach.findUnique({ where: { authUserId } });
+  if (existing) {
+    // Keep profile info fresh.
+    return prisma.coach.update({
+      where: { id: existing.id },
+      data: { name, ...(email ? { email } : {}) },
+    });
+  }
+
+  // IMPORTANT security note:
+  // Without a role system, any logged-in user could become a coach by visiting /coach.
+  // In production, set COACH_EMAIL_ALLOWLIST="you@domain.com,other@domain.com".
+  const allowlistRaw = process.env.COACH_EMAIL_ALLOWLIST || "";
+  const allowlist = allowlistRaw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  const normalizedEmail = (email || "").toLowerCase();
+  const hasCoach = await prisma.coach.count().then((n) => n > 0);
+  const allowed =
+    allowlist.length > 0
+      ? Boolean(normalizedEmail && allowlist.includes(normalizedEmail))
+      : !hasCoach; // if no allowlist, only the first coach can be created.
+
+  if (!allowed) {
+    throw new Error(
+      "Not authorized as coach. Ask an admin to add your email to COACH_EMAIL_ALLOWLIST.",
+    );
+  }
+
+  const coach = await prisma.coach.create({
+    data: {
       authUserId,
       name,
-      // If Supabase user has no email (rare), write a stable placeholder.
       email: email || `${authUserId}@example.invalid`,
     },
   });

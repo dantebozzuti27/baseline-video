@@ -12,23 +12,7 @@ export async function getCoachFromRequest(req: NextRequest) {
   if (!user) return null;
 
   const authUserId = user.id;
-  const email = user.email ?? null;
-  const name =
-    (user.user_metadata as any)?.full_name ||
-    (user.user_metadata as any)?.name ||
-    (email ? email.split("@")[0] : "Coach");
-
-  const existing = await prisma.coach.findUnique({ where: { authUserId } });
-  if (existing) return existing;
-
-  // Create a coach record on first successful sign-in.
-  return prisma.coach.create({
-    data: {
-      authUserId,
-      name,
-      email: email || `${authUserId}@example.invalid`,
-    },
-  });
+  return prisma.coach.findUnique({ where: { authUserId } });
 }
 
 export async function requireCoach(req: NextRequest) {

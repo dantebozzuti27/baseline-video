@@ -47,14 +47,40 @@ export default async function CoachDashboard() {
     (user.user_metadata as any)?.name ||
     (email ? email.split("@")[0] : "Coach");
 
-  const coach = await ensureCoachForAuthUser({
-    authUserId: user.id,
-    email,
-    name,
-  });
+  let coachId: string | null = null;
+  try {
+    const coach = await ensureCoachForAuthUser({
+      authUserId: user.id,
+      email,
+      name,
+    });
+    coachId = coach.id;
+  } catch (e) {
+    return (
+      <main className="min-h-screen px-5 py-10">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <header className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
+              Coach
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold">Not authorized</h1>
+            <p className="mt-2 text-sm text-white/70">
+              {e instanceof Error ? e.message : "You are not authorized as a coach."}
+            </p>
+          </header>
+          <Link
+            href="/player"
+            className="inline-block rounded-xl border border-white/15 px-4 py-3 text-sm font-medium text-white"
+          >
+            Go to player dashboard →
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   const players = await prisma.player.findMany({
-    where: { coachId: coach.id },
+    where: { coachId: coachId! },
     orderBy: { createdAt: "desc" },
   });
 
