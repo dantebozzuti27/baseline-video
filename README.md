@@ -19,7 +19,8 @@ R2_ENDPOINT="https://<account>.r2.cloudflarestorage.com"
 R2_BUCKET="..."
 R2_ACCESS_KEY_ID="..."
 R2_SECRET_ACCESS_KEY="..."
-NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+NEXT_PUBLIC_BASE_URL="https://baseline-video.vercel.app"
+NEXTAUTH_URL="https://baseline-video.vercel.app"
 ADMIN_API_TOKEN="set-a-strong-admin-token"
 R2_PUBLIC_BASE_URL="https://<public-cdn-base>/your-bucket" # used by mirror worker
 ```
