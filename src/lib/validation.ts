@@ -1,14 +1,12 @@
 import { z } from "zod";
 
 export const playerCreateSchema = z.object({
-  coachId: z.string().uuid(),
   name: z.string().min(1),
   email: z.string().email().optional().nullable(),
   status: z.enum(["active", "inactive"]).optional().default("active"),
 });
 
 export const lessonCreateSchema = z.object({
-  coachId: z.string().uuid(),
   playerId: z.string().uuid(),
   date: z.string().datetime(),
   category: z.string().min(1),

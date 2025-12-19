@@ -33,17 +33,11 @@ export async function POST(
 
   // Ensure lesson belongs to coach
   const lesson = await prisma.lesson.findUnique({
-    where: { id: lessonId },
+    where: { id: lessonId, coachId: coach.id },
     select: { coachId: true },
   });
   if (!lesson) {
     return Response.json({ error: "Lesson not found" }, { status: 404 });
-  }
-  if (lesson.coachId !== coach.id) {
-    return Response.json(
-      { error: "Forbidden: coach mismatch" },
-      { status: 403 },
-    );
   }
 
   const media = await prisma.mediaAsset.create({

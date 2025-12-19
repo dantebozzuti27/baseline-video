@@ -25,8 +25,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const coach = await prisma.coach.create({
-    data: {
+  // find-or-create coach by email to avoid duplicates
+  const coach = await prisma.coach.upsert({
+    where: { email: session.user.email },
+    update: {
+      name: parsed.data.name,
+      authProviderId: parsed.data.authProviderId,
+    },
+    create: {
       name: parsed.data.name,
       email: session.user.email,
       authProviderId: parsed.data.authProviderId,

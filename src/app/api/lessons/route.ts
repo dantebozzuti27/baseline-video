@@ -50,6 +50,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ensure player belongs to this coach
+  const player = await prisma.player.findUnique({
+    where: { id: parsed.data.playerId, coachId: coach.id },
+  });
+  if (!player) {
+    return Response.json({ error: "Player not found for coach" }, { status: 403 });
+  }
+
   const lesson = await prisma.lesson.create({
     data: {
       coachId: coach.id,
