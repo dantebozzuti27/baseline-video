@@ -10,10 +10,12 @@ export default function CommentForm({ videoId }: { videoId: string }) {
   const [timestampSeconds, setTimestampSeconds] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     if (!body.trim()) {
       setError("Write a comment.");
@@ -33,11 +35,13 @@ export default function CommentForm({ videoId }: { videoId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: body.trim(), timestampSeconds: ts })
       });
-      const json = await resp.json();
-      if (!resp.ok) throw new Error(json?.error ?? "Unable to post comment.");
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error((json as any)?.error ?? `Unable to post comment (${resp.status}).`);
 
       setBody("");
       setTimestampSeconds("");
+      setSuccess("Posted.");
+      setTimeout(() => setSuccess(null), 2000);
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? "Unable to post comment.");
@@ -76,10 +80,10 @@ export default function CommentForm({ videoId }: { videoId: string }) {
             </Button>
           </div>
         </div>
+
         {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
+        {success ? <div style={{ color: "var(--primary)", fontSize: 13 }}>{success}</div> : null}
       </form>
     </Card>
   );
 }
-
-

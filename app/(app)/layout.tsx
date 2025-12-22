@@ -1,21 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
-import { Button } from "@/components/ui";
-
-async function SignOutButton() {
-  async function signOut() {
-    "use server";
-    const supabase = createSupabaseServerClient();
-    await supabase.auth.signOut();
-  }
-
-  return (
-    <form action={signOut}>
-      <Button type="submit">Sign out</Button>
-    </form>
-  );
-}
+import SignOutButton from "./SignOutButton";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createSupabaseServerClient();

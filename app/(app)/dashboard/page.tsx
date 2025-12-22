@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LinkButton } from "@/components/ui";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
@@ -40,9 +41,7 @@ export default async function DashboardPage() {
             Players and recent uploads (last 7 days).
           </div>
         </div>
-        <Link href="/app/upload">
-          <Button variant="primary">Upload</Button>
-        </Link>
+        <LinkButton href="/app/upload" variant="primary">Upload</LinkButton>
       </div>
       <AccessCodeCard />
 

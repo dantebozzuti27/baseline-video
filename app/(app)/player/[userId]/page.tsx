@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LinkButton } from "@/components/ui";
 import { redirect } from "next/navigation";
 import { LocalDateTime } from "@/components/LocalDateTime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -48,9 +49,7 @@ export default async function PlayerPage({
           </div>
         </div>
         <div className="row">
-          <Link href="/app/dashboard">
-            <Button>Back</Button>
-          </Link>
+          <LinkButton href="/app/dashboard">Back</LinkButton>
         </div>
       </div>
 

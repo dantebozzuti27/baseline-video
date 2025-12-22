@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LinkButton } from "@/components/ui";
 import { redirect } from "next/navigation";
 import { LocalDateTime } from "@/components/LocalDateTime";
 import { getMyProfile } from "@/lib/auth/profile";
@@ -38,9 +39,7 @@ export default async function AppHomePage({
             Upload, filter, and review.
           </div>
         </div>
-        <Link href="/app/upload">
-          <Button variant="primary">Upload</Button>
-        </Link>
+        <LinkButton href="/app/upload" variant="primary">Upload</LinkButton>
       </div>
 
       <Card>
@@ -90,9 +89,7 @@ export default async function AppHomePage({
             Upload your first Game or Training clip.
           </div>
           <div style={{ marginTop: 12 }}>
-            <Link href="/app/upload">
-              <Button variant="primary">Upload</Button>
-            </Link>
+            <LinkButton href="/app/upload" variant="primary">Upload</LinkButton>
           </div>
         </Card>
       )}

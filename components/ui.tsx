@@ -1,7 +1,14 @@
 import * as React from "react";
+import Link from "next/link";
 
 export function Card({ children }: { children: React.ReactNode }) {
   return <div className="card">{children}</div>;
+}
+
+type ButtonVariant = "default" | "primary" | "danger";
+
+function getButtonClass(variant?: ButtonVariant) {
+  return variant === "primary" ? "btn btnPrimary" : variant === "danger" ? "btn btnDanger" : "btn";
 }
 
 export function Button({
@@ -12,21 +19,33 @@ export function Button({
   onClick
 }: {
   children: React.ReactNode;
-  variant?: "default" | "primary" | "danger";
+  variant?: ButtonVariant;
   type?: "button" | "submit";
   disabled?: boolean;
   onClick?: () => void;
 }) {
-  const cls =
-    variant === "primary"
-      ? "btn btnPrimary"
-      : variant === "danger"
-        ? "btn btnDanger"
-        : "btn";
+  const cls = getButtonClass(variant);
   return (
     <button className={cls} type={type ?? "button"} disabled={disabled} onClick={onClick}>
       {children}
     </button>
+  );
+}
+
+export function LinkButton({
+  href,
+  children,
+  variant
+}: {
+  href: string;
+  children: React.ReactNode;
+  variant?: ButtonVariant;
+}) {
+  const cls = getButtonClass(variant);
+  return (
+    <Link className={cls} href={href}>
+      {children}
+    </Link>
   );
 }
 
@@ -87,5 +106,3 @@ export function Select({
     </div>
   );
 }
-
-

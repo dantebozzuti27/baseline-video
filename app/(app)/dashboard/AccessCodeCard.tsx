@@ -7,17 +7,31 @@ export default function AccessCodeCard() {
   const [accessCode, setAccessCode] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
   async function generate() {
+    if (accessCode) {
+      const ok = window.confirm(
+        "Generate a new access code? This will invalidate the previous code and players will need the new one."
+      );
+      if (!ok) return;
+    }
+
     setLoading(true);
     setError(null);
+    setCopied(false);
+
     try {
       const resp = await fetch("/api/team/access-code", { method: "POST" });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json?.error ?? "Unable to generate code.");
+
       setAccessCode(json.accessCode);
+
       try {
         await navigator.clipboard.writeText(json.accessCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
       } catch {
         // ignore
       }
@@ -34,16 +48,16 @@ export default function AccessCodeCard() {
         <div>
           <div style={{ fontWeight: 900 }}>Team access code</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-            Players use this to join your team. You can generate a new one anytime.
+            Players use this to join your team.
           </div>
         </div>
 
         {accessCode ? (
           <div className="card">
-            <div className="label">Current code (newly generated)</div>
+            <div className="label">Current code</div>
             <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.08em", marginTop: 6 }}>{accessCode}</div>
             <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
-              Copied to clipboard (if your browser allowed it).
+              {copied ? "Copied to clipboard." : "Tip: click Generate new code to rotate it."}
             </div>
           </div>
         ) : (
@@ -59,7 +73,7 @@ export default function AccessCodeCard() {
             {loading ? "Generating…" : accessCode ? "Generate new code" : "Generate code"}
           </Button>
           <div className="muted" style={{ fontSize: 12 }}>
-            Generating a new code invalidates the previous one.
+            Rotating invalidates the previous code.
           </div>
         </div>
       </div>

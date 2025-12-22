@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LinkButton } from "@/components/ui";
 import { redirect } from "next/navigation";
 import { LocalDateTime } from "@/components/LocalDateTime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -44,9 +45,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
             {video.category.toUpperCase()} • {<LocalDateTime value={video.created_at} />}
           </div>
         </div>
-        <Link href="/app">
-          <Button>Back</Button>
-        </Link>
+        <LinkButton href="/app">Back</LinkButton>
       </div>
 
       <VideoClient videoId={video.id} />
