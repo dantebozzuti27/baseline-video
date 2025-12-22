@@ -9,6 +9,7 @@ import CommentForm from "./commentForm";
 import DeleteVideoButton from "./DeleteVideoButton";
 import DeleteCommentButton from "./DeleteCommentButton";
 import PinLibraryControls from "./PinLibraryControls";
+import CompareQuick from "./CompareQuick";
 
 export default async function VideoDetailPage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -68,6 +69,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
         <Card>
           <div className="stack">
             <div style={{ fontWeight: 900 }}>Coach controls</div>
+            <CompareQuick videoId={video.id} />
             <PinLibraryControls
               videoId={video.id}
               initialPinned={Boolean((video as any).pinned)}
