@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logEvent } from "@/lib/utils/events";
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
   const {
     data: { user }
@@ -13,21 +13,19 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if ((profile as any)?.is_active === false) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { error } = await supabase
-    .from("comments")
-    .update({ deleted_at: new Date().toISOString(), deleted_by_user_id: user.id })
+    .from("videos")
+    .update({ deleted_at: null, deleted_by_user_id: null })
     .eq("id", params.id);
+
   if (error) {
     return NextResponse.json(
-      {
-        error:
-          error.message +
-          " (Run supabase/migrations/0009_soft_deletes_trash.sql in Supabase SQL Editor.)"
-      },
+      { error: error.message + " (Run supabase/migrations/0009_soft_deletes_trash.sql)" },
       { status: 403 }
     );
   }
 
-  await logEvent("comment_trash", "comment", params.id, {});
-
+  await logEvent("video_restore", "video", params.id, {});
   return NextResponse.json({ ok: true });
 }
+
+

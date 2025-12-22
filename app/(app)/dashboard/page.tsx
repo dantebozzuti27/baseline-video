@@ -25,20 +25,47 @@ export default async function DashboardPage() {
   // "Needs feedback" = recent team videos with zero comments (fast heuristic)
   const { data: recentTeamVideos } = await supabase
     .from("videos")
-    .select("id, title, owner_user_id, created_at")
+    .select("id, title, owner_user_id, created_at, last_activity_at")
     .eq("team_id", profile.team_id)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
-    .limit(25);
+    .limit(60);
 
   const videoIds = (recentTeamVideos ?? []).map((v: any) => v.id);
   const { data: comments } = videoIds.length
-    ? await supabase.from("comments").select("video_id").in("video_id", videoIds)
+    ? await supabase.from("comments").select("video_id").in("video_id", videoIds).is("deleted_at", null)
     : { data: [] as any[] };
 
   const commented = new Set((comments ?? []).map((c: any) => c.video_id));
-  const needsFeedback = (recentTeamVideos ?? []).filter((v: any) => !commented.has(v.id)).slice(0, 10);
+  const pendingAll = (recentTeamVideos ?? []).filter((v: any) => !commented.has(v.id));
+  const pendingOldest = [...pendingAll]
+    .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .slice(0, 10);
 
-  const ownerIds = Array.from(new Set((needsFeedback ?? []).map((v: any) => v.owner_user_id)));
+  const awaitingCounts = new Map<string, { count: number; oldestAt: string | null }>();
+  for (const v of pendingAll as any[]) {
+    const prev = awaitingCounts.get(v.owner_user_id) ?? { count: 0, oldestAt: null };
+    const oldestAt =
+      !prev.oldestAt || new Date(v.created_at).getTime() < new Date(prev.oldestAt).getTime() ? v.created_at : prev.oldestAt;
+    awaitingCounts.set(v.owner_user_id, { count: prev.count + 1, oldestAt });
+  }
+
+  // True unread for coach: unread if last_activity_at > last_seen_at (per video_views).
+  const { data: coachViews } = videoIds.length
+    ? await supabase.from("video_views").select("video_id, last_seen_at").in("video_id", videoIds)
+    : { data: [] as any[] };
+  const coachSeenMap = new Map<string, number>();
+  for (const vv of coachViews ?? []) coachSeenMap.set(vv.video_id, new Date(vv.last_seen_at).getTime());
+  const unreadCounts = new Map<string, number>();
+  for (const v of recentTeamVideos ?? []) {
+    const activity = new Date((v as any).last_activity_at ?? v.created_at).getTime();
+    const seen = coachSeenMap.get((v as any).id) ?? 0;
+    if (activity > seen) {
+      unreadCounts.set((v as any).owner_user_id, (unreadCounts.get((v as any).owner_user_id) ?? 0) + 1);
+    }
+  }
+
+  const ownerIds = Array.from(new Set((pendingOldest ?? []).map((v: any) => v.owner_user_id)));
   const { data: owners } = ownerIds.length
     ? await supabase
         .from("profiles")
@@ -82,15 +109,15 @@ export default async function DashboardPage() {
           <div>
             <div style={{ fontWeight: 900 }}>Needs feedback</div>
             <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-              Recent videos with no comments yet.
+              Oldest pending videos (no comments yet).
             </div>
           </div>
-          <div className="pill">{needsFeedback.length}</div>
+          <div className="pill">{pendingAll.length}</div>
         </div>
 
-        {needsFeedback.length > 0 ? (
+        {pendingOldest.length > 0 ? (
           <div className="stack" style={{ marginTop: 12 }}>
-            {needsFeedback.map((v: any) => {
+            {pendingOldest.map((v: any) => {
               const owner = ownerMap.get(v.owner_user_id);
               return (
                 <Link key={v.id} href={`/app/videos/${v.id}`}>
@@ -127,8 +154,21 @@ export default async function DashboardPage() {
                 <div className="card">
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800 }}>{displayNameFromProfile(p as any)}</div>
-                    <div className="pill">{counts.get(p.user_id) ?? 0} recent</div>
+                    <div className="row" style={{ alignItems: "center" }}>
+                      {(unreadCounts.get(p.user_id) ?? 0) > 0 ? (
+                        <div className="pill">{unreadCounts.get(p.user_id) ?? 0} unread</div>
+                      ) : null}
+                      {(awaitingCounts.get(p.user_id)?.count ?? 0) > 0 ? (
+                        <div className="pill">{awaitingCounts.get(p.user_id)?.count ?? 0} awaiting</div>
+                      ) : null}
+                      <div className="pill">{counts.get(p.user_id) ?? 0} recent</div>
+                    </div>
                   </div>
+                  {(awaitingCounts.get(p.user_id)?.count ?? 0) > 0 && awaitingCounts.get(p.user_id)?.oldestAt ? (
+                    <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+                      Oldest awaiting: <LocalDateTime value={awaitingCounts.get(p.user_id)?.oldestAt as string} />
+                    </div>
+                  ) : null}
                 </div>
               </Link>
             ))}

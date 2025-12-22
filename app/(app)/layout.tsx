@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
@@ -12,6 +13,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
 
   const profile = await getMyProfile();
+  if (!user) redirect("/sign-in");
+  if (!profile) redirect("/onboarding");
+  if ((profile as any).is_active === false) redirect("/inactive");
 
   return (
     <div>
@@ -27,10 +31,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <Link className="pill" href="/app/dashboard">
                   Dashboard
                 </Link>
+                <Link className="pill" href="/app/library">
+                  Library
+                </Link>
                 <Link className="pill" href="/app/compare">
                   Compare
                 </Link>
               </>
+            ) : null}
+            {profile ? (
+              <Link className="pill" href="/app/trash">
+                Trash
+              </Link>
             ) : null}
             <Link className="pill" href="/app/upload">
               Upload

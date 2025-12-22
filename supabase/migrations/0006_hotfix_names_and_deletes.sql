@@ -22,6 +22,13 @@ set
   end
 where (first_name = '' or last_name = '');
 
+-- Ensure non-empty first/last for any legacy single-name rows (prevents later table rewrites from failing)
+update public.profiles
+set
+  first_name = case when char_length(trim(first_name)) = 0 then 'User' else first_name end,
+  last_name = case when char_length(trim(last_name)) = 0 then '—' else last_name end
+where char_length(trim(first_name)) = 0 or char_length(trim(last_name)) = 0;
+
 -- Require non-empty first/last for new/updated rows (does not validate old rows)
 alter table public.profiles
   drop constraint if exists profiles_first_last_nonempty,

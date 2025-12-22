@@ -16,7 +16,7 @@ export default async function ComparePage({
   if (!user) redirect("/sign-in");
 
   const profile = await getMyProfile();
-  if (!profile) redirect("/sign-up");
+  if (!profile) redirect("/onboarding");
 
   const left = searchParams.left ?? "";
   const right = searchParams.right ?? "";

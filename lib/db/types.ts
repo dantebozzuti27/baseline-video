@@ -8,6 +8,8 @@ export type Profile = {
   display_name: string;
   first_name: string;
   last_name: string;
+  is_active?: boolean | null;
+  last_seen_feed_at?: string | null;
   created_at: string;
 };
 
@@ -20,6 +22,7 @@ export type Video = {
   title: string;
   storage_path: string;
   created_at: string;
+  last_activity_at?: string | null;
 };
 
 export type Comment = {
@@ -29,4 +32,6 @@ export type Comment = {
   body: string;
   timestamp_seconds: number | null;
   created_at: string;
+  visibility?: "team" | "player_private" | "coach_only";
+  deleted_at?: string | null;
 };

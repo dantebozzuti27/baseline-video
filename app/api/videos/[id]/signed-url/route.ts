@@ -7,7 +7,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const { data: video, error } = await supabase
     .from("videos")
-    .select("id, storage_path")
+    .select("id, storage_path, deleted_at")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -15,6 +15,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Unable to load video." }, { status: 500 });
   }
   if (!video) {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+  if ((video as any).deleted_at) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 

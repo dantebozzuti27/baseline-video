@@ -2,11 +2,15 @@ import { redirect } from "next/navigation";
 import { getMyProfile } from "@/lib/auth/profile";
 import UploadForm from "./uploadForm";
 
-export default async function UploadPage() {
+export default async function UploadPage({
+  searchParams
+}: {
+  searchParams?: { owner?: string };
+}) {
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
 
-  return <UploadForm />;
+  return <UploadForm initialOwnerUserId={searchParams?.owner ?? null} />;
 }
 
 

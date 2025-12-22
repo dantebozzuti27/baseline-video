@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function getCurrentVideoTimeSeconds(): number | null {
   const el = document.querySelector("video");
@@ -16,9 +17,33 @@ export default function CommentForm({ videoId }: { videoId: string }) {
   const router = useRouter();
   const [body, setBody] = React.useState("");
   const [timestampSeconds, setTimestampSeconds] = React.useState<string>("");
+  const [visibility, setVisibility] = React.useState<"team" | "player_private" | "coach_only">("team");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
+
+  const [role, setRole] = React.useState<"coach" | "player" | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const {
+          data: { user }
+        } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
+        if (!cancelled) setRole((data?.role as any) ?? null);
+      } catch {
+        // ignore
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,13 +66,14 @@ export default function CommentForm({ videoId }: { videoId: string }) {
       const resp = await fetch(`/api/videos/${videoId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: body.trim(), timestampSeconds: ts })
+        body: JSON.stringify({ body: body.trim(), timestampSeconds: ts, visibility })
       });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? `Unable to post comment (${resp.status}).`);
 
       setBody("");
       setTimestampSeconds("");
+      setVisibility("team");
       setSuccess("Posted.");
       setTimeout(() => setSuccess(null), 2000);
       router.refresh();
@@ -99,6 +125,47 @@ export default function CommentForm({ videoId }: { videoId: string }) {
             </Button>
           </div>
         </div>
+
+        {role ? (
+          <div className="row" style={{ alignItems: "center" }}>
+            <div className="muted" style={{ fontSize: 12 }}>
+              Visibility:
+            </div>
+            <label className="pill" style={{ cursor: "pointer" }}>
+              <input
+                type="radio"
+                name="visibility"
+                checked={visibility === "team"}
+                onChange={() => setVisibility("team")}
+                style={{ marginRight: 8 }}
+              />
+              Team
+            </label>
+            {role === "player" ? (
+              <label className="pill" style={{ cursor: "pointer" }}>
+                <input
+                  type="radio"
+                  name="visibility"
+                  checked={visibility === "player_private"}
+                  onChange={() => setVisibility("player_private")}
+                  style={{ marginRight: 8 }}
+                />
+                Private note (only you)
+              </label>
+            ) : (
+              <label className="pill" style={{ cursor: "pointer" }}>
+                <input
+                  type="radio"
+                  name="visibility"
+                  checked={visibility === "coach_only"}
+                  onChange={() => setVisibility("coach_only")}
+                  style={{ marginRight: 8 }}
+                />
+                Coach note (coach-only)
+              </label>
+            )}
+          </div>
+        ) : null}
 
         {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
         {success ? <div style={{ color: "var(--primary)", fontSize: 13 }}>{success}</div> : null}

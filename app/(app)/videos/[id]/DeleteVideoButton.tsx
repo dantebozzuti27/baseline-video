@@ -10,7 +10,7 @@ export default function DeleteVideoButton({ videoId }: { videoId: string }) {
   const [error, setError] = React.useState<string | null>(null);
 
   async function onDelete() {
-    const ok = window.confirm("Delete this video? This cannot be undone.");
+    const ok = window.confirm("Move this video to Trash? You can restore it from Trash.");
     if (!ok) return;
 
     setLoading(true);
@@ -18,12 +18,12 @@ export default function DeleteVideoButton({ videoId }: { videoId: string }) {
     try {
       const resp = await fetch(`/api/videos/${videoId}`, { method: "DELETE" });
       const json = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error((json as any)?.error ?? `Unable to delete video (${resp.status}).`);
+      if (!resp.ok) throw new Error((json as any)?.error ?? `Unable to move video to Trash (${resp.status}).`);
 
-      router.replace("/app");
+      router.replace("/app/trash");
       router.refresh();
     } catch (e: any) {
-      setError(e?.message ?? "Unable to delete video.");
+      setError(e?.message ?? "Unable to move video to Trash.");
     } finally {
       setLoading(false);
     }
@@ -32,7 +32,7 @@ export default function DeleteVideoButton({ videoId }: { videoId: string }) {
   return (
     <div className="stack" style={{ gap: 8 }}>
       <Button variant="danger" onClick={onDelete} disabled={loading}>
-        {loading ? "Deleting…" : "Delete video"}
+        {loading ? "Moving…" : "Move to Trash"}
       </Button>
       {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
     </div>

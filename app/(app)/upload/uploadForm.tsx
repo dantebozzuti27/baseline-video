@@ -16,6 +16,7 @@ type UploadItem = {
   status: "queued" | "uploading" | "done" | "error";
   error?: string;
   videoId?: string;
+  progress?: number; // 0..100
 };
 
 function formatDateForTitle(d = new Date()) {
@@ -25,7 +26,7 @@ function formatDateForTitle(d = new Date()) {
   return `${mm}/${dd}/${yy}`;
 }
 
-export default function UploadForm() {
+export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId: string | null }) {
   const router = useRouter();
 
   const [title, setTitle] = React.useState("");
@@ -74,21 +75,32 @@ export default function UploadForm() {
         } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: me } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
+        const { data: me } = await supabase
+          .from("profiles")
+          .select("role, team_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
         if (cancelled) return;
 
         setRole(me?.role ?? null);
         if (me?.role === "coach") {
           const { data: ps } = await supabase
             .from("profiles")
-            .select("user_id, display_name, role")
+            .select("user_id, display_name, role, team_id, is_active")
+            .eq("team_id", me.team_id)
             .eq("role", "player")
+            .eq("is_active", true)
             .order("display_name", { ascending: true });
           if (cancelled) return;
           const list = (ps ?? []).map((p: any) => ({ user_id: p.user_id, display_name: p.display_name }));
           setPlayers(list);
-          // Default owner to first player? No: default to coach's own uploads.
-          setOwnerUserId(null);
+          // Default owner: coach's own uploads unless a deep link preselects a player.
+          const pre = initialOwnerUserId;
+          if (pre && list.some((p) => p.user_id === pre)) {
+            setOwnerUserId(pre);
+          } else {
+            setOwnerUserId(null);
+          }
         }
       } catch {
         // ignore
@@ -100,6 +112,65 @@ export default function UploadForm() {
       cancelled = true;
     };
   }, []);
+
+  async function getAccessToken() {
+    const supabase = createSupabaseBrowserClient();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  }
+
+  function uploadToStorageWithProgress(
+    storagePath: string,
+    file: File,
+    accessToken: string,
+    onProgress?: (pct: number) => void
+  ) {
+    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    if (!baseUrl || !anonKey) return Promise.reject(new Error("Supabase env missing."));
+
+    // Supabase Storage upload REST endpoint.
+    // Path is team_id/user_id/videoId.ext (safe chars).
+    const url = `${baseUrl.replace(/\/$/, "")}/storage/v1/object/videos/${storagePath}`;
+
+    return new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", url, true);
+      xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+      xhr.setRequestHeader("apikey", anonKey);
+      xhr.setRequestHeader("x-upsert", "false");
+      xhr.setRequestHeader("Content-Type", file.type || "video/mp4");
+
+      let lastEmit = 0;
+      xhr.upload.onprogress = (evt) => {
+        if (!evt.lengthComputable) return;
+        const pct = Math.max(0, Math.min(100, Math.round((evt.loaded / evt.total) * 100)));
+        const now = Date.now();
+        if (onProgress && (pct === 100 || now - lastEmit > 120)) {
+          lastEmit = now;
+          onProgress(pct);
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network error while uploading."));
+      xhr.onabort = () => reject(new Error("Upload cancelled."));
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) return resolve();
+
+        const msg = (() => {
+          try {
+            const j = JSON.parse(xhr.responseText || "{}");
+            return j?.message || j?.error || null;
+          } catch {
+            return null;
+          }
+        })();
+        reject(new Error(msg ? String(msg) : `Upload failed (${xhr.status})`));
+      };
+
+      xhr.send(file);
+    });
+  }
 
   function suggestedTitle() {
     const date = formatDateForTitle();
@@ -124,7 +195,9 @@ export default function UploadForm() {
 
     const finalTitle = (quickMode ? (title.trim() || suggestedTitle()) : title.trim()) || suggestedTitle();
 
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, status: "uploading", error: undefined } : it)));
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, status: "uploading", error: undefined, progress: 0 } : it))
+    );
 
     const resp = await fetch("/api/videos", {
       method: "POST",
@@ -141,15 +214,48 @@ export default function UploadForm() {
     const json = await resp.json().catch(() => ({}));
     if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to create video record.");
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: uploadError } = await supabase.storage.from("videos").upload((json as any).storagePath, file, {
-      upsert: false,
-      contentType: file.type || "video/mp4"
-    });
-    if (uploadError) throw uploadError;
+    const accessToken = await getAccessToken();
+    if (!accessToken) throw new Error("Not signed in.");
 
-    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, status: "done", videoId: (json as any).id } : it)));
+    // Wire progress updates (poll-based, low-churn).
+    const storagePath = (json as any).storagePath as string;
+    const videoId = (json as any).id as string;
+    const setPct = (pct: number) => {
+      setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, progress: pct } : it)));
+    };
+
+    try {
+      await uploadToStorageWithProgress(storagePath, file, accessToken, setPct);
+    } catch (e: any) {
+      // Best-effort cleanup: delete the created video record so retry can recreate cleanly.
+      try {
+        await fetch(`/api/videos/${videoId}`, { method: "DELETE" });
+      } catch {
+        // ignore
+      }
+      throw e;
+    }
+
+    setItems((prev) =>
+      prev.map((it, i) => (i === idx ? { ...it, status: "done", videoId: (json as any).id, progress: 100 } : it))
+    );
     return (json as any).id as string;
+  }
+
+  async function retryOne(idx: number) {
+    setError(null);
+    const it = items[idx];
+    if (!it) return;
+    try {
+      const id = await uploadOne(it, idx);
+      // If it's a single file and this retry made it done, navigate.
+      if (items.length === 1) {
+        router.replace(`/app/videos/${id}`);
+        router.refresh();
+      }
+    } catch (err: any) {
+      setItems((prev) => prev.map((x, j) => (j === idx ? { ...x, status: "error", error: err?.message } : x)));
+    }
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -170,16 +276,26 @@ export default function UploadForm() {
     setLoading(true);
     try {
       const doneIds: string[] = [];
-      for (let i = 0; i < items.length; i++) {
-        const it = items[i];
-        if (it.status === "done") continue;
-        try {
-          const id = await uploadOne(it, i);
-          doneIds.push(id);
-        } catch (err: any) {
-          setItems((prev) => prev.map((x, j) => (j === i ? { ...x, status: "error", error: err?.message } : x)));
+      const indices = items.map((_, i) => i).filter((i) => items[i]?.status !== "done");
+      let cursor = 0;
+      const concurrency =
+        typeof window !== "undefined" && window.innerWidth < 680 ? 2 : indices.length > 1 ? 3 : 1;
+
+      async function worker() {
+        while (cursor < indices.length) {
+          const i = indices[cursor++];
+          const it = items[i];
+          if (!it || it.status === "done") continue;
+          try {
+            const id = await uploadOne(it, i);
+            doneIds.push(id);
+          } catch (err: any) {
+            setItems((prev) => prev.map((x, j) => (j === i ? { ...x, status: "error", error: err?.message } : x)));
+          }
         }
       }
+
+      await Promise.all(new Array(concurrency).fill(0).map(() => worker()));
 
       const first = doneIds[0] ?? items.find((it) => it.status === "done")?.videoId;
       if (first && items.length === 1) {
@@ -290,7 +406,28 @@ export default function UploadForm() {
 
           <div className="stack" style={{ gap: 6 }}>
             <div className="label">Video files</div>
-            <input className="input" type="file" accept="video/*" multiple onChange={(e) => onPickFiles(e.target.files)} />
+            <div className="row" style={{ alignItems: "center" }}>
+              <label className="btn btnPrimary" style={{ cursor: "pointer" }}>
+                Record video
+                <input
+                  style={{ display: "none" }}
+                  type="file"
+                  accept="video/*"
+                  capture="environment"
+                  onChange={(e) => onPickFiles(e.target.files)}
+                />
+              </label>
+              <label className="btn" style={{ cursor: "pointer" }}>
+                Choose files
+                <input
+                  style={{ display: "none" }}
+                  type="file"
+                  accept="video/*"
+                  multiple
+                  onChange={(e) => onPickFiles(e.target.files)}
+                />
+              </label>
+            </div>
             <div className="muted" style={{ fontSize: 12 }}>
               {items.length > 1 ? "Batch upload enabled." : "You can select multiple videos."}
             </div>
@@ -305,7 +442,16 @@ export default function UploadForm() {
               <div className="stack" style={{ marginTop: 10 }}>
                 {items.map((it, i) => (
                   <div key={i} className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>{it.file.name}</div>
+                    <div style={{ flex: 1, minWidth: 220 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {it.file.name}
+                      </div>
+                      {typeof it.progress === "number" && it.status === "uploading" ? (
+                        <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                          {it.progress}%
+                        </div>
+                      ) : null}
+                    </div>
                     <div className="row" style={{ alignItems: "center" }}>
                       <div className="pill">
                         {it.status === "queued"
@@ -316,6 +462,11 @@ export default function UploadForm() {
                               ? "Done"
                               : "Error"}
                       </div>
+                      {it.status === "error" ? (
+                        <Button onClick={() => retryOne(i)} disabled={loading}>
+                          Retry
+                        </Button>
+                      ) : null}
                       {it.status === "error" ? (
                         <div className="muted" style={{ fontSize: 12, maxWidth: 260 }}>
                           {it.error}
@@ -330,9 +481,20 @@ export default function UploadForm() {
 
           {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
 
-          <Button variant="primary" type="submit" disabled={loading}>
-            {loading ? (uploadingIndex >= 0 ? "Uploading…" : "Working…") : items.length > 1 ? "Upload all" : "Upload"}
-          </Button>
+          <div
+            style={{
+              position: "sticky",
+              bottom: 0,
+              paddingTop: 10,
+              marginTop: 6,
+              background: "linear-gradient(180deg, transparent, rgba(11, 15, 20, 0.9) 35%, rgba(11, 15, 20, 0.98))",
+              borderTop: "1px solid var(--border)"
+            }}
+          >
+            <Button variant="primary" type="submit" disabled={loading}>
+              {loading ? (uploadingIndex >= 0 ? "Uploading…" : "Working…") : items.length > 1 ? "Upload all" : "Upload"}
+            </Button>
+          </div>
         </form>
       </Card>
     </div>

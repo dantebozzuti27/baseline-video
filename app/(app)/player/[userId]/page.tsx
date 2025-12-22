@@ -33,12 +33,23 @@ export default async function PlayerPage({
 
   let query = supabase
     .from("videos")
-    .select("id, title, category, created_at")
+    .select("id, title, category, created_at, pinned, is_library, last_activity_at")
     .eq("owner_user_id", params.userId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: sort === "oldest" });
   if (category !== "all") query = query.eq("category", category);
 
   const { data: videos } = await query;
+  const ids = (videos ?? []).map((v: any) => v.id);
+  const { data: views } = ids.length
+    ? await supabase.from("video_views").select("video_id, last_seen_at").in("video_id", ids)
+    : { data: [] as any[] };
+  const seenMap = new Map<string, number>();
+  for (const vv of views ?? []) {
+    seenMap.set(vv.video_id, new Date(vv.last_seen_at).getTime());
+  }
+  const pinned = (videos ?? []).filter((v: any) => v.pinned);
+  const rest = (videos ?? []).filter((v: any) => !v.pinned);
 
   return (
     <div className="stack">
@@ -50,6 +61,9 @@ export default async function PlayerPage({
           </div>
         </div>
         <div className="row">
+          <LinkButton href={`/app/upload?owner=${params.userId}`} variant="primary">
+            Upload for player
+          </LinkButton>
           <LinkButton href="/app/dashboard">Back</LinkButton>
         </div>
       </div>
@@ -78,17 +92,59 @@ export default async function PlayerPage({
         </div>
       </Card>
 
-      {videos && videos.length > 0 ? (
+      {pinned.length > 0 ? (
         <div className="stack">
-          {videos.map((v) => (
+          <div style={{ fontWeight: 900 }}>Pinned</div>
+          {pinned.map((v: any) => (
             <Link key={v.id} href={`/app/videos/${v.id}`}>
               <div className="card">
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 800 }}>{v.title}</div>
-                  <div className="pill">{String(v.category).toUpperCase()}</div>
+                  <div className="row" style={{ alignItems: "center" }}>
+                    {(() => {
+                      const activity = new Date(v.last_activity_at ?? v.created_at).getTime();
+                      const seen = seenMap.get(v.id) ?? 0;
+                      return activity > seen ? <div className="pill">UNREAD</div> : null;
+                    })()}
+                    {v.is_library ? <div className="pill">LIBRARY</div> : null}
+                    <div className="pill">PINNED</div>
+                    <div className="pill">{String(v.category).toUpperCase()}</div>
+                  </div>
+                </div>
+                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+                  Visible to: {v.is_library ? "Team" : `Coach + ${displayNameFromProfile(player as any)}`}
                 </div>
                 <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                  {<LocalDateTime value={v.created_at} />}
+                  <LocalDateTime value={v.created_at} />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
+      {rest && rest.length > 0 ? (
+        <div className="stack">
+          {rest.map((v: any) => (
+            <Link key={v.id} href={`/app/videos/${v.id}`}>
+              <div className="card">
+                <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontWeight: 800 }}>{v.title}</div>
+                  <div className="row" style={{ alignItems: "center" }}>
+                    {(() => {
+                      const activity = new Date(v.last_activity_at ?? v.created_at).getTime();
+                      const seen = seenMap.get(v.id) ?? 0;
+                      return activity > seen ? <div className="pill">UNREAD</div> : null;
+                    })()}
+                    {v.is_library ? <div className="pill">LIBRARY</div> : null}
+                    <div className="pill">{String(v.category).toUpperCase()}</div>
+                  </div>
+                </div>
+                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+                  Visible to: {v.is_library ? "Team" : `Coach + ${displayNameFromProfile(player as any)}`}
+                </div>
+                <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                  <LocalDateTime value={v.created_at} />
                 </div>
               </div>
             </Link>

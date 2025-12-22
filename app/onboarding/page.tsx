@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
-import ProfileClient from "./ProfileClient";
+import OnboardingClient from "./OnboardingClient";
 
-export default async function ProfilePage() {
+export default async function OnboardingPage({
+  searchParams
+}: {
+  searchParams?: { next?: string };
+}) {
   const supabase = createSupabaseServerClient();
   const {
     data: { user }
@@ -11,14 +15,9 @@ export default async function ProfilePage() {
   if (!user) redirect("/sign-in");
 
   const profile = await getMyProfile();
-  if (!profile) redirect("/onboarding");
+  if (profile) redirect("/app");
 
-  return (
-    <ProfileClient
-      initialFirstName={profile.first_name ?? ""}
-      initialLastName={profile.last_name ?? ""}
-      email={user.email ?? ""}
-      role={profile.role}
-    />
-  );
+  return <OnboardingClient nextPath={searchParams?.next ?? "/app"} />;
 }
+
+

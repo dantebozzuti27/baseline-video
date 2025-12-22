@@ -30,6 +30,9 @@ export default function VideoClient({ videoId }: { videoId: string }) {
         const json = await resp.json();
         if (!resp.ok) throw new Error(json?.error ?? "Unable to load video.");
         if (!cancelled) setUrl(json.url);
+
+        // Best-effort: mark video as seen for true unread.
+        fetch(`/api/videos/${videoId}/touch`, { method: "POST" }).catch(() => {});
       } catch (e: any) {
         if (!cancelled) setError(e?.message ?? "Unable to load video.");
       } finally {

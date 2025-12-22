@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { logEvent } from "@/lib/utils/events";
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function POST(_req: Request, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
   const {
     data: { user }
@@ -12,22 +11,15 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const { data: profile } = await supabase.from("profiles").select("is_active").eq("user_id", user.id).maybeSingle();
   if ((profile as any)?.is_active === false) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { error } = await supabase
-    .from("comments")
-    .update({ deleted_at: new Date().toISOString(), deleted_by_user_id: user.id })
-    .eq("id", params.id);
+  const { error } = await supabase.rpc("touch_video_seen", { p_video_id: params.id });
   if (error) {
     return NextResponse.json(
-      {
-        error:
-          error.message +
-          " (Run supabase/migrations/0009_soft_deletes_trash.sql in Supabase SQL Editor.)"
-      },
-      { status: 403 }
+      { error: error.message + " (Run supabase/migrations/0010_true_unread_video_views.sql)" },
+      { status: 500 }
     );
   }
 
-  await logEvent("comment_trash", "comment", params.id, {});
-
   return NextResponse.json({ ok: true });
 }
+
+

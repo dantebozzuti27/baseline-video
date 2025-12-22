@@ -22,16 +22,18 @@ export default async function VideoDetailPage({ params }: { params: { id: string
 
   const { data: video } = await supabase
     .from("videos")
-    .select("id, title, category, created_at, uploader_user_id, pinned, is_library")
+    .select("id, title, category, created_at, uploader_user_id, pinned, is_library, deleted_at")
     .eq("id", params.id)
     .maybeSingle();
 
   if (!video) redirect("/app");
+  if ((video as any).deleted_at) redirect("/app/trash");
 
   const { data: comments } = await supabase
     .from("comments")
-    .select("id, body, timestamp_seconds, created_at, author_user_id")
+    .select("id, body, timestamp_seconds, created_at, author_user_id, visibility")
     .eq("video_id", params.id)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   const authorIds = Array.from(new Set((comments ?? []).map((c) => c.author_user_id)));
@@ -57,7 +59,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
             {video.category.toUpperCase()} • <LocalDateTime value={video.created_at} />
           </div>
           <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-            Visible to: {myProfile?.role === "coach" ? "Coach (team)" : "You + your coach"}
+            Visible to: {(video as any).is_library ? "Team" : myProfile?.role === "coach" ? "Coach (team)" : "You + your coach"}
           </div>
         </div>
         <LinkButton href="/app">Back</LinkButton>
@@ -84,7 +86,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
           <div className="stack">
             <div style={{ fontWeight: 900 }}>Danger zone</div>
             <div className="muted" style={{ fontSize: 13 }}>
-              Deleting removes the video record. We also try to remove the uploaded file.
+              Move videos to Trash so you can restore mistakes.
             </div>
             <DeleteVideoButton videoId={video.id} />
           </div>
@@ -107,6 +109,8 @@ export default async function VideoDetailPage({ params }: { params: { id: string
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800 }}>{label}</div>
                     <div className="row" style={{ alignItems: "center" }}>
+                      {c.visibility === "player_private" ? <div className="pill">PRIVATE</div> : null}
+                      {c.visibility === "coach_only" ? <div className="pill">COACH NOTE</div> : null}
                       <div className="muted" style={{ fontSize: 12 }}>
                         <LocalDateTime value={c.created_at} />
                       </div>
