@@ -4,5 +4,5 @@ import { getMyProfile } from "@/lib/auth/profile";
 export default async function ProfilePage() {
   const profile = await getMyProfile();
   if (!profile) redirect("/onboarding");
-  redirect("/app/settings");
+  redirect("/settings");
 }

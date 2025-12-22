@@ -26,7 +26,7 @@ export default async function PlayerPage({
     .eq("user_id", params.userId)
     .maybeSingle();
 
-  if (!player || player.role !== "player") redirect("/app/dashboard");
+  if (!player || player.role !== "player") redirect("/dashboard");
 
   const category = (searchParams.cat ?? "all") as "all" | VideoCategory;
   const sort = searchParams.sort === "oldest" ? "oldest" : "recent";
@@ -61,31 +61,31 @@ export default async function PlayerPage({
           </div>
         </div>
         <div className="row">
-          <LinkButton href={`/app/upload?owner=${params.userId}`} variant="primary">
+          <LinkButton href={`/upload?owner=${params.userId}`} variant="primary">
             Upload for player
           </LinkButton>
-          <LinkButton href="/app/dashboard">Back</LinkButton>
+          <LinkButton href="/dashboard">Back</LinkButton>
         </div>
       </div>
 
       <Card>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
           <div className="row">
-            <Link className="pill" href={`/app/player/${params.userId}?cat=all&sort=${sort}`}>
+            <Link className="pill" href={`/player/${params.userId}?cat=all&sort=${sort}`}>
               All
             </Link>
-            <Link className="pill" href={`/app/player/${params.userId}?cat=game&sort=${sort}`}>
+            <Link className="pill" href={`/player/${params.userId}?cat=game&sort=${sort}`}>
               Game
             </Link>
-            <Link className="pill" href={`/app/player/${params.userId}?cat=training&sort=${sort}`}>
+            <Link className="pill" href={`/player/${params.userId}?cat=training&sort=${sort}`}>
               Training
             </Link>
           </div>
           <div className="row">
-            <Link className="pill" href={`/app/player/${params.userId}?cat=${category}&sort=recent`}>
+            <Link className="pill" href={`/player/${params.userId}?cat=${category}&sort=recent`}>
               Recent
             </Link>
-            <Link className="pill" href={`/app/player/${params.userId}?cat=${category}&sort=oldest`}>
+            <Link className="pill" href={`/player/${params.userId}?cat=${category}&sort=oldest`}>
               Oldest
             </Link>
           </div>
@@ -96,7 +96,7 @@ export default async function PlayerPage({
         <div className="stack">
           <div style={{ fontWeight: 900 }}>Pinned</div>
           {pinned.map((v: any) => (
-            <Link key={v.id} href={`/app/videos/${v.id}`}>
+            <Link key={v.id} href={`/videos/${v.id}`}>
               <div className="card">
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 800 }}>{v.title}</div>
@@ -126,7 +126,7 @@ export default async function PlayerPage({
       {rest && rest.length > 0 ? (
         <div className="stack">
           {rest.map((v: any) => (
-            <Link key={v.id} href={`/app/videos/${v.id}`}>
+            <Link key={v.id} href={`/videos/${v.id}`}>
               <div className="card">
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 800 }}>{v.title}</div>

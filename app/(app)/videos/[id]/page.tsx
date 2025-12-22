@@ -27,8 +27,8 @@ export default async function VideoDetailPage({ params }: { params: { id: string
     .eq("id", params.id)
     .maybeSingle();
 
-  if (!video) redirect("/app");
-  if ((video as any).deleted_at) redirect("/app/trash");
+  if (!video) redirect("/dashboard");
+  if ((video as any).deleted_at) redirect("/trash");
 
   const { data: comments } = await supabase
     .from("comments")
@@ -65,7 +65,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
         </div>
         <div className="row" style={{ alignItems: "center" }}>
           <ShareVideoButton videoId={video.id} />
-          <LinkButton href="/app">Back</LinkButton>
+          <LinkButton href="/dashboard">Back</LinkButton>
         </div>
       </div>
 

@@ -97,7 +97,7 @@ export default async function DashboardPage() {
             Triage first, then drill into players.
           </div>
         </div>
-        <LinkButton href="/app/upload" variant="primary">
+        <LinkButton href="/upload" variant="primary">
           Upload
         </LinkButton>
       </div>
@@ -120,7 +120,7 @@ export default async function DashboardPage() {
             {pendingOldest.map((v: any) => {
               const owner = ownerMap.get(v.owner_user_id);
               return (
-                <Link key={v.id} href={`/app/videos/${v.id}`}>
+                <Link key={v.id} href={`/videos/${v.id}`}>
                   <div className="card">
                     <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                       <div>
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
         {players && players.length > 0 ? (
           <div className="stack">
             {players.map((p) => (
-              <Link key={p.user_id} href={`/app/player/${p.user_id}`}>
+              <Link key={p.user_id} href={`/player/${p.user_id}`}>
                 <div className="card">
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800 }}>{displayNameFromProfile(p as any)}</div>
@@ -179,7 +179,7 @@ export default async function DashboardPage() {
       </Card>
 
       <div className="row">
-        <LinkButton href="/app/settings">Team settings</LinkButton>
+        <LinkButton href="/settings">Team settings</LinkButton>
       </div>
     </div>
   );

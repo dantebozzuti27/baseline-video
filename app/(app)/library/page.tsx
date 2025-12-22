@@ -42,30 +42,30 @@ export default async function LibraryPage({
             Team-visible reference videos.
           </div>
         </div>
-        <LinkButton href="/app/dashboard">Back</LinkButton>
+        <LinkButton href="/dashboard">Back</LinkButton>
       </div>
 
       <Card>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
           <div className="row">
-            <Link className="pill" href={`/app/library?cat=all&sort=${sort}`}>
+            <Link className="pill" href={`/library?cat=all&sort=${sort}`}>
               All
             </Link>
-            <Link className="pill" href={`/app/library?cat=game&sort=${sort}`}>
+            <Link className="pill" href={`/library?cat=game&sort=${sort}`}>
               Game
             </Link>
-            <Link className="pill" href={`/app/library?cat=training&sort=${sort}`}>
+            <Link className="pill" href={`/library?cat=training&sort=${sort}`}>
               Training
             </Link>
           </div>
           <div className="row">
-            <Link className="pill" href={`/app/library?cat=${category}&sort=recent`}>
+            <Link className="pill" href={`/library?cat=${category}&sort=recent`}>
               Recent
             </Link>
-            <Link className="pill" href={`/app/library?cat=${category}&sort=oldest`}>
+            <Link className="pill" href={`/library?cat=${category}&sort=oldest`}>
               Oldest
             </Link>
-            <Link className="pill" href={`/app/library?cat=${category}&sort=activity`}>
+            <Link className="pill" href={`/library?cat=${category}&sort=activity`}>
               Activity
             </Link>
           </div>
@@ -76,7 +76,7 @@ export default async function LibraryPage({
         <div className="stack">
           <div style={{ fontWeight: 900 }}>Pinned</div>
           {pinned.map((v: any) => (
-            <Link key={v.id} href={`/app/videos/${v.id}`}>
+            <Link key={v.id} href={`/videos/${v.id}`}>
               <div className="card">
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 800 }}>{v.title}</div>
@@ -99,7 +99,7 @@ export default async function LibraryPage({
       {rest && rest.length > 0 ? (
         <div className="stack">
           {rest.map((v: any) => (
-            <Link key={v.id} href={`/app/videos/${v.id}`}>
+            <Link key={v.id} href={`/videos/${v.id}`}>
               <div className="card">
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 800 }}>{v.title}</div>

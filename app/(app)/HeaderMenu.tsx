@@ -12,11 +12,12 @@ type Props = {
 
 export default function HeaderMenu({ role, displayName, email }: Props) {
   const [open, setOpen] = React.useState(false);
+  const isCoach = role === "coach";
 
   return (
     <>
       <div className="bvMobileHeaderActions">
-        <Link className="btn btnPrimary" href="/app/upload">
+        <Link className="btn btnPrimary" href="/upload">
           Upload
         </Link>
         <button className="btn" onClick={() => setOpen(true)}>
@@ -38,25 +39,25 @@ export default function HeaderMenu({ role, displayName, email }: Props) {
               <div className="row">
                 <Link
                   className="pill"
-                  href={role === "coach" ? "/app/dashboard" : "/app"}
+                  href={isCoach ? "/dashboard" : "/app"}
                   onClick={() => setOpen(false)}
                 >
-                  {role === "coach" ? "Dashboard" : "Videos"}
+                  {isCoach ? "Dashboard" : "Videos"}
                 </Link>
-                {role === "coach" ? (
+                {isCoach ? (
                   <>
-                    <Link className="pill" href="/app/library" onClick={() => setOpen(false)}>
+                    <Link className="pill" href="/library" onClick={() => setOpen(false)}>
                       Library
                     </Link>
-                    <Link className="pill" href="/app/compare" onClick={() => setOpen(false)}>
+                    <Link className="pill" href="/compare" onClick={() => setOpen(false)}>
                       Compare
                     </Link>
                   </>
                 ) : null}
-                <Link className="pill" href="/app/trash" onClick={() => setOpen(false)}>
+                <Link className="pill" href="/trash" onClick={() => setOpen(false)}>
                   Trash
                 </Link>
-                <Link className="pill" href="/app/settings" onClick={() => setOpen(false)}>
+                <Link className="pill" href="/settings" onClick={() => setOpen(false)}>
                   Account & team
                 </Link>
               </div>

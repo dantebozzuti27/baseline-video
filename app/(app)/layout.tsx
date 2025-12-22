@@ -21,30 +21,30 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div>
       <div className="nav">
         <div className="navInner">
-          <Link className="brand" href="/app">
+          <Link className="brand" href={profile.role === "coach" ? "/dashboard" : "/app"}>
             Baseline Video
           </Link>
           <div className="bvDesktopNav row" style={{ alignItems: "center" }}>
             {profile?.role === "coach" ? (
               <>
-                <Link className="pill" href="/app/dashboard">
+                <Link className="pill" href="/dashboard">
                   Dashboard
                 </Link>
-                <Link className="pill" href="/app/library">
+                <Link className="pill" href="/library">
                   Library
                 </Link>
-                <Link className="pill" href="/app/compare">
+                <Link className="pill" href="/compare">
                   Compare
                 </Link>
               </>
             ) : null}
-            <Link className="pill" href="/app/upload">
+            <Link className="pill" href="/upload">
               Upload
             </Link>
-            <Link className="pill" href="/app/settings">
+            <Link className="pill" href="/settings">
               Account & team
             </Link>
-            <Link className="pill" href="/app/trash">
+            <Link className="pill" href="/trash">
               Trash
             </Link>
             <SignOutButton />

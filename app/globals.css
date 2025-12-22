@@ -125,6 +125,11 @@ a {
   gap: 12px;
 }
 
+/* Mobile-only header actions (hide on desktop to avoid redundant nav) */
+.bvMobileHeaderActions {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .bvDesktopNav {
     display: none;
