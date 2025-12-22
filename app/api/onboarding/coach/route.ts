@@ -28,26 +28,60 @@ async function getUserIdFromRequest(req: Request): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
-  const userId = await getUserIdFromRequest(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const json = await req.json().catch(() => null);
-  const parsed = bodySchema.safeParse(json);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    const json = await req.json().catch(() => null);
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.rpc("create_team_for_coach", {
-    p_team_name: parsed.data.teamName,
-    p_coach_user_id: userId,
-    p_coach_display_name: parsed.data.displayName
-  });
+    let admin;
+    try {
+      admin = createSupabaseAdminClient();
+    } catch (e: any) {
+      console.error("[onboarding/coach] Admin client misconfigured", {
+        message: e?.message,
+        hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+        hasAnon: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+        hasServiceRole: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+      });
+      return NextResponse.json(
+        {
+          error:
+            "Server env misconfigured: missing SUPABASE_SERVICE_ROLE_KEY (Vercel env vars) or NEXT_PUBLIC_SUPABASE_URL."
+        },
+        { status: 500 }
+      );
+    }
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const { data, error } = await admin.rpc("create_team_for_coach", {
+      p_team_name: parsed.data.teamName,
+      p_coach_user_id: userId,
+      p_coach_display_name: parsed.data.displayName
+    });
+
+    if (error) {
+      console.error("[onboarding/coach] RPC error", {
+        code: (error as any).code,
+        message: error.message,
+        details: (error as any).details,
+        hint: (error as any).hint
+      });
+      return NextResponse.json(
+        {
+          error:
+            error.message +
+            " (If this says function does not exist/permission denied, re-run the SQL or ensure Vercel is pointing at the correct Supabase project.)"
+        },
+        { status: 500 }
+      );
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    return NextResponse.json({ teamId: row.team_id, accessCode: row.access_code });
+  } catch (e: any) {
+    console.error("[onboarding/coach] Unhandled", { message: e?.message, stack: e?.stack });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const row = Array.isArray(data) ? data[0] : data;
-  return NextResponse.json({ teamId: row.team_id, accessCode: row.access_code });
 }
-
-
