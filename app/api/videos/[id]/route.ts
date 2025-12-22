@@ -38,8 +38,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const { error } = await supabase.from("videos").update(updates).eq("id", params.id);
 
   if (error) {
+    console.error("video update failed", error);
     return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0007_fast_wins_coach_features.sql)" },
+      { error: "Unable to update video." },
       { status: 403 }
     );
   }
@@ -81,11 +82,10 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     .update({ deleted_at: new Date().toISOString(), deleted_by_user_id: user.id })
     .eq("id", params.id);
   if (trashError) {
+    console.error("video trash failed", trashError);
     return NextResponse.json(
       {
-        error:
-          trashError.message +
-          " (Run supabase/migrations/0009_soft_deletes_trash.sql in Supabase SQL Editor.)"
+        error: "Unable to move video to Trash."
       },
       { status: 403 }
     );

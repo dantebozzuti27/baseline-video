@@ -45,8 +45,9 @@ export async function POST(req: Request) {
   });
 
   if (error) {
+    console.error("join_team_with_invite_token failed", error);
     return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0008_sprint2_invites_events_activity_roster.sql)" },
+      { error: "Unable to join team with invite link." },
       { status: 500 }
     );
   }

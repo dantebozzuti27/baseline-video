@@ -24,10 +24,8 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0008_sprint2_invites_events_activity_roster.sql)" },
-      { status: 500 }
-    );
+    console.error("team players load failed", error);
+    return NextResponse.json({ error: "Unable to load roster." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

@@ -17,10 +17,8 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0007_fast_wins_coach_features.sql)" },
-      { status: 500 }
-    );
+    console.error("team preview failed", error);
+    return NextResponse.json({ error: "Invalid access code." }, { status: 400 });
   }
 
   const row = Array.isArray(data) ? data[0] : data;

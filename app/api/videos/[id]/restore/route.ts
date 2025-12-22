@@ -18,10 +18,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
     .eq("id", params.id);
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0009_soft_deletes_trash.sql)" },
-      { status: 403 }
-    );
+    console.error("video restore failed", error);
+    return NextResponse.json({ error: "Unable to restore video." }, { status: 403 });
   }
 
   await logEvent("video_restore", "video", params.id, {});

@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { Button, Card } from "@/components/ui";
-import { getSiteUrl } from "@/lib/utils/site";
+function siteOrigin() {
+  if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+  return "";
+}
 
 export default function InviteCard() {
   const [token, setToken] = React.useState<string | null>(null);
@@ -40,7 +43,7 @@ export default function InviteCard() {
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to create invite");
       setToken((json as any).token);
 
-      const url = `${getSiteUrl()}/join/${(json as any).token}`;
+      const url = `${siteOrigin()}/join/${(json as any).token}`;
       try {
         await navigator.clipboard.writeText(url);
       } catch {
@@ -75,7 +78,7 @@ export default function InviteCard() {
     }
   }
 
-  const inviteUrl = token ? `${getSiteUrl()}/join/${token}` : null;
+  const inviteUrl = token ? `${siteOrigin()}/join/${token}` : null;
 
   return (
     <Card>
@@ -106,7 +109,7 @@ export default function InviteCard() {
           {invites.length > 0 ? (
             <div className="stack" style={{ marginTop: 12 }}>
               {invites.map((inv) => {
-                const url = `${getSiteUrl()}/join/${inv.token}`;
+                const url = `${siteOrigin()}/join/${inv.token}`;
                 const expired = inv.expires_at ? new Date(inv.expires_at).getTime() < Date.now() : false;
                 return (
                   <div key={inv.id} className="card">

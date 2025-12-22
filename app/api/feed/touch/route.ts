@@ -17,8 +17,9 @@ export async function POST() {
 
   const { error } = await supabase.rpc("touch_last_seen_feed");
   if (error) {
+    console.error("touch_last_seen_feed failed", error);
     return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0007_fast_wins_coach_features.sql)" },
+      { error: "Unable to update feed state." },
       { status: 500 }
     );
   }

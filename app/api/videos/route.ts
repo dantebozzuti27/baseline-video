@@ -71,11 +71,10 @@ export async function POST(req: Request) {
   });
 
   if (insertError) {
+    console.error("video insert failed", insertError);
     return NextResponse.json(
       {
-        error:
-          insertError.message +
-          " (If this mentions RLS, run supabase/migrations/0007_fast_wins_coach_features.sql in Supabase SQL Editor.)"
+        error: "Unable to create video."
       },
       { status: 500 }
     );

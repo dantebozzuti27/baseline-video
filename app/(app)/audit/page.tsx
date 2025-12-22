@@ -31,8 +31,9 @@ export default async function AuditPage() {
 
       {error ? (
         <Card>
-          <div style={{ color: "var(--danger)" }}>
-            {error.message} (Run supabase/migrations/0008_sprint2_invites_events_activity_roster.sql)
+          <div style={{ color: "var(--danger)", fontWeight: 800 }}>Unable to load audit log</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            Please try again in a moment.
           </div>
         </Card>
       ) : null}

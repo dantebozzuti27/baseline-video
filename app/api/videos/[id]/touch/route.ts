@@ -13,10 +13,8 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   const { error } = await supabase.rpc("touch_video_seen", { p_video_id: params.id });
   if (error) {
-    return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0010_true_unread_video_views.sql)" },
-      { status: 500 }
-    );
+    console.error("touch_video_seen failed", error);
+    return NextResponse.json({ error: "Unable to mark as seen." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

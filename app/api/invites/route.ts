@@ -37,10 +37,8 @@ export async function POST(req: Request) {
   });
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0008_sprint2_invites_events_activity_roster.sql)" },
-      { status: 500 }
-    );
+    console.error("create_invite_link failed", error);
+    return NextResponse.json({ error: "Unable to create invite link." }, { status: 500 });
   }
 
   await logEvent("invite_create", "invite", null, { expires_minutes: parsed.data.expiresMinutes ?? 60 * 24 * 7 });
@@ -71,10 +69,8 @@ export async function GET() {
     .limit(50);
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message + " (Run supabase/migrations/0008_sprint2_invites_events_activity_roster.sql)" },
-      { status: 500 }
-    );
+    console.error("list invites failed", error);
+    return NextResponse.json({ error: "Unable to load invites." }, { status: 500 });
   }
 
   return NextResponse.json({ invites: data ?? [] });

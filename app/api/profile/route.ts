@@ -24,11 +24,10 @@ export async function PATCH(req: Request) {
   });
 
   if (error) {
+    console.error("profile update failed", error);
     return NextResponse.json(
       {
-        error:
-          error.message +
-          " (Run supabase/migrations/0006_hotfix_names_and_deletes.sql in Supabase SQL Editor.)"
+        error: "Unable to update profile."
       },
       { status: 500 }
     );
