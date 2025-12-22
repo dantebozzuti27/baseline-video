@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import FieldModeToggle from "./FieldModeToggle";
 import SignOutButton from "./SignOutButton";
 
 type Props = {
@@ -87,7 +86,6 @@ export default function MobileNav({ role, displayName, email }: Props) {
               </div>
 
               <div className="row" style={{ alignItems: "center" }}>
-                <FieldModeToggle />
                 <SignOutButton />
                 <button className="btn" onClick={() => setOpen(false)}>
                   Close

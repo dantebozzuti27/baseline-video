@@ -4,7 +4,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
 import SignOutButton from "./SignOutButton";
-import FieldModeToggle from "./FieldModeToggle";
 import MobileNav from "./MobileNav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -54,7 +53,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link className="pill" href="/app/trash">
               Trash
             </Link>
-            <FieldModeToggle />
             <SignOutButton />
           </div>
         </div>
