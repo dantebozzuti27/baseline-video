@@ -10,6 +10,7 @@ import DeleteVideoButton from "./DeleteVideoButton";
 import DeleteCommentButton from "./DeleteCommentButton";
 import PinLibraryControls from "./PinLibraryControls";
 import CompareQuick from "./CompareQuick";
+import ShareVideoButton from "./ShareVideoButton";
 
 export default async function VideoDetailPage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -62,7 +63,10 @@ export default async function VideoDetailPage({ params }: { params: { id: string
             Visible to: {(video as any).is_library ? "Team" : myProfile?.role === "coach" ? "Coach (team)" : "You + your coach"}
           </div>
         </div>
-        <LinkButton href="/app">Back</LinkButton>
+        <div className="row" style={{ alignItems: "center" }}>
+          <ShareVideoButton videoId={video.id} />
+          <LinkButton href="/app">Back</LinkButton>
+        </div>
       </div>
 
       <VideoClient videoId={video.id} />

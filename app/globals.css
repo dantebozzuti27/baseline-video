@@ -150,6 +150,11 @@ body.fieldMode .btn {
   font-size: 16px;
 }
 
+body.fieldMode .pill {
+  padding: 10px 12px;
+  font-size: 15px;
+}
+
 body.fieldMode .input,
 body.fieldMode .select,
 body.fieldMode .textarea {
@@ -159,6 +164,16 @@ body.fieldMode .textarea {
 
 body.fieldMode .card {
   padding: 18px;
+}
+
+/* Make field mode feel obviously different: calmer nav, fewer collisions */
+body.fieldMode .navInner {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+body.fieldMode .row {
+  gap: 14px;
 }
 
 .bvWithActionBar {

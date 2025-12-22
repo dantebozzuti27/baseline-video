@@ -28,5 +28,5 @@ export default function FieldModeToggle() {
     }
   }
 
-  return <Button onClick={toggle}>{enabled ? "Field mode: ON" : "Field mode"}</Button>;
+  return <Button onClick={toggle}>{enabled ? "Field: ON" : "Field mode"}</Button>;
 }
