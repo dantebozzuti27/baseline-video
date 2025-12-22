@@ -51,9 +51,6 @@ export default function HeaderMenu({ role, displayName, email }: Props) {
                     <Link className="pill" href="/app/compare" onClick={() => setOpen(false)}>
                       Compare
                     </Link>
-                    <Link className="pill" href="/app/audit" onClick={() => setOpen(false)}>
-                      Audit
-                    </Link>
                   </>
                 ) : null}
                 <Link className="pill" href="/app/trash" onClick={() => setOpen(false)}>

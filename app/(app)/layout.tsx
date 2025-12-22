@@ -36,9 +36,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <Link className="pill" href="/app/compare">
                   Compare
                 </Link>
-                <Link className="pill" href="/app/audit">
-                  Audit
-                </Link>
               </>
             ) : null}
             <Link className="pill" href="/app/upload">

@@ -179,7 +179,6 @@ export default async function DashboardPage() {
       </Card>
 
       <div className="row">
-        <LinkButton href="/app/audit">Audit log</LinkButton>
         <LinkButton href="/app/settings">Team settings</LinkButton>
       </div>
     </div>
