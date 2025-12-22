@@ -28,6 +28,7 @@ function formatDateForTitle(d = new Date()) {
 
 export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId: string | null }) {
   const router = useRouter();
+  const formRef = React.useRef<HTMLFormElement | null>(null);
 
   const [title, setTitle] = React.useState("");
   const [category, setCategory] = React.useState<"game" | "training">("training");
@@ -42,6 +43,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
   const [quickMode, setQuickMode] = React.useState(true);
   const [pinned, setPinned] = React.useState(false);
   const [isLibrary, setIsLibrary] = React.useState(false);
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   React.useEffect(() => {
     // Strong defaults: remember category + quick mode
@@ -186,7 +188,10 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
   function onPickFiles(files: FileList | null) {
     if (!files) return;
     const picked = Array.from(files);
-    setItems(picked.map((f) => ({ file: f, status: "queued" })));
+    setItems((prev) => {
+      const next = picked.map((f) => ({ file: f, status: "queued" as const }));
+      return prev.length ? [...prev, ...next] : next;
+    });
   }
 
   async function uploadOne(item: UploadItem, idx: number) {
@@ -313,9 +318,16 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
 
   const uploadingIndex = items.findIndex((i) => i.status === "uploading");
   const uploadedCount = items.filter((i) => i.status === "done").length;
+  const avgProgress =
+    items.length > 0
+      ? Math.round(
+          items.reduce((sum, it) => sum + (typeof it.progress === "number" ? it.progress : it.status === "done" ? 100 : 0), 0) /
+            items.length
+        )
+      : 0;
 
   return (
-    <div className="stack">
+    <div className="stack bvWithActionBar">
       <div>
         <div style={{ fontSize: 18, fontWeight: 900 }}>Upload</div>
         <div className="muted" style={{ marginTop: 6 }}>
@@ -324,33 +336,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       </div>
 
       <Card>
-        <form className="stack" onSubmit={onSubmit}>
-          <div className="row" style={{ alignItems: "center" }}>
-            <label className="pill" style={{ cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={quickMode}
-                onChange={(e) => setQuickMode(e.target.checked)}
-                style={{ marginRight: 8 }}
-              />
-              Quick mode
-            </label>
-            <div className="muted" style={{ fontSize: 12 }}>
-              {quickMode ? "Title optional; we’ll auto-name it." : "Title required."}
-            </div>
-          </div>
-
-          {!quickMode ? (
-            <Input label="Title" name="title" value={title} onChange={setTitle} placeholder={suggestedTitle()} />
-          ) : (
-            <div className="stack" style={{ gap: 6 }}>
-              <div className="label">Title (optional)</div>
-              <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={suggestedTitle()} />
-              <div className="muted" style={{ fontSize: 12 }}>
-                Default: <b>{suggestedTitle()}</b>
-              </div>
-            </div>
-          )}
+        <form ref={formRef} className="stack" onSubmit={onSubmit}>
 
           <Select
             label="Category"
@@ -372,6 +358,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
                     className="select"
                     value={ownerUserId ?? ""}
                     onChange={(e) => setOwnerUserId(e.target.value || null)}
+                    disabled={loading}
                   >
                     <option value="">Me (coach)</option>
                     {players.map((p) => (
@@ -383,55 +370,82 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
                 </div>
               </div>
 
-              <div className="row" style={{ alignItems: "center" }}>
-                <label className="pill" style={{ cursor: "pointer" }}>
-                  <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} style={{ marginRight: 8 }} />
-                  Pin
-                </label>
-                <label className="pill" style={{ cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={isLibrary}
-                    onChange={(e) => setIsLibrary(e.target.checked)}
-                    style={{ marginRight: 8 }}
-                  />
-                  Coach library
-                </label>
-                <div className="muted" style={{ fontSize: 12 }}>
-                  Library videos are visible to your whole team.
-                </div>
-              </div>
             </div>
           ) : null}
 
-          <div className="stack" style={{ gap: 6 }}>
-            <div className="label">Video files</div>
-            <div className="row" style={{ alignItems: "center" }}>
-              <label className="btn btnPrimary" style={{ cursor: "pointer" }}>
-                Record video
-                <input
-                  style={{ display: "none" }}
-                  type="file"
-                  accept="video/*"
-                  capture="environment"
-                  onChange={(e) => onPickFiles(e.target.files)}
-                />
-              </label>
-              <label className="btn" style={{ cursor: "pointer" }}>
-                Choose files
-                <input
-                  style={{ display: "none" }}
-                  type="file"
-                  accept="video/*"
-                  multiple
-                  onChange={(e) => onPickFiles(e.target.files)}
-                />
-              </label>
+          <details
+            open={showAdvanced}
+            onToggle={(e) => setShowAdvanced((e.target as HTMLDetailsElement).open)}
+            className="card"
+            style={{ background: "rgba(255,255,255,0.03)" }}
+          >
+            <summary className="pill" style={{ cursor: "pointer", display: "inline-flex" }}>
+              More options
+            </summary>
+            <div className="stack" style={{ marginTop: 12 }}>
+              <div className="row" style={{ alignItems: "center" }}>
+                <label className="pill" style={{ cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={quickMode}
+                    onChange={(e) => setQuickMode(e.target.checked)}
+                    style={{ marginRight: 8 }}
+                    disabled={loading}
+                  />
+                  Quick mode
+                </label>
+                <div className="muted" style={{ fontSize: 12 }}>
+                  {quickMode ? "Title optional; we’ll auto-name it." : "Title required."}
+                </div>
+              </div>
+
+              {!quickMode ? (
+                <Input label="Title" name="title" value={title} onChange={setTitle} placeholder={suggestedTitle()} />
+              ) : (
+                <div className="stack" style={{ gap: 6 }}>
+                  <div className="label">Title (optional)</div>
+                  <input
+                    className="input"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={suggestedTitle()}
+                    disabled={loading}
+                  />
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Default: <b>{suggestedTitle()}</b>
+                  </div>
+                </div>
+              )}
+
+              {role === "coach" ? (
+                <div className="row" style={{ alignItems: "center" }}>
+                  <label className="pill" style={{ cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={pinned}
+                      onChange={(e) => setPinned(e.target.checked)}
+                      style={{ marginRight: 8 }}
+                      disabled={loading}
+                    />
+                    Pin
+                  </label>
+                  <label className="pill" style={{ cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={isLibrary}
+                      onChange={(e) => setIsLibrary(e.target.checked)}
+                      style={{ marginRight: 8 }}
+                      disabled={loading}
+                    />
+                    Coach library
+                  </label>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Library videos are visible to your whole team.
+                  </div>
+                </div>
+              ) : null}
             </div>
-            <div className="muted" style={{ fontSize: 12 }}>
-              {items.length > 1 ? "Batch upload enabled." : "You can select multiple videos."}
-            </div>
-          </div>
+          </details>
 
           {items.length > 0 ? (
             <div className="card">
@@ -441,18 +455,12 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
               </div>
               <div className="stack" style={{ marginTop: 10 }}>
                 {items.map((it, i) => (
-                  <div key={i} className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ flex: 1, minWidth: 220 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {it.file.name}
-                      </div>
-                      {typeof it.progress === "number" && it.status === "uploading" ? (
-                        <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                          {it.progress}%
-                        </div>
-                      ) : null}
+                  <div key={i} className="card" style={{ padding: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {it.file.name}
                     </div>
-                    <div className="row" style={{ alignItems: "center" }}>
+
+                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
                       <div className="pill">
                         {it.status === "queued"
                           ? "Queued"
@@ -467,12 +475,27 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
                           Retry
                         </Button>
                       ) : null}
-                      {it.status === "error" ? (
-                        <div className="muted" style={{ fontSize: 12, maxWidth: 260 }}>
-                          {it.error}
-                        </div>
-                      ) : null}
                     </div>
+
+                    <div style={{ marginTop: 10 }}>
+                      <div className="bvProgressBar">
+                        <div
+                          className="bvProgressBarFill"
+                          style={{
+                            width: `${it.status === "done" ? 100 : typeof it.progress === "number" ? it.progress : 0}%`
+                          }}
+                        />
+                      </div>
+                      <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                        {it.status === "done" ? "100%" : typeof it.progress === "number" ? `${it.progress}%` : ""}
+                      </div>
+                    </div>
+
+                    {it.status === "error" && it.error ? (
+                      <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                        {it.error}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -480,23 +503,74 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
           ) : null}
 
           {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
-
-          <div
-            style={{
-              position: "sticky",
-              bottom: 0,
-              paddingTop: 10,
-              marginTop: 6,
-              background: "linear-gradient(180deg, transparent, rgba(11, 15, 20, 0.9) 35%, rgba(11, 15, 20, 0.98))",
-              borderTop: "1px solid var(--border)"
-            }}
-          >
-            <Button variant="primary" type="submit" disabled={loading}>
-              {loading ? (uploadingIndex >= 0 ? "Uploading…" : "Working…") : items.length > 1 ? "Upload all" : "Upload"}
-            </Button>
-          </div>
         </form>
       </Card>
+
+      <div className="bvActionBar">
+        <div className="bvActionBarInner">
+          <div className="muted" style={{ fontSize: 12 }}>
+            {loading
+              ? `Uploading ${uploadedCount}/${items.length} • ${avgProgress}%`
+              : items.length === 0
+                ? "Record or choose a video."
+                : `${items.length} file(s) ready`}
+          </div>
+
+          <div className="row" style={{ alignItems: "center" }}>
+            {items.length === 0 ? (
+              <>
+                <label className="btn btnPrimary" style={{ cursor: "pointer" }}>
+                  Record video
+                  <input
+                    style={{ display: "none" }}
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    onChange={(e) => onPickFiles(e.target.files)}
+                    disabled={loading}
+                  />
+                </label>
+                <label className="btn" style={{ cursor: "pointer" }}>
+                  Choose files
+                  <input
+                    style={{ display: "none" }}
+                    type="file"
+                    accept="video/*"
+                    multiple
+                    onChange={(e) => onPickFiles(e.target.files)}
+                    disabled={loading}
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                {!loading ? (
+                  <label className="btn" style={{ cursor: "pointer" }}>
+                    Add more
+                    <input
+                      style={{ display: "none" }}
+                      type="file"
+                      accept="video/*"
+                      multiple
+                      onChange={(e) => onPickFiles(e.target.files)}
+                      disabled={loading}
+                    />
+                  </label>
+                ) : null}
+                <Button
+                  variant="primary"
+                  disabled={loading}
+                  onClick={() => {
+                    formRef.current?.requestSubmit();
+                  }}
+                >
+                  {loading ? (uploadingIndex >= 0 ? "Uploading…" : "Working…") : items.length > 1 ? "Upload all" : "Upload"}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

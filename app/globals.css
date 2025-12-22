@@ -8,6 +8,9 @@
   --danger: #ff6b6b;
 
   color-scheme: dark;
+
+  /* Upload action bar (mobile-first) */
+  --bv-action-bar-h: 76px;
 }
 
 * {
@@ -156,4 +159,42 @@ body.fieldMode .textarea {
 
 body.fieldMode .card {
   padding: 18px;
+}
+
+.bvWithActionBar {
+  padding-bottom: calc(var(--bv-action-bar-h) + env(safe-area-inset-bottom) + 16px);
+}
+
+.bvActionBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  border-top: 1px solid var(--border);
+  background: rgba(11, 15, 20, 0.86);
+  backdrop-filter: blur(12px);
+  padding: 10px 20px calc(env(safe-area-inset-bottom) + 10px);
+}
+
+.bvActionBarInner {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bvProgressBar {
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.bvProgressBarFill {
+  height: 100%;
+  background: rgba(99, 179, 255, 0.45);
 }

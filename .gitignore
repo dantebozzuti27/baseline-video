@@ -10,4 +10,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# local media / screen recordings
+*.mov
+*.mp4
+*.m4v
+
 
