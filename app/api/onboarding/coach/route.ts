@@ -6,7 +6,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
   teamName: z.string().min(2).max(80),
-  displayName: z.string().min(2).max(80)
+  firstName: z.string().min(1).max(80),
+  lastName: z.string().min(1).max(80)
 });
 
 async function getUserIdFromRequest(req: Request): Promise<string | null> {
@@ -58,7 +59,8 @@ export async function POST(req: Request) {
     const { data, error } = await admin.rpc("create_team_for_coach", {
       p_team_name: parsed.data.teamName,
       p_coach_user_id: userId,
-      p_coach_display_name: parsed.data.displayName
+      p_first_name: parsed.data.firstName,
+      p_last_name: parsed.data.lastName
     });
 
     if (error) {
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
         {
           error:
             error.message +
-            " (If this says function does not exist/permission denied, re-run the SQL or ensure Vercel is pointing at the correct Supabase project.)"
+            " (If this says function does not exist/permission denied, run supabase/migrations/0006_hotfix_names_and_deletes.sql in Supabase SQL Editor.)"
         },
         { status: 500 }
       );

@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { LinkButton } from "@/components/ui";
 import { redirect } from "next/navigation";
+import AccessCodeCard from "./AccessCodeCard";
+import { LinkButton, Card } from "@/components/ui";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
-import { Button, Card } from "@/components/ui";
-import AccessCodeCard from "./AccessCodeCard";
+import { displayNameFromProfile } from "@/lib/utils/name";
 
 export default async function DashboardPage() {
   const profile = await getMyProfile();
@@ -15,10 +15,11 @@ export default async function DashboardPage() {
 
   const { data: players } = await supabase
     .from("profiles")
-    .select("user_id, display_name, role")
+    .select("user_id, first_name, last_name, display_name, role")
     .eq("team_id", profile.team_id)
     .eq("role", "player")
-    .order("display_name", { ascending: true });
+    .order("first_name", { ascending: true })
+    .order("last_name", { ascending: true });
 
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data: recentVideos } = await supabase
@@ -41,8 +42,11 @@ export default async function DashboardPage() {
             Players and recent uploads (last 7 days).
           </div>
         </div>
-        <LinkButton href="/app/upload" variant="primary">Upload</LinkButton>
+        <LinkButton href="/app/upload" variant="primary">
+          Upload
+        </LinkButton>
       </div>
+
       <AccessCodeCard />
 
       <Card>
@@ -53,7 +57,7 @@ export default async function DashboardPage() {
               <Link key={p.user_id} href={`/app/player/${p.user_id}`}>
                 <div className="card">
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontWeight: 800 }}>{p.display_name}</div>
+                    <div style={{ fontWeight: 800 }}>{displayNameFromProfile(p as any)}</div>
                     <div className="pill">{counts.get(p.user_id) ?? 0} recent</div>
                   </div>
                 </div>
@@ -67,5 +71,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
-

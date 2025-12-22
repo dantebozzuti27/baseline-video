@@ -6,6 +6,8 @@ export type Profile = {
   team_id: string;
   role: Role;
   display_name: string;
+  first_name: string;
+  last_name: string;
   created_at: string;
 };
 
@@ -28,5 +30,3 @@ export type Comment = {
   timestamp_seconds: number | null;
   created_at: string;
 };
-
-

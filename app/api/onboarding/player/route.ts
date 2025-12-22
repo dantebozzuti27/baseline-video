@@ -6,7 +6,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({
   accessCode: z.string().min(4).max(32),
-  displayName: z.string().min(2).max(80)
+  firstName: z.string().min(1).max(80),
+  lastName: z.string().min(1).max(80)
 });
 
 async function getUserIdFromRequest(req: Request): Promise<string | null> {
@@ -28,28 +29,63 @@ async function getUserIdFromRequest(req: Request): Promise<string | null> {
 }
 
 export async function POST(req: Request) {
-  const userId = await getUserIdFromRequest(req);
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const json = await req.json().catch(() => null);
-  const parsed = bodySchema.safeParse(json);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    const json = await req.json().catch(() => null);
+    const parsed = bodySchema.safeParse(json);
+    if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.rpc("join_team_with_access_code", {
-    p_access_code: parsed.data.accessCode.trim().toUpperCase(),
-    p_user_id: userId,
-    p_display_name: parsed.data.displayName
-  });
-
-  if (error) {
-    if (error.message.includes("invalid_access_code")) {
-      return NextResponse.json({ error: "Invalid access code" }, { status: 400 });
+    let admin;
+    try {
+      admin = createSupabaseAdminClient();
+    } catch (e: any) {
+      console.error("[onboarding/player] Admin client misconfigured", {
+        message: e?.message,
+        hasUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+        hasAnon: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+        hasServiceRole: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+      });
+      return NextResponse.json(
+        {
+          error:
+            "Server env misconfigured: missing SUPABASE_SERVICE_ROLE_KEY (Vercel env vars) or NEXT_PUBLIC_SUPABASE_URL."
+        },
+        { status: 500 }
+      );
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const { data, error } = await admin.rpc("join_team_with_access_code", {
+      p_access_code: parsed.data.accessCode.trim().toUpperCase(),
+      p_user_id: userId,
+      p_first_name: parsed.data.firstName,
+      p_last_name: parsed.data.lastName
+    });
+
+    if (error) {
+      if (error.message.includes("invalid_access_code")) {
+        return NextResponse.json({ error: "Invalid access code" }, { status: 400 });
+      }
+      console.error("[onboarding/player] RPC error", {
+        code: (error as any).code,
+        message: error.message,
+        details: (error as any).details,
+        hint: (error as any).hint
+      });
+      return NextResponse.json(
+        {
+          error:
+            error.message +
+            " (If this says function does not exist/permission denied, run supabase/migrations/0006_hotfix_names_and_deletes.sql in Supabase SQL Editor.)"
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ teamId: data });
+  } catch (e: any) {
+    console.error("[onboarding/player] Unhandled", { message: e?.message, stack: e?.stack });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  return NextResponse.json({ teamId: data });
 }
-
-

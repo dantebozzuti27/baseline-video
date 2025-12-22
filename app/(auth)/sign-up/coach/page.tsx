@@ -8,7 +8,8 @@ import { Button, Card, Input } from "@/components/ui";
 
 const schema = z.object({
   teamName: z.string().min(2),
-  displayName: z.string().min(2),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8)
 });
@@ -16,7 +17,8 @@ const schema = z.object({
 export default function CoachSignUpPage() {
   const router = useRouter();
   const [teamName, setTeamName] = React.useState("");
-  const [displayName, setDisplayName] = React.useState("");
+  const [firstName, setFirstName] = React.useState("");
+  const [lastName, setLastName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -27,7 +29,7 @@ export default function CoachSignUpPage() {
     e.preventDefault();
     setError(null);
 
-    const parsed = schema.safeParse({ teamName, displayName, email, password });
+    const parsed = schema.safeParse({ teamName, firstName, lastName, email, password });
     if (!parsed.success) {
       setError("Please fill out all fields (password must be 8+ characters).");
       return;
@@ -44,13 +46,19 @@ export default function CoachSignUpPage() {
 
       const token = data.session?.access_token;
       if (!token) {
-        throw new Error("No session returned from sign up. Check Supabase auth settings (email confirmation?).");
+        throw new Error(
+          "No session returned from sign up. In Supabase Auth, enable Email signups and disable email confirmations (for MVP)."
+        );
       }
 
       const resp = await fetch("/api/onboarding/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ teamName: parsed.data.teamName, displayName: parsed.data.displayName })
+        body: JSON.stringify({
+          teamName: parsed.data.teamName,
+          firstName: parsed.data.firstName,
+          lastName: parsed.data.lastName
+        })
       });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json?.error ?? "Unable to create team.");
@@ -77,9 +85,7 @@ export default function CoachSignUpPage() {
           <div className="stack">
             <div className="card">
               <div className="label">Team access code</div>
-              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.08em", marginTop: 6 }}>
-                {accessCode}
-              </div>
+              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.08em", marginTop: 6 }}>{accessCode}</div>
               <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
                 Share this with your players. They’ll enter it during sign up.
               </div>
@@ -87,7 +93,7 @@ export default function CoachSignUpPage() {
             <Button
               variant="primary"
               onClick={() => {
-                router.replace("/app");
+                router.replace("/app/dashboard");
                 router.refresh();
               }}
             >
@@ -97,7 +103,14 @@ export default function CoachSignUpPage() {
         ) : (
           <form className="stack" onSubmit={onSubmit}>
             <Input label="Team name" name="teamName" value={teamName} onChange={setTeamName} placeholder="Putsky Hitting" />
-            <Input label="Your name" name="displayName" value={displayName} onChange={setDisplayName} placeholder="Coach Dan" />
+            <div className="row">
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} placeholder="Dan" />
+              </div>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} placeholder="Putsky" />
+              </div>
+            </div>
             <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
             <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
             {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
@@ -110,5 +123,3 @@ export default function CoachSignUpPage() {
     </Card>
   );
 }
-
-

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
+import { displayNameFromProfile } from "@/lib/utils/name";
 import SignOutButton from "./SignOutButton";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link className="pill" href="/app/upload">
               Upload
             </Link>
+            {profile ? (
+              <Link className="pill" href="/app/profile">
+                {displayNameFromProfile(profile)}
+              </Link>
+            ) : null}
             {user ? <div className="pill">{user.email}</div> : null}
             <SignOutButton />
           </div>

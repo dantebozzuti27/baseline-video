@@ -8,7 +8,8 @@ import { Button, Card, Input } from "@/components/ui";
 
 const schema = z.object({
   accessCode: z.string().min(4),
-  displayName: z.string().min(2),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8)
 });
@@ -16,7 +17,8 @@ const schema = z.object({
 export default function PlayerSignUpPage() {
   const router = useRouter();
   const [accessCode, setAccessCode] = React.useState("");
-  const [displayName, setDisplayName] = React.useState("");
+  const [firstName, setFirstName] = React.useState("");
+  const [lastName, setLastName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -26,7 +28,7 @@ export default function PlayerSignUpPage() {
     e.preventDefault();
     setError(null);
 
-    const parsed = schema.safeParse({ accessCode, displayName, email, password });
+    const parsed = schema.safeParse({ accessCode, firstName, lastName, email, password });
     if (!parsed.success) {
       setError("Please fill out all fields (password must be 8+ characters).");
       return;
@@ -43,13 +45,19 @@ export default function PlayerSignUpPage() {
 
       const token = data.session?.access_token;
       if (!token) {
-        throw new Error("No session returned from sign up. Check Supabase auth settings (email confirmation?).");
+        throw new Error(
+          "No session returned from sign up. In Supabase Auth, enable Email signups and disable email confirmations (for MVP)."
+        );
       }
 
       const resp = await fetch("/api/onboarding/player", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ accessCode: parsed.data.accessCode, displayName: parsed.data.displayName })
+        body: JSON.stringify({
+          accessCode: parsed.data.accessCode,
+          firstName: parsed.data.firstName,
+          lastName: parsed.data.lastName
+        })
       });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json?.error ?? "Unable to join team.");
@@ -81,7 +89,14 @@ export default function PlayerSignUpPage() {
             onChange={(v) => setAccessCode(v.toUpperCase())}
             placeholder="A1B2C3D4"
           />
-          <Input label="Your name" name="displayName" value={displayName} onChange={setDisplayName} placeholder="Player Name" />
+          <div className="row">
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} placeholder="Jane" />
+            </div>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} placeholder="Doe" />
+            </div>
+          </div>
           <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
           <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
           {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
@@ -93,5 +108,3 @@ export default function PlayerSignUpPage() {
     </Card>
   );
 }
-
-

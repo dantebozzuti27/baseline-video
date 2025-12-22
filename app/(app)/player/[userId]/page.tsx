@@ -5,7 +5,8 @@ import { LocalDateTime } from "@/components/LocalDateTime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import type { VideoCategory } from "@/lib/db/types";
-import { Button, Card } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { displayNameFromProfile } from "@/lib/utils/name";
 
 export default async function PlayerPage({
   params,
@@ -21,7 +22,7 @@ export default async function PlayerPage({
   const supabase = createSupabaseServerClient();
   const { data: player } = await supabase
     .from("profiles")
-    .select("user_id, display_name, role")
+    .select("user_id, first_name, last_name, display_name, role")
     .eq("user_id", params.userId)
     .maybeSingle();
 
@@ -43,7 +44,7 @@ export default async function PlayerPage({
     <div className="stack">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 900 }}>{player.display_name}</div>
+          <div style={{ fontSize: 18, fontWeight: 900 }}>{displayNameFromProfile(player as any)}</div>
           <div className="muted" style={{ marginTop: 6 }}>
             Player videos
           </div>
