@@ -102,6 +102,12 @@ exception
   when duplicate_object then null;
 end $$;
 
+do $$ begin
+  create type public.video_source as enum ('upload', 'link');
+exception
+  when duplicate_object then null;
+end $$;
+
 create table if not exists public.teams (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -123,10 +129,17 @@ create table if not exists public.videos (
   uploader_user_id uuid not null references auth.users (id) on delete restrict,
   owner_user_id uuid not null references auth.users (id) on delete restrict,
   category public.video_category not null,
+  source public.video_source not null default 'upload',
   title text not null,
-  storage_path text not null,
+  storage_path text null,
+  external_url text null,
   created_at timestamptz not null default now(),
   constraint videos_storage_path_unique unique (storage_path),
+  constraint videos_source_fields_chk check (
+    (source = 'upload' and storage_path is not null and external_url is null)
+    or
+    (source = 'link' and external_url is not null and char_length(trim(external_url)) > 0)
+  ),
   constraint videos_owner_same_team_chk check (team_id is not null)
 );
 

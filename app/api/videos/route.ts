@@ -2,14 +2,31 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const createSchema = z.object({
-  title: z.string().min(1).max(120),
-  category: z.enum(["game", "training"]),
-  fileExt: z.string().min(1).max(12),
-  ownerUserId: z.string().uuid().optional(),
-  pinned: z.boolean().optional(),
-  isLibrary: z.boolean().optional()
-});
+const createSchema = z
+  .object({
+    title: z.string().min(1).max(120),
+    category: z.enum(["game", "training"]),
+    source: z.enum(["upload", "link"]).optional(),
+    fileExt: z.string().min(1).max(12).optional(),
+    externalUrl: z.string().url().optional(),
+    ownerUserId: z.string().uuid().optional(),
+    pinned: z.boolean().optional(),
+    isLibrary: z.boolean().optional()
+  })
+  .superRefine((v, ctx) => {
+    const source = v.source ?? "upload";
+    if (source === "upload") {
+      if (!v.fileExt) ctx.addIssue({ code: "custom", message: "fileExt required", path: ["fileExt"] });
+      if (v.externalUrl) ctx.addIssue({ code: "custom", message: "externalUrl not allowed", path: ["externalUrl"] });
+      return;
+    }
+    // link
+    if (!v.externalUrl) ctx.addIssue({ code: "custom", message: "externalUrl required", path: ["externalUrl"] });
+    if (v.fileExt) ctx.addIssue({ code: "custom", message: "fileExt not allowed", path: ["fileExt"] });
+    if (v.externalUrl && !/^https?:\/\//i.test(v.externalUrl)) {
+      ctx.addIssue({ code: "custom", message: "URL must start with http(s)", path: ["externalUrl"] });
+    }
+  });
 
 export async function POST(req: Request) {
   const supabase = createSupabaseServerClient();
@@ -32,8 +49,17 @@ export async function POST(req: Request) {
   if ((profile as any).is_active === false) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const id = crypto.randomUUID();
-  const safeExt = parsed.data.fileExt.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-  const storagePath = `${profile.team_id}/${user.id}/${id}.${safeExt}`;
+  const source = parsed.data.source ?? "upload";
+  const storagePath =
+    source === "upload"
+      ? (() => {
+          const safeExt = String(parsed.data.fileExt ?? "mp4")
+            .replace(/[^a-zA-Z0-9]/g, "")
+            .toLowerCase();
+          return `${profile.team_id}/${user.id}/${id}.${safeExt}`;
+        })()
+      : null;
+  const externalUrl = source === "link" ? parsed.data.externalUrl : null;
 
   const ownerUserId = parsed.data.ownerUserId ?? user.id;
   const isCoach = profile.role === "coach";
@@ -64,8 +90,10 @@ export async function POST(req: Request) {
     uploader_user_id: user.id,
     owner_user_id: ownerUserId,
     category: parsed.data.category,
+    source,
     title: parsed.data.title,
     storage_path: storagePath,
+    external_url: externalUrl,
     pinned,
     is_library: isLibrary
   });
@@ -80,5 +108,5 @@ export async function POST(req: Request) {
     );
   }
 
-  return NextResponse.json({ id, storagePath });
+  return NextResponse.json({ id, storagePath, source, externalUrl });
 }

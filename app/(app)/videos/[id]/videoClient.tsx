@@ -15,10 +15,30 @@ function parseSeekSecondsFromHash() {
 
 export default function VideoClient({ videoId }: { videoId: string }) {
   const router = useRouter();
+  const [kind, setKind] = React.useState<"storage" | "external">("storage");
   const [url, setUrl] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
+
+  function getYoutubeEmbed(u: string) {
+    try {
+      const parsed = new URL(u);
+      const host = parsed.hostname.replace(/^www\./, "").toLowerCase();
+      let id: string | null = null;
+      if (host === "youtu.be") id = parsed.pathname.replace("/", "") || null;
+      if (host === "youtube.com" || host === "m.youtube.com") {
+        if (parsed.pathname === "/watch") id = parsed.searchParams.get("v");
+        if (parsed.pathname.startsWith("/shorts/")) id = parsed.pathname.split("/")[2] || null;
+        if (parsed.pathname.startsWith("/embed/")) id = parsed.pathname.split("/")[2] || null;
+      }
+      if (!id) return null;
+      if (!/^[a-zA-Z0-9_-]{6,}$/.test(id)) return null;
+      return `https://www.youtube.com/embed/${id}`;
+    } catch {
+      return null;
+    }
+  }
 
   React.useEffect(() => {
     let cancelled = false;
@@ -29,7 +49,11 @@ export default function VideoClient({ videoId }: { videoId: string }) {
         const resp = await fetch(`/api/videos/${videoId}/signed-url`, { cache: "no-store" });
         const json = await resp.json();
         if (!resp.ok) throw new Error(json?.error ?? "Unable to load video.");
-        if (!cancelled) setUrl(json.url);
+        const nextKind = (json as any)?.kind === "external" ? "external" : "storage";
+        if (!cancelled) {
+          setKind(nextKind);
+          setUrl((json as any)?.url ?? null);
+        }
 
         // Best-effort: mark video as seen for true unread.
         fetch(`/api/videos/${videoId}/touch`, { method: "POST" }).catch(() => {});
@@ -89,6 +113,35 @@ export default function VideoClient({ videoId }: { videoId: string }) {
           >
             Retry
           </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  if (kind === "external" && url) {
+    const yt = getYoutubeEmbed(url);
+    return (
+      <Card>
+        <div className="stack" style={{ gap: 10 }}>
+          <div className="muted" style={{ fontSize: 13 }}>
+            This is a link video.
+          </div>
+          {yt ? (
+            <iframe
+              src={yt}
+              style={{ width: "100%", aspectRatio: "16 / 9", borderRadius: 12, border: "1px solid var(--border)" }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Video"
+            />
+          ) : (
+            <a className="btn btnPrimary" href={url} target="_blank" rel="noreferrer">
+              Open link
+            </a>
+          )}
+          <div className="muted" style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis" }}>
+            {url}
+          </div>
         </div>
       </Card>
     );

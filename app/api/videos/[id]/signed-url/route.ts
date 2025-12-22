@@ -7,7 +7,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const { data: video, error } = await supabase
     .from("videos")
-    .select("id, storage_path, deleted_at")
+    .select("id, source, storage_path, external_url, deleted_at")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -21,6 +21,12 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
+  if ((video as any).source === "link") {
+    const url = (video as any).external_url as string | null;
+    if (!url) return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ kind: "external", url });
+  }
+
   const admin = createSupabaseAdminClient();
   const { data, error: signedError } = await admin.storage.from("videos").createSignedUrl(video.storage_path, 60 * 10);
 
@@ -28,7 +34,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Unable to sign URL." }, { status: 500 });
   }
 
-  return NextResponse.json({ url: data.signedUrl });
+  return NextResponse.json({ kind: "storage", url: data.signedUrl });
 }
 
 

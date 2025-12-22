@@ -13,6 +13,7 @@
 --   - 0009_soft_deletes_trash.sql
 --   - 0010_true_unread_video_views.sql
 --   - 0011_comment_visibility_notes.sql
+--   - 0012_video_links.sql
 
 -- ============================================================
 -- 0006_hotfix_names_and_deletes.sql
@@ -776,6 +777,39 @@ with check (
 );
 
 grant select, insert, update on public.comments to authenticated;
+
+commit;
+
+-- ============================================================
+-- 0012_video_links.sql
+-- ============================================================
+-- Video links (external URL videos)
+-- Run in Supabase SQL Editor (safe to run once).
+
+begin;
+
+do $$ begin
+  create type public.video_source as enum ('upload', 'link');
+exception
+  when duplicate_object then null;
+end $$;
+
+alter table public.videos
+  add column if not exists source public.video_source not null default 'upload',
+  add column if not exists external_url text null;
+
+alter table public.videos
+  alter column storage_path drop not null;
+
+alter table public.videos
+  drop constraint if exists videos_source_fields_chk,
+  add constraint videos_source_fields_chk
+    check (
+      (source = 'upload' and storage_path is not null and external_url is null)
+      or
+      (source = 'link' and external_url is not null and char_length(trim(external_url)) > 0)
+    )
+    not valid;
 
 commit;
 

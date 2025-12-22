@@ -30,6 +30,9 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
   const router = useRouter();
   const formRef = React.useRef<HTMLFormElement | null>(null);
 
+  const [uploadKind, setUploadKind] = React.useState<"file" | "link">("file");
+  const [linkUrl, setLinkUrl] = React.useState("");
+
   const [title, setTitle] = React.useState("");
   const [category, setCategory] = React.useState<"game" | "training">("training");
   const [items, setItems] = React.useState<UploadItem[]>([]);
@@ -52,6 +55,8 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       if (lastCat === "game" || lastCat === "training") setCategory(lastCat);
       const qm = window.localStorage.getItem("bv:quickMode");
       if (qm === "0" || qm === "1") setQuickMode(qm === "1");
+      const uk = window.localStorage.getItem("bv:uploadKind");
+      if (uk === "file" || uk === "link") setUploadKind(uk);
     } catch {
       // ignore
     }
@@ -61,10 +66,11 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
     try {
       window.localStorage.setItem("bv:lastCategory", category);
       window.localStorage.setItem("bv:quickMode", quickMode ? "1" : "0");
+      window.localStorage.setItem("bv:uploadKind", uploadKind);
     } catch {
       // ignore
     }
-  }, [category, quickMode]);
+  }, [category, quickMode, uploadKind]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -210,6 +216,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       body: JSON.stringify({
         title: finalTitle,
         category,
+        source: "upload",
         fileExt: ext,
         ownerUserId: ownerUserId ?? undefined,
         pinned: pinned || undefined,
@@ -247,6 +254,29 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
     return (json as any).id as string;
   }
 
+  async function createLinkVideo() {
+    const finalTitle = (quickMode ? (title.trim() || suggestedTitle()) : title.trim()) || suggestedTitle();
+    const url = linkUrl.trim();
+    if (!url) throw new Error("Paste a video link.");
+
+    const resp = await fetch("/api/videos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: finalTitle,
+        category,
+        source: "link",
+        externalUrl: url,
+        ownerUserId: ownerUserId ?? undefined,
+        pinned: pinned || undefined,
+        isLibrary: isLibrary || undefined
+      })
+    });
+    const json = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to create link video.");
+    return (json as any).id as string;
+  }
+
   async function retryOne(idx: number) {
     setError(null);
     const it = items[idx];
@@ -267,7 +297,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
     e.preventDefault();
     setError(null);
 
-    if (items.length === 0) {
+    if (uploadKind === "file" && items.length === 0) {
       setError("Choose at least one video file.");
       return;
     }
@@ -280,6 +310,13 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
 
     setLoading(true);
     try {
+      if (uploadKind === "link") {
+        const id = await createLinkVideo();
+        router.replace(`/app/videos/${id}`);
+        router.refresh();
+        return;
+      }
+
       const doneIds: string[] = [];
       const indices = items.map((_, i) => i).filter((i) => items[i]?.status !== "done");
       let cursor = 0;
@@ -337,6 +374,30 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
 
       <Card>
         <form ref={formRef} className="stack" onSubmit={onSubmit}>
+          <div className="row" style={{ alignItems: "center" }}>
+            <button
+              type="button"
+              className={uploadKind === "file" ? "pill" : "btn"}
+              onClick={() => {
+                setUploadKind("file");
+                setError(null);
+              }}
+              disabled={loading}
+            >
+              Video file
+            </button>
+            <button
+              type="button"
+              className={uploadKind === "link" ? "pill" : "btn"}
+              onClick={() => {
+                setUploadKind("link");
+                setError(null);
+              }}
+              disabled={loading}
+            >
+              Link
+            </button>
+          </div>
 
           <Select
             label="Category"
@@ -348,6 +409,16 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
               { value: "game", label: "Game" }
             ]}
           />
+
+          {uploadKind === "link" ? (
+            <Input
+              label="Video link"
+              name="externalUrl"
+              value={linkUrl}
+              onChange={setLinkUrl}
+              placeholder="https://…"
+            />
+          ) : null}
 
           {role === "coach" ? (
             <div className="stack" style={{ gap: 10 }}>
@@ -447,7 +518,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
             </div>
           </details>
 
-          {items.length > 0 ? (
+          {uploadKind === "file" && items.length > 0 ? (
             <div className="card">
               <div style={{ fontWeight: 900 }}>Queue</div>
               <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
@@ -510,14 +581,28 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
         <div className="bvActionBarInner">
           <div className="muted" style={{ fontSize: 12 }}>
             {loading
-              ? `Uploading ${uploadedCount}/${items.length} • ${avgProgress}%`
-              : items.length === 0
-                ? "Record or choose a video."
-                : `${items.length} file(s) ready`}
+              ? uploadKind === "link"
+                ? "Saving link…"
+                : `Uploading ${uploadedCount}/${items.length} • ${avgProgress}%`
+              : uploadKind === "link"
+                ? "Paste a link to add it to your feed."
+                : items.length === 0
+                  ? "Record or choose a video."
+                  : `${items.length} file(s) ready`}
           </div>
 
           <div className="row" style={{ alignItems: "center" }}>
-            {items.length === 0 ? (
+            {uploadKind === "link" ? (
+              <Button
+                variant="primary"
+                disabled={loading}
+                onClick={() => {
+                  formRef.current?.requestSubmit();
+                }}
+              >
+                {loading ? "Saving…" : "Add link"}
+              </Button>
+            ) : items.length === 0 ? (
               <>
                 <label className="btn btnPrimary" style={{ cursor: "pointer" }}>
                   Record video

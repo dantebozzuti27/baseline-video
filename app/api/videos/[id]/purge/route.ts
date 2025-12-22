@@ -20,7 +20,7 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   // Load the trashed video via RLS (coach can see team, player can see own).
   const { data: video, error: loadError } = await supabase
     .from("videos")
-    .select("id, storage_path, deleted_at, uploader_user_id")
+    .select("id, source, storage_path, deleted_at, uploader_user_id")
     .eq("id", params.id)
     .maybeSingle();
   if (loadError) return NextResponse.json({ error: loadError.message }, { status: 500 });
@@ -39,7 +39,9 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
 
   // Best-effort storage cleanup.
   try {
-    await admin.storage.from("videos").remove([(video as any).storage_path]);
+    if ((video as any).source !== "link" && (video as any).storage_path) {
+      await admin.storage.from("videos").remove([(video as any).storage_path]);
+    }
   } catch {
     // ignore
   }

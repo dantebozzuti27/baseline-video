@@ -19,8 +19,10 @@ export type Video = {
   uploader_user_id: string;
   owner_user_id: string;
   category: VideoCategory;
+  source?: "upload" | "link";
   title: string;
-  storage_path: string;
+  storage_path?: string | null;
+  external_url?: string | null;
   created_at: string;
   last_activity_at?: string | null;
 };
