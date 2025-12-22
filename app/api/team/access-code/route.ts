@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logEvent } from "@/lib/utils/events";
 
 export async function POST() {
   const supabase = createSupabaseServerClient();
@@ -17,6 +18,8 @@ export async function POST() {
     const status = msg.includes("forbidden") ? 403 : 500;
     return NextResponse.json({ error: msg }, { status });
   }
+
+  await logEvent("access_code_rotate", "team", null, {});
 
   return NextResponse.json({ accessCode: data });
 }

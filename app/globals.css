@@ -136,3 +136,24 @@ a {
 }
 
 
+
+/* On-field mode: bigger targets, calmer reading */
+body.fieldMode .container {
+  max-width: 1100px;
+}
+
+body.fieldMode .btn {
+  padding: 14px 16px;
+  font-size: 16px;
+}
+
+body.fieldMode .input,
+body.fieldMode .select,
+body.fieldMode .textarea {
+  padding: 14px 14px;
+  font-size: 16px;
+}
+
+body.fieldMode .card {
+  padding: 18px;
+}

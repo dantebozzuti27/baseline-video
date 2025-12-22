@@ -34,9 +34,12 @@ export default async function AppHomePage({
   const lastSeen = myProfile?.last_seen_feed_at ? new Date(myProfile.last_seen_feed_at).getTime() : 0;
 
   // We don't have true last-activity persisted yet; "activity" currently approximates by created_at.
-  let query = supabase.from("videos").select("id, title, category, created_at, pinned").order("created_at", {
-    ascending: sort === "oldest"
-  });
+  let query = supabase
+    .from("videos")
+    .select("id, title, category, created_at, pinned, last_activity_at")
+    .order(sort === "activity" ? "last_activity_at" : "created_at", {
+      ascending: sort === "oldest"
+    });
   if (category !== "all") query = query.eq("category", category);
 
   const { data: videos } = await query;
@@ -109,7 +112,8 @@ export default async function AppHomePage({
       {rest && rest.length > 0 ? (
         <div className="stack">
           {rest.map((v: any) => {
-            const isNew = lastSeen > 0 && new Date(v.created_at).getTime() > lastSeen;
+            const ts = sort === "activity" ? v.last_activity_at ?? v.created_at : v.created_at;
+            const isNew = lastSeen > 0 && new Date(ts).getTime() > lastSeen;
             return (
               <Link key={v.id} href={`/app/videos/${v.id}`}>
                 <div className="card">

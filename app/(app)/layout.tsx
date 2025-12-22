@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
 import SignOutButton from "./SignOutButton";
+import FieldModeToggle from "./FieldModeToggle";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createSupabaseServerClient();
@@ -47,6 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               </>
             ) : null}
             {user ? <div className="pill">{user.email}</div> : null}
+            <FieldModeToggle />
             <SignOutButton />
           </div>
         </div>

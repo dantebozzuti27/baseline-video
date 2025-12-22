@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logEvent } from "@/lib/utils/events";
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -19,6 +20,8 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
       { status: 403 }
     );
   }
+
+  await logEvent("comment_delete", "comment", params.id, {});
 
   return NextResponse.json({ ok: true });
 }

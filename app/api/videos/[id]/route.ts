@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { logEvent } from "@/lib/utils/events";
 
 const patchSchema = z.object({
   pinned: z.boolean().optional(),
@@ -31,6 +32,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       { status: 403 }
     );
   }
+
+  await logEvent("video_update", "video", params.id, updates);
 
   return NextResponse.json({ ok: true });
 }
@@ -71,6 +74,8 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   } catch {
     // ignore
   }
+
+  await logEvent("video_delete", "video", params.id, { storage_path: video.storage_path });
 
   return NextResponse.json({ ok: true });
 }
