@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import type { VideoCategory } from "@/lib/db/types";
@@ -87,7 +88,7 @@ export default async function PlayerPage({
                   <div className="pill">{String(v.category).toUpperCase()}</div>
                 </div>
                 <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                  {new Date(v.created_at).toLocaleString()}
+                  {<LocalDateTime value={v.created_at} />}
                 </div>
               </div>
             </Link>

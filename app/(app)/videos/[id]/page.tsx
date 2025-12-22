@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { Button, Card } from "@/components/ui";
 import VideoClient from "./videoClient";
@@ -40,7 +41,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
         <div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>{video.title}</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-            {video.category.toUpperCase()} • {new Date(video.created_at).toLocaleString()}
+            {video.category.toUpperCase()} • {<LocalDateTime value={video.created_at} />}
           </div>
         </div>
         <Link href="/app">
@@ -62,7 +63,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800 }}>{label}</div>
                     <div className="muted" style={{ fontSize: 12 }}>
-                      {new Date(c.created_at).toLocaleString()}
+                      {<LocalDateTime value={c.created_at} />}
                     </div>
                   </div>
                   {c.timestamp_seconds !== null ? (
