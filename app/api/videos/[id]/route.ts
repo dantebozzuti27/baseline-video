@@ -1,6 +1,39 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+const patchSchema = z.object({
+  pinned: z.boolean().optional(),
+  isLibrary: z.boolean().optional()
+});
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const json = await req.json().catch(() => null);
+  const parsed = patchSchema.safeParse(json);
+  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+
+  const updates: any = {};
+  if (typeof parsed.data.pinned === "boolean") updates.pinned = parsed.data.pinned;
+  if (typeof parsed.data.isLibrary === "boolean") updates.is_library = parsed.data.isLibrary;
+
+  const { error } = await supabase.from("videos").update(updates).eq("id", params.id);
+
+  if (error) {
+    return NextResponse.json(
+      { error: error.message + " (Run supabase/migrations/0007_fast_wins_coach_features.sql)" },
+      { status: 403 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();

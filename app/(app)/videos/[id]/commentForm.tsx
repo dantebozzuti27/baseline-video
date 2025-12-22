@@ -4,6 +4,14 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 
+function getCurrentVideoTimeSeconds(): number | null {
+  const el = document.querySelector("video");
+  if (!el) return null;
+  const t = (el as HTMLVideoElement).currentTime;
+  if (!Number.isFinite(t) || t < 0) return null;
+  return Math.floor(t);
+}
+
 export default function CommentForm({ videoId }: { videoId: string }) {
   const router = useRouter();
   const [body, setBody] = React.useState("");
@@ -63,6 +71,7 @@ export default function CommentForm({ videoId }: { videoId: string }) {
             placeholder="Quick cue, what to watch for…"
           />
         </div>
+
         <div className="row">
           <div style={{ flex: 1, minWidth: 180 }}>
             <div className="label">Timestamp seconds (optional)</div>
@@ -73,6 +82,16 @@ export default function CommentForm({ videoId }: { videoId: string }) {
               onChange={(e) => setTimestampSeconds(e.target.value)}
               placeholder="e.g. 12"
             />
+            <div style={{ marginTop: 8 }}>
+              <Button
+                onClick={() => {
+                  const sec = getCurrentVideoTimeSeconds();
+                  if (sec !== null) setTimestampSeconds(String(sec));
+                }}
+              >
+                Use current time
+              </Button>
+            </div>
           </div>
           <div style={{ display: "flex", alignItems: "end" }}>
             <Button variant="primary" type="submit" disabled={loading}>

@@ -22,17 +22,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="row" style={{ alignItems: "center" }}>
             {profile ? <div className="pill">{profile.role === "coach" ? "Coach" : "Player"}</div> : null}
             {profile?.role === "coach" ? (
-              <Link className="pill" href="/app/dashboard">
-                Dashboard
-              </Link>
+              <>
+                <Link className="pill" href="/app/dashboard">
+                  Dashboard
+                </Link>
+                <Link className="pill" href="/app/compare">
+                  Compare
+                </Link>
+              </>
             ) : null}
             <Link className="pill" href="/app/upload">
               Upload
             </Link>
             {profile ? (
-              <Link className="pill" href="/app/profile">
-                {displayNameFromProfile(profile)}
-              </Link>
+              <>
+                <Link className="pill" href="/app/profile">
+                  {displayNameFromProfile(profile)}
+                </Link>
+                {profile.role === "coach" ? (
+                  <Link className="pill" href="/app/settings">
+                    Settings
+                  </Link>
+                ) : null}
+              </>
             ) : null}
             {user ? <div className="pill">{user.email}</div> : null}
             <SignOutButton />

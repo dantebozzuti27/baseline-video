@@ -8,6 +8,7 @@ import VideoClient from "./videoClient";
 import CommentForm from "./commentForm";
 import DeleteVideoButton from "./DeleteVideoButton";
 import DeleteCommentButton from "./DeleteCommentButton";
+import PinLibraryControls from "./PinLibraryControls";
 
 export default async function VideoDetailPage({ params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
@@ -20,7 +21,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
 
   const { data: video } = await supabase
     .from("videos")
-    .select("id, title, category, created_at, uploader_user_id")
+    .select("id, title, category, created_at, uploader_user_id, pinned, is_library")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -54,11 +55,27 @@ export default async function VideoDetailPage({ params }: { params: { id: string
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
             {video.category.toUpperCase()} • <LocalDateTime value={video.created_at} />
           </div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+            Visible to: {myProfile?.role === "coach" ? "Coach (team)" : "You + your coach"}
+          </div>
         </div>
         <LinkButton href="/app">Back</LinkButton>
       </div>
 
       <VideoClient videoId={video.id} />
+
+      {isCoach ? (
+        <Card>
+          <div className="stack">
+            <div style={{ fontWeight: 900 }}>Coach controls</div>
+            <PinLibraryControls
+              videoId={video.id}
+              initialPinned={Boolean((video as any).pinned)}
+              initialIsLibrary={Boolean((video as any).is_library)}
+            />
+          </div>
+        </Card>
+      ) : null}
 
       {canDeleteVideo ? (
         <Card>
@@ -96,7 +113,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
                   </div>
                   {c.timestamp_seconds !== null ? (
                     <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                      @{c.timestamp_seconds}s
+                      <a href={`#t=${c.timestamp_seconds}`} className="pill">@{c.timestamp_seconds}s</a>
                     </div>
                   ) : null}
                   <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{c.body}</div>
