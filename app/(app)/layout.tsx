@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
-import SignOutButton from "./SignOutButton";
 import HeaderMenu from "./HeaderMenu";
+import NavMenu from "./NavMenu";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createSupabaseServerClient();
@@ -33,21 +33,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <Link className="pill" href="/app/library">
                   Library
                 </Link>
-                <Link className="pill" href="/app/compare">
-                  Compare
-                </Link>
               </>
             ) : null}
             <Link className="pill" href="/app/upload">
               Upload
             </Link>
-            <Link className="pill" href="/app/settings">
-              Account & team
-            </Link>
-            <Link className="pill" href="/app/trash">
-              Trash
-            </Link>
-            <SignOutButton />
+            <NavMenu role={profile.role} />
           </div>
 
           <HeaderMenu role={profile.role} displayName={displayNameFromProfile(profile)} email={user.email ?? ""} />
