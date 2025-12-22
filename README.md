@@ -1,30 +1,23 @@
-## Baseline Video
+# Baseline Video
 
-Coaching app MVP (Next.js App Router + Prisma/Postgres + Supabase Auth).
+Simple, purpose-built video management for baseball coaches and players.
 
-### Local setup
-- `npm install`
-- Copy `env.example` → `.env` and fill values
+## Stack
+- Next.js (App Router)
+- Supabase (Auth + Postgres + Storage)
 
-### Supabase (recommended setup)
-Use **two connection strings**:
-- **`DATABASE_URL`**: Supabase Transaction Pooler (runtime / serverless)
-- **`DIRECT_URL`**: Supabase Direct Connection (migrations)
+## Local setup
+1. Install dependencies:
+   - `npm install`
+2. Create an env file (this repo can’t commit `.env*` templates in this environment):
+   - Copy `env.example` to `.env.local`
+3. Create a Supabase project and apply SQL:
+   - Run `supabase/migrations/0000_baseline_video_all.sql` in the Supabase SQL editor
+4. Run the app:
+   - `npm run dev`
 
-To avoid clobbering an existing `public` schema, append `?schema=baseline` to both URLs.
+## Deploy
+- Deploy Next.js to Vercel
+- Set env vars in Vercel from `.env.local`
 
-### Google Drive uploads (required for in-app upload)
-Supabase Google OAuth must request the Drive scope:
-- In Supabase: **Authentication → Providers → Google**
-  - Add additional scope: `https://www.googleapis.com/auth/drive.file`
-  - Save, then **sign out and sign in again** to re-consent.
 
-### Migrations
-Create/apply migrations locally (dev):
-- `npm run prisma:migrate`
-
-Apply migrations in production (CI/Vercel manual step):
-- `npm run prisma:deploy`
-
-### Run
-- `npm run dev`

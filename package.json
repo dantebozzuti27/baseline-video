@@ -1,47 +1,31 @@
 {
   "name": "baseline-video",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "postinstall": "prisma generate",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio",
-    "seed": "tsx prisma/seed.ts",
-    "worker:mirror": "tsx scripts/mirror-worker.ts"
-  },
-  "engines": {
-    "node": "20.x"
+    "lint": "next lint",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.879.0",
-    "@aws-sdk/lib-storage": "^3.879.0",
-    "@prisma/client": "^6.4.0",
-    "bcryptjs": "^3.0.2",
-    "googleapis": "^156.0.0",
-    "jose": "^6.1.0",
-    "next": "16.1.0",
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.57.2",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "zod": "^4.1.9"
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.49.1",
+    "next": "^14.2.20",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.0",
-    "prisma": "^6.4.0",
-    "tailwindcss": "^4",
-    "tsx": "^4.19.2",
-    "typescript": "^5"
+    "@types/node": "^20.17.12",
+    "@types/react": "^18.3.14",
+    "@types/react-dom": "^18.3.2",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.20",
+    "typescript": "^5.7.3"
   }
 }
+
+

@@ -1,50 +1,61 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+function isPublicPath(pathname: string) {
+  return (
+    pathname === "/" ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/api/health") ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon")
+  );
+}
+
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({ request });
+  const response = NextResponse.next();
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  // Never break the entire app if env vars aren't available in the Edge runtime yet.
-  // (Vercel requires a redeploy after adding env vars so middleware can inline them.)
-  if (!url || !anonKey) {
-    return response;
-  }
-
-  try {
-    const supabase = createServerClient(url, anonKey, {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+    {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(
-          cookiesToSet: Array<{
-            name: string;
-            value: string;
-            options?: Parameters<typeof response.cookies.set>[2];
-          }>,
-        ) {
-          for (const { name, value, options } of cookiesToSet) {
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);
-          }
-        },
-      },
-    });
+          });
+        }
+      }
+    }
+  );
 
-    // Refresh session if needed (important for SSR).
-    await supabase.auth.getUser();
-  } catch {
-    // If anything goes wrong in Edge middleware, fail open (no auth cookie refresh).
-    return response;
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  if (!user && !isPublicPath(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/sign-in";
+    url.searchParams.set("next", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  if (user && (pathname === "/sign-in" || pathname === "/sign-up" || pathname.startsWith("/sign-up/"))) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/app";
+    return NextResponse.redirect(url);
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
 };
 
 
