@@ -80,7 +80,6 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith("/app/dashboard") ||
       pathname.startsWith("/app/library") ||
       pathname.startsWith("/app/settings") ||
-      pathname.startsWith("/app/audit") ||
       pathname.startsWith("/app/player") ||
       pathname.startsWith("/app/compare");
 

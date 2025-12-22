@@ -11,7 +11,7 @@ export default async function HomePage() {
   if (!user) redirect("/sign-in");
   const profile = await getMyProfile();
   if (!profile) redirect("/onboarding");
-  redirect(profile.role === "coach" ? "/dashboard" : "/app");
+  redirect(profile.role === "coach" ? "/app/dashboard" : "/app");
 }
 
 

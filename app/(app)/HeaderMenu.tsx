@@ -17,7 +17,7 @@ export default function HeaderMenu({ role, displayName, email }: Props) {
   return (
     <>
       <div className="bvMobileHeaderActions">
-        <Link className="btn btnPrimary" href="/upload">
+        <Link className="btn btnPrimary" href="/app/upload">
           Upload
         </Link>
         <button className="btn" onClick={() => setOpen(true)}>
@@ -32,32 +32,32 @@ export default function HeaderMenu({ role, displayName, email }: Props) {
               <div>
                 <div style={{ fontWeight: 900 }}>{displayName}</div>
                 <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                  {role === "coach" ? "Coach" : "Player"} • {email}
+                  {role === "coach" ? "Coach" : "Player"}
                 </div>
               </div>
 
               <div className="row">
                 <Link
                   className="pill"
-                  href={isCoach ? "/dashboard" : "/app"}
+                  href={isCoach ? "/app/dashboard" : "/app"}
                   onClick={() => setOpen(false)}
                 >
                   {isCoach ? "Dashboard" : "Videos"}
                 </Link>
                 {isCoach ? (
                   <>
-                    <Link className="pill" href="/library" onClick={() => setOpen(false)}>
+                    <Link className="pill" href="/app/library" onClick={() => setOpen(false)}>
                       Library
                     </Link>
-                    <Link className="pill" href="/compare" onClick={() => setOpen(false)}>
+                    <Link className="pill" href="/app/compare" onClick={() => setOpen(false)}>
                       Compare
                     </Link>
                   </>
                 ) : null}
-                <Link className="pill" href="/trash" onClick={() => setOpen(false)}>
+                <Link className="pill" href="/app/trash" onClick={() => setOpen(false)}>
                   Trash
                 </Link>
-                <Link className="pill" href="/settings" onClick={() => setOpen(false)}>
+                <Link className="pill" href="/app/settings" onClick={() => setOpen(false)}>
                   Account & team
                 </Link>
               </div>

@@ -1,5 +1,7 @@
-import ProfilePage from "../../profile/page";
+import { redirect } from "next/navigation";
 
-export default ProfilePage;
+export default function AppProfilePage() {
+  redirect("/app/settings");
+}
 
 
