@@ -12,7 +12,7 @@ async function SignOutButton() {
 
   return (
     <form action={signOut}>
-      <Button>Sign out</Button>
+      <Button type="submit">Sign out</Button>
     </form>
   );
 }
