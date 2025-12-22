@@ -125,6 +125,79 @@ a {
   gap: 12px;
 }
 
+/* Mobile nav: bottom tabs + sheet. Hide desktop pill row on small screens. */
+.bvMobileNav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .bvDesktopNav {
+    display: none;
+  }
+
+  .bvAppContainer {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom) + 14px);
+  }
+
+  .bvMobileNav {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+    border-top: 1px solid var(--border);
+    background: rgba(11, 15, 20, 0.9);
+    backdrop-filter: blur(12px);
+    padding: 10px 12px calc(env(safe-area-inset-bottom) + 10px);
+  }
+
+  .bvMobileNavInner {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bvMobileTab {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    border-radius: 999px;
+    padding: 10px 10px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .bvMobileTabActive {
+    border-color: rgba(99, 179, 255, 0.35);
+    background: rgba(99, 179, 255, 0.14);
+  }
+
+  .bvMobileSheetBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 16px 12px calc(env(safe-area-inset-bottom) + 12px);
+  }
+
+  .bvMobileSheet {
+    width: 100%;
+    max-width: 980px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: rgba(17, 24, 38, 0.98);
+    padding: 14px;
+  }
+}
+
 .brand {
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -174,6 +247,13 @@ body.fieldMode .navInner {
 
 body.fieldMode .row {
   gap: 14px;
+}
+
+@media (max-width: 760px) {
+  body.fieldMode .bvMobileTab {
+    padding: 14px 12px;
+    font-size: 16px;
+  }
 }
 
 .bvWithActionBar {

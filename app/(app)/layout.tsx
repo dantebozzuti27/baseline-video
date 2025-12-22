@@ -5,6 +5,7 @@ import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
 import SignOutButton from "./SignOutButton";
 import FieldModeToggle from "./FieldModeToggle";
+import MobileNav from "./MobileNav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createSupabaseServerClient();
@@ -24,8 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link className="brand" href="/app">
             Baseline Video
           </Link>
-          <div className="row" style={{ alignItems: "center" }}>
-            {profile ? <div className="pill">{profile.role === "coach" ? "Coach" : "Player"}</div> : null}
+          <div className="bvDesktopNav row" style={{ alignItems: "center" }}>
             {profile?.role === "coach" ? (
               <>
                 <Link className="pill" href="/app/dashboard">
@@ -37,35 +37,30 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <Link className="pill" href="/app/compare">
                   Compare
                 </Link>
+                <Link className="pill" href="/app/settings">
+                  Settings
+                </Link>
+                <Link className="pill" href="/app/audit">
+                  Audit
+                </Link>
               </>
-            ) : null}
-            {profile ? (
-              <Link className="pill" href="/app/trash">
-                Trash
-              </Link>
             ) : null}
             <Link className="pill" href="/app/upload">
               Upload
             </Link>
-            {profile ? (
-              <>
-                <Link className="pill" href="/app/profile">
-                  {displayNameFromProfile(profile)}
-                </Link>
-                {profile.role === "coach" ? (
-                  <Link className="pill" href="/app/settings">
-                    Settings
-                  </Link>
-                ) : null}
-              </>
-            ) : null}
-            {user ? <div className="pill">{user.email}</div> : null}
+            <Link className="pill" href="/app/profile">
+              {displayNameFromProfile(profile)}
+            </Link>
+            <Link className="pill" href="/app/trash">
+              Trash
+            </Link>
             <FieldModeToggle />
             <SignOutButton />
           </div>
         </div>
       </div>
-      <div className="container">{children}</div>
+      <div className="container bvAppContainer">{children}</div>
+      <MobileNav role={profile.role} displayName={displayNameFromProfile(profile)} email={user.email ?? ""} />
     </div>
   );
 }
