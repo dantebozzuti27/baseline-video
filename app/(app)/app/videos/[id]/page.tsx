@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
+import VideoDetailPage from "../../../videos/[id]/page";
 
-export default function AppVideoAlias({ params }: { params: { id: string } }) {
-  redirect(`/videos/${params.id}`);
-}
+export default VideoDetailPage;

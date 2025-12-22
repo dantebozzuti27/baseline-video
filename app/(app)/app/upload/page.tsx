@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
+import UploadPage from "../../upload/page";
 
-export default function AppUploadAlias() {
-  redirect("/upload");
-}
+export default UploadPage;

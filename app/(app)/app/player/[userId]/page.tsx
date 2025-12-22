@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
+import PlayerPage from "../../../player/[userId]/page";
 
-export default function AppPlayerAlias({ params }: { params: { userId: string } }) {
-  redirect(`/player/${params.userId}`);
-}
+export default PlayerPage;
