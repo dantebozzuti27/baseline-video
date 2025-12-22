@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
 import SignOutButton from "./SignOutButton";
-import MobileNav from "./MobileNav";
+import HeaderMenu from "./HeaderMenu";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createSupabaseServerClient();
@@ -36,9 +36,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <Link className="pill" href="/app/compare">
                   Compare
                 </Link>
-                <Link className="pill" href="/app/settings">
-                  Settings
-                </Link>
                 <Link className="pill" href="/app/audit">
                   Audit
                 </Link>
@@ -47,18 +44,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link className="pill" href="/app/upload">
               Upload
             </Link>
-            <Link className="pill" href="/app/profile">
-              {displayNameFromProfile(profile)}
+            <Link className="pill" href="/app/settings">
+              Account & team
             </Link>
             <Link className="pill" href="/app/trash">
               Trash
             </Link>
             <SignOutButton />
           </div>
+
+          <HeaderMenu role={profile.role} displayName={displayNameFromProfile(profile)} email={user.email ?? ""} />
         </div>
       </div>
-      <div className="container bvAppContainer">{children}</div>
-      <MobileNav role={profile.role} displayName={displayNameFromProfile(profile)} email={user.email ?? ""} />
+      <div className="container">{children}</div>
     </div>
   );
 }
