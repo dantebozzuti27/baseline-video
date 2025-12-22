@@ -190,6 +190,37 @@ grant execute on function public.current_team_id() to authenticated;
 grant execute on function public.is_coach() to authenticated;
 grant execute on function public.can_read_video(uuid) to authenticated;
 
+create or replace function public.rotate_team_access_code()
+returns text
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_team_id uuid;
+  v_code text;
+begin
+  if not public.is_coach() then
+    raise exception "forbidden";
+  end if;
+
+  v_team_id := public.current_team_id();
+  if v_team_id is null then
+    raise exception "missing_profile";
+  end if;
+
+  v_code := upper(substr(replace(gen_random_uuid()::text, "-", ""), 1, 8));
+
+  update public.teams
+    set access_code_hash = extensions.crypt(v_code, extensions.gen_salt("bf"))
+  where id = v_team_id;
+
+  return v_code;
+end;
+$$;
+
+grant execute on function public.rotate_team_access_code() to authenticated;
+
 alter table public.teams enable row level security;
 alter table public.profiles enable row level security;
 alter table public.videos enable row level security;

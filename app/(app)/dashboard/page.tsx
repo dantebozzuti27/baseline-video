@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { Button, Card } from "@/components/ui";
+import AccessCodeCard from "./AccessCodeCard";
 
 export default async function DashboardPage() {
   const profile = await getMyProfile();
@@ -43,6 +44,7 @@ export default async function DashboardPage() {
           <Button variant="primary">Upload</Button>
         </Link>
       </div>
+      <AccessCodeCard />
 
       <Card>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Players</div>
