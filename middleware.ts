@@ -38,6 +38,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Gate non-public routes for signed-out users.
   if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
@@ -45,11 +46,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && (pathname === "/sign-in" || pathname === "/sign-up" || pathname.startsWith("/sign-up/"))) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/app";
-    return NextResponse.redirect(url);
-  }
+  // IMPORTANT:
+  // Do NOT redirect signed-in users away from /sign-up.
+  // A signed-in user may still need onboarding (no profile yet), and /app redirects to /sign-up,
+  // which would create an infinite redirect loop if we forced /sign-up -> /app here.
 
   return response;
 }
@@ -57,5 +57,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
 };
-
-
