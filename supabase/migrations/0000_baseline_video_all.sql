@@ -88,7 +88,7 @@ begin
 end $$;
 
 -- 3) Baseline schema + RLS
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 do $$ begin
   create type public.user_role as enum ('coach', 'player');
@@ -149,7 +149,7 @@ returns uuid
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   select team_id from public.profiles where user_id = auth.uid();
 $$;
@@ -159,7 +159,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   select exists (
     select 1 from public.profiles
@@ -173,7 +173,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   select exists (
     select 1
@@ -314,7 +314,7 @@ create or replace function public.create_team_for_coach(
 returns table (team_id uuid, access_code text)
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_team_id uuid;
@@ -324,7 +324,7 @@ begin
   v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)); -- hex chars, readable
 
   insert into public.teams (id, name, access_code_hash)
-  values (v_team_id, p_team_name, crypt(v_code, gen_salt('bf')));
+  values (v_team_id, p_team_name, extensions.crypt(v_code, extensions.gen_salt('bf')));
 
   insert into public.profiles (user_id, team_id, role, display_name)
   values (p_coach_user_id, v_team_id, 'coach', p_coach_display_name);
@@ -343,7 +343,7 @@ create or replace function public.join_team_with_access_code(
 returns uuid
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_team_id uuid;
@@ -351,7 +351,7 @@ begin
   select t.id
     into v_team_id
   from public.teams t
-  where t.access_code_hash = crypt(p_access_code, t.access_code_hash)
+  where t.access_code_hash = extensions.crypt(p_access_code, t.access_code_hash)
   limit 1;
 
   if v_team_id is null then
