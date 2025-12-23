@@ -109,8 +109,9 @@ a {
   position: sticky;
   top: 0;
   z-index: 10;
-  backdrop-filter: blur(10px);
-  background: rgba(7, 12, 20, 0.78);
+  /* Solid app chrome (no glass) */
+  backdrop-filter: none;
+  background: #070c14;
   border-bottom: 1px solid var(--border);
 }
 
@@ -253,6 +254,22 @@ a {
   margin-top: auto;
   padding-top: 8px;
   border-top: 1px solid #1a2436;
+}
+
+/* Make drawer controls solid (no translucent buttons inside the drawer) */
+.bvDrawer .btn {
+  background: #111826;
+  border-color: #1a2436;
+}
+
+.bvDrawer .btnPrimary {
+  background: #0d2746;
+  border-color: #2a78c2;
+}
+
+.bvDrawer .btnDanger {
+  background: #3a1414;
+  border-color: #b93a3a;
 }
 
 .bvToastWrap {
