@@ -364,7 +364,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       : 0;
 
   return (
-    <div className="stack bvWithActionBar">
+    <div className="stack">
       <div>
         <div style={{ fontSize: 18, fontWeight: 900 }}>Upload</div>
         <div className="muted" style={{ marginTop: 6 }}>
@@ -574,64 +574,46 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
           ) : null}
 
           {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
-        </form>
-      </Card>
 
-      <div className="bvActionBar">
-        <div className="bvActionBarInner">
-          <div className="muted" style={{ fontSize: 12 }}>
-            {loading
-              ? uploadKind === "link"
-                ? "Saving link…"
-                : `Uploading ${uploadedCount}/${items.length} • ${avgProgress}%`
-              : uploadKind === "link"
-                ? "Paste a link to add it to your feed."
-                : items.length === 0
-                  ? "Record or choose a video."
-                  : `${items.length} file(s) ready`}
-          </div>
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+            <div className="muted" style={{ fontSize: 12 }}>
+              {loading
+                ? uploadKind === "link"
+                  ? "Saving link…"
+                  : `Uploading ${uploadedCount}/${items.length} • ${avgProgress}%`
+                : uploadKind === "link"
+                  ? "Paste a link to add it to your feed."
+                  : items.length === 0
+                    ? "Record or choose a video."
+                    : `${items.length} file(s) ready`}
+            </div>
 
-          <div className="row" style={{ alignItems: "center" }}>
-            {uploadKind === "link" ? (
-              <Button
-                variant="primary"
-                disabled={loading}
-                onClick={() => {
-                  formRef.current?.requestSubmit();
-                }}
-              >
-                {loading ? "Saving…" : "Add link"}
-              </Button>
-            ) : items.length === 0 ? (
-              <>
-                <label className="btn btnPrimary" style={{ cursor: "pointer" }}>
-                  Record video
-                  <input
-                    style={{ display: "none" }}
-                    type="file"
-                    accept="video/*"
-                    capture="environment"
-                    onChange={(e) => onPickFiles(e.target.files)}
-                    disabled={loading}
-                  />
-                </label>
-                <label className="btn" style={{ cursor: "pointer" }}>
-                  Choose files
-                  <input
-                    style={{ display: "none" }}
-                    type="file"
-                    accept="video/*"
-                    multiple
-                    onChange={(e) => onPickFiles(e.target.files)}
-                    disabled={loading}
-                  />
-                </label>
-              </>
-            ) : (
-              <>
-                {!loading ? (
+            <div className="row" style={{ alignItems: "center" }}>
+              {uploadKind === "link" ? (
+                <Button
+                  variant="primary"
+                  disabled={loading}
+                  onClick={() => {
+                    formRef.current?.requestSubmit();
+                  }}
+                >
+                  {loading ? "Saving…" : "Add link"}
+                </Button>
+              ) : items.length === 0 ? (
+                <>
+                  <label className="btn btnPrimary" style={{ cursor: "pointer" }}>
+                    Record video
+                    <input
+                      style={{ display: "none" }}
+                      type="file"
+                      accept="video/*"
+                      capture="environment"
+                      onChange={(e) => onPickFiles(e.target.files)}
+                      disabled={loading}
+                    />
+                  </label>
                   <label className="btn" style={{ cursor: "pointer" }}>
-                    Add more
+                    Choose files
                     <input
                       style={{ display: "none" }}
                       type="file"
@@ -641,21 +623,37 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
                       disabled={loading}
                     />
                   </label>
-                ) : null}
-                <Button
-                  variant="primary"
-                  disabled={loading}
-                  onClick={() => {
-                    formRef.current?.requestSubmit();
-                  }}
-                >
-                  {loading ? (uploadingIndex >= 0 ? "Uploading…" : "Working…") : items.length > 1 ? "Upload all" : "Upload"}
-                </Button>
-              </>
-            )}
+                </>
+              ) : (
+                <>
+                  {!loading ? (
+                    <label className="btn" style={{ cursor: "pointer" }}>
+                      Add more
+                      <input
+                        style={{ display: "none" }}
+                        type="file"
+                        accept="video/*"
+                        multiple
+                        onChange={(e) => onPickFiles(e.target.files)}
+                        disabled={loading}
+                      />
+                    </label>
+                  ) : null}
+                  <Button
+                    variant="primary"
+                    disabled={loading}
+                    onClick={() => {
+                      formRef.current?.requestSubmit();
+                    }}
+                  >
+                    {loading ? (uploadingIndex >= 0 ? "Uploading…" : "Working…") : items.length > 1 ? "Upload all" : "Upload"}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </form>
+      </Card>
     </div>
   );
 }

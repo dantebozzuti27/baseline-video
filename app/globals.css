@@ -9,8 +9,6 @@
 
   color-scheme: dark;
 
-  /* Upload action bar (mobile-first) */
-  --bv-action-bar-h: 76px;
 }
 
 * {
@@ -180,30 +178,7 @@ a {
 
 /* (Removed) Field mode */
 
-.bvWithActionBar {
-  padding-bottom: calc(var(--bv-action-bar-h) + env(safe-area-inset-bottom) + 16px);
-}
-
-.bvActionBar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 20;
-  border-top: 1px solid var(--border);
-  background: rgba(11, 15, 20, 0.86);
-  backdrop-filter: blur(12px);
-  padding: 10px 20px calc(env(safe-area-inset-bottom) + 10px);
-}
-
-.bvActionBarInner {
-  max-width: 980px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
+/* (Removed) Upload fixed action bar */
 
 .bvProgressBar {
   height: 8px;
