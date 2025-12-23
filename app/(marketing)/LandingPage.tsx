@@ -20,7 +20,7 @@ export default function LandingPage() {
           <div style={{ flex: "1 1 420px", minWidth: 280 }}>
             <div className="stack" style={{ gap: 14 }}>
               <div className="bvLandingHeroLogoWrap">
-                <img className="bvLandingHeroLogo" src="/brand.png" alt="Baseline Video" />
+                <img className="bvLandingHeroLogo" src="/brand-Photoroom.png" alt="Baseline Video" />
               </div>
               <h1 style={{ margin: 0, fontSize: 38, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
                 The calm, simple video hub for baseball teams.
