@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button, Card } from "@/components/ui";
+import { toast } from "../toast";
 
 function siteOrigin() {
   if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
@@ -69,6 +70,7 @@ export default function TeamInviteCard() {
                 await navigator.clipboard.writeText(inviteUrl);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2500);
+                toast("Invite link copied.");
               } catch {
                 // ignore
               }

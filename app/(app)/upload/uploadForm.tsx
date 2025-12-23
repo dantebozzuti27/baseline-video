@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button, Card, Input, Select } from "@/components/ui";
+import { toast } from "../toast";
 
 const schema = z.object({
   title: z.string().max(120).optional(),
@@ -327,6 +328,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
     try {
       if (uploadKind === "link") {
         const id = await createLinkVideo();
+        toast("Link added.");
         router.replace(`/app/videos/${id}`);
         router.refresh();
         return;
@@ -356,8 +358,10 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
 
       const first = doneIds[0] ?? items.find((it) => it.status === "done")?.videoId;
       if (first && items.length === 1) {
+        toast("Upload complete.");
         router.replace(`/app/videos/${first}`);
       } else {
+        toast("Upload complete.");
         router.replace("/app");
       }
       router.refresh();

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button, Card } from "@/components/ui";
+import { toast } from "../toast";
 function siteOrigin() {
   if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
   return "";
@@ -62,6 +63,7 @@ export default function InviteCard() {
               setError(null);
               try {
                 await navigator.clipboard.writeText(inviteUrl);
+                toast("Invite link copied.");
               } catch {
                 // ignore
               } finally {

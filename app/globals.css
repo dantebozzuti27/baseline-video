@@ -174,7 +174,7 @@ a {
   /* Leave a generous tap target on the right to dismiss without hunting for “Close”. */
   width: min(360px, calc(100vw - 120px));
   height: 100%;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid #1a2436;
   background: #070c14;
   padding: 14px;
   display: flex;
@@ -205,7 +205,7 @@ a {
   gap: 10px;
   padding: 14px 14px;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid #1a2436;
   background: #111826;
   font-weight: 700;
   font-size: 16px;
@@ -217,8 +217,8 @@ a {
 }
 
 .bvNavItemActive {
-  border-color: rgba(99, 179, 255, 0.35);
-  background: rgba(99, 179, 255, 0.14);
+  border-color: #2a78c2;
+  background: #0d2746;
 }
 
 /* Marketing landing */
@@ -252,7 +252,31 @@ a {
 .bvDrawerFooter {
   margin-top: auto;
   padding-top: 8px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #1a2436;
+}
+
+.bvToastWrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 18px);
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0 14px;
+}
+
+.bvToast {
+  pointer-events: none;
+  background: #0b1220;
+  border: 1px solid #1a2436;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 13px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
 }
 
 @media (max-width: 760px) {
