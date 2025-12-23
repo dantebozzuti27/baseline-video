@@ -44,7 +44,6 @@ export default function DrawerNav({ role, displayName }: Props) {
     if (isCoach) {
       return [
         { label: "Dashboard", href: "/app/dashboard", match: "prefix" },
-        { label: "Feed", href: "/app", match: "exact" },
         { label: "Library", href: "/app/library", match: "prefix" },
         { label: "Upload", href: "/app/upload", match: "prefix" },
         { label: "Compare", href: "/app/compare", match: "prefix" },
