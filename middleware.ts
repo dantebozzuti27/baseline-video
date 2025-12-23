@@ -6,6 +6,8 @@ function isPublicPath(pathname: string) {
     pathname === "/" ||
     pathname === "/brand.png" ||
     pathname === "/brand-Photoroom.png" ||
+    pathname === "/brand copy-Photoroom.png" ||
+    pathname === "/brand%20copy-Photoroom.png" ||
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/sign-up") ||
     pathname.startsWith("/onboarding") ||
