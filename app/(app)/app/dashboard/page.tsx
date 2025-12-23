@@ -97,9 +97,6 @@ export default async function DashboardPage() {
             Triage first, then drill into players.
           </div>
         </div>
-        <LinkButton href="/app/upload" variant="primary">
-          Upload
-        </LinkButton>
       </div>
 
       <TeamInviteCard />
