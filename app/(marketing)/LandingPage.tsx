@@ -1,14 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export default function LandingPage() {
   return (
-    <div className="container" style={{ maxWidth: 980, paddingTop: 28, paddingBottom: 48 }}>
+    <div className="container bvLanding" style={{ maxWidth: 1100, paddingTop: 44, paddingBottom: 64 }}>
       <div className="stack" style={{ gap: 28 }}>
         <div className="row" style={{ alignItems: "center", justifyContent: "space-between" }}>
-          <div className="brand" style={{ gap: 10 }}>
-            <Image src="/brand.png" alt="Baseline Video" width={220} height={40} style={{ height: 28, width: "auto" }} />
-          </div>
+          <div />
           <div className="row" style={{ alignItems: "center", gap: 10 }}>
             <Link className="btn" href="/sign-in">
               Sign in
@@ -22,27 +19,8 @@ export default function LandingPage() {
         <div className="row" style={{ alignItems: "stretch", gap: 16 }}>
           <div style={{ flex: "1 1 420px", minWidth: 280 }}>
             <div className="stack" style={{ gap: 14 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  paddingTop: 6,
-                  paddingBottom: 6
-                }}
-              >
-                <Image
-                  src="/brand.png"
-                  alt="Baseline Video"
-                  width={900}
-                  height={180}
-                  priority
-                  style={{
-                    height: 118,
-                    width: "auto",
-                    maxWidth: "100%",
-                    objectFit: "contain"
-                  }}
-                />
+              <div className="bvLandingHeroLogoWrap">
+                <img className="bvLandingHeroLogo" src="/brand.png" alt="Baseline Video" />
               </div>
               <h1 style={{ margin: 0, fontSize: 38, lineHeight: 1.05, letterSpacing: "-0.03em" }}>
                 The calm, simple video hub for baseball teams.
