@@ -281,10 +281,24 @@ a {
   display: block;
 }
 
+/* Auth pages (sign-in / sign-up): intentionally huge logo */
+.bvAuthLogo {
+  height: 170px;
+  width: auto;
+  max-width: min(100%, 520px);
+  object-fit: contain;
+  display: block;
+}
+
 @media (max-width: 760px) {
   .brandLogo {
     height: 24px;
     max-width: 170px;
+  }
+
+  .bvAuthLogo {
+    height: 140px;
+    max-width: 100%;
   }
 }
 
