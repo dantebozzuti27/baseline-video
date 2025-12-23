@@ -8,7 +8,7 @@ export default function SignUpChooserPage() {
         <div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>Create your account</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            Coaches create a team. Players join with a coach’s access code.
+            Coaches create a team. Players join with a coach’s invite link.
           </div>
         </div>
 
@@ -17,7 +17,7 @@ export default function SignUpChooserPage() {
             <div className="card">
               <div style={{ fontWeight: 800 }}>I’m a coach</div>
               <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-                Create a team and get an access code.
+                Create a team and share an invite link.
               </div>
               <div style={{ marginTop: 12 }}>
                 <Button variant="primary">Continue</Button>
@@ -29,7 +29,7 @@ export default function SignUpChooserPage() {
             <div className="card">
               <div style={{ fontWeight: 800 }}>I’m a player</div>
               <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-                Join a team using an access code.
+                Open the invite link from your coach.
               </div>
               <div style={{ marginTop: 12 }}>
                 <Button variant="primary">Continue</Button>

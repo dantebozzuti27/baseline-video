@@ -14,6 +14,7 @@
 --   - 0010_true_unread_video_views.sql
 --   - 0011_comment_visibility_notes.sql
 --   - 0012_video_links.sql
+--   - 0013_stable_team_invite.sql
 
 -- ============================================================
 -- 0006_hotfix_names_and_deletes.sql
@@ -810,6 +811,60 @@ alter table public.videos
       (source = 'link' and external_url is not null and char_length(trim(external_url)) > 0)
     )
     not valid;
+
+commit;
+
+-- ============================================================
+-- 0013_stable_team_invite.sql
+-- ============================================================
+-- Stable team invite link (no rotation)
+-- Run in Supabase SQL Editor (safe to run once).
+
+begin;
+
+create extension if not exists pgcrypto with schema extensions;
+
+create or replace function public.get_or_create_team_invite()
+returns text
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_team_id uuid;
+  v_token text;
+begin
+  if not public.is_coach() then
+    raise exception 'forbidden';
+  end if;
+
+  v_team_id := public.current_team_id();
+  if v_team_id is null then
+    raise exception 'missing_profile';
+  end if;
+
+  select token into v_token
+  from public.invites
+  where team_id = v_team_id
+    and expires_at is null
+  order by created_at desc
+  limit 1;
+
+  if v_token is not null then
+    return v_token;
+  end if;
+
+  v_token := encode(extensions.gen_random_bytes(24), 'hex');
+
+  insert into public.invites (team_id, created_by_user_id, token, expires_at, max_uses)
+  values (v_team_id, auth.uid(), v_token, null, 100000);
+
+  return v_token;
+end;
+$$;
+
+revoke all on function public.get_or_create_team_invite() from public;
+grant execute on function public.get_or_create_team_invite() to authenticated;
 
 commit;
 

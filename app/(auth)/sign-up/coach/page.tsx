@@ -14,6 +14,11 @@ const schema = z.object({
   password: z.string().min(8)
 });
 
+function siteOrigin() {
+  if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+  return "";
+}
+
 export default function CoachSignUpPage() {
   const router = useRouter();
   const [teamName, setTeamName] = React.useState("");
@@ -23,7 +28,7 @@ export default function CoachSignUpPage() {
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [accessCode, setAccessCode] = React.useState<string | null>(null);
+  const [inviteToken, setInviteToken] = React.useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -63,7 +68,11 @@ export default function CoachSignUpPage() {
       const json = await resp.json();
       if (!resp.ok) throw new Error(json?.error ?? "Unable to create team.");
 
-      setAccessCode(json.accessCode);
+      // Create/load stable team invite link
+      const inv = await fetch("/api/team/invite", { method: "GET" });
+      const invJson = await inv.json().catch(() => ({}));
+      if (!inv.ok) throw new Error((invJson as any)?.error ?? "Unable to load invite link.");
+      setInviteToken((invJson as any).token ?? null);
     } catch (err: any) {
       setError(err?.message ?? "Unable to sign up.");
     } finally {
@@ -71,25 +80,38 @@ export default function CoachSignUpPage() {
     }
   }
 
+  const inviteUrl = inviteToken ? `${siteOrigin()}/join/${inviteToken}` : null;
+
   return (
     <Card>
       <div className="stack">
         <div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>Coach sign up</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            Create your team and get an access code for players.
+            Create your team and get a permanent invite link for players.
           </div>
         </div>
 
-        {accessCode ? (
+        {inviteUrl ? (
           <div className="stack">
             <div className="card">
-              <div className="label">Team access code</div>
-              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.08em", marginTop: 6 }}>{accessCode}</div>
+              <div className="label">Invite link</div>
+              <div style={{ marginTop: 6, fontWeight: 800, wordBreak: "break-all" }}>{inviteUrl}</div>
               <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                Share this with your players. They’ll enter it during sign up.
+                Share this with your players. They’ll create an account and join your team.
               </div>
             </div>
+            <Button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(inviteUrl);
+                } catch {
+                  // ignore
+                }
+              }}
+            >
+              Copy invite link
+            </Button>
             <Button
               variant="primary"
               onClick={() => {

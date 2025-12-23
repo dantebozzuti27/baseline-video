@@ -7,16 +7,25 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Button, Card, Input } from "@/components/ui";
 
 const schema = z.object({
-  accessCode: z.string().min(4),
+  invite: z.string().min(8),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8)
 });
 
+function tokenFromInviteInput(raw: string) {
+  const s = raw.trim();
+  if (!s) return "";
+  // Allow pasting the full URL or just the token.
+  const m = s.match(/\/join\/([^/?#]+)/i);
+  if (m?.[1]) return m[1];
+  return s;
+}
+
 export default function PlayerSignUpPage() {
   const router = useRouter();
-  const [accessCode, setAccessCode] = React.useState("");
+  const [invite, setInvite] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [email, setEmail] = React.useState("");
@@ -24,47 +33,11 @@ export default function PlayerSignUpPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const [teamPreview, setTeamPreview] = React.useState<{ teamName: string; coachName: string } | null>(null);
-  const [previewErr, setPreviewErr] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      setPreviewErr(null);
-      setTeamPreview(null);
-
-      const code = accessCode.trim();
-      if (code.length < 4) return;
-
-      try {
-        const resp = await fetch("/api/team/preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessCode: code })
-        });
-        const json = await resp.json().catch(() => ({}));
-        if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to preview team");
-        if (!cancelled && (json as any)?.ok) {
-          setTeamPreview({ teamName: (json as any).teamName, coachName: (json as any).coachName });
-        }
-      } catch (e: any) {
-        if (!cancelled) setPreviewErr(e?.message ?? "Unable to preview team");
-      }
-    }
-
-    const t = setTimeout(run, 300);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [accessCode]);
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    const parsed = schema.safeParse({ accessCode, firstName, lastName, email, password });
+    const parsed = schema.safeParse({ invite: tokenFromInviteInput(invite), firstName, lastName, email, password });
     if (!parsed.success) {
       setError("Please fill out all fields (password must be 8+ characters).");
       return;
@@ -86,11 +59,11 @@ export default function PlayerSignUpPage() {
         );
       }
 
-      const resp = await fetch("/api/onboarding/player", {
+      const resp = await fetch("/api/onboarding/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          accessCode: parsed.data.accessCode,
+          token: parsed.data.invite,
           firstName: parsed.data.firstName,
           lastName: parsed.data.lastName
         })
@@ -113,30 +86,18 @@ export default function PlayerSignUpPage() {
         <div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>Player sign up</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            Enter the access code from your coach.
+            Paste the invite link from your coach.
           </div>
         </div>
 
         <form className="stack" onSubmit={onSubmit}>
           <Input
-            label="Team access code"
-            name="accessCode"
-            value={accessCode}
-            onChange={(v) => setAccessCode(v.toUpperCase())}
-            placeholder="A1B2C3D4"
+            label="Invite link (or code)"
+            name="invite"
+            value={invite}
+            onChange={setInvite}
+            placeholder="https://…/join/abcd…"
           />
-
-          {teamPreview ? (
-            <div className="card">
-              <div className="label">Team</div>
-              <div style={{ fontWeight: 900, marginTop: 6 }}>{teamPreview.teamName}</div>
-              <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>Coach: {teamPreview.coachName}</div>
-            </div>
-          ) : previewErr ? (
-            <div className="muted" style={{ fontSize: 13 }}>
-              {previewErr}
-            </div>
-          ) : null}
 
           <div className="row">
             <div style={{ flex: 1, minWidth: 180 }}>

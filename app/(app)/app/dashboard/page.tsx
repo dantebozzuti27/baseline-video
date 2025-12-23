@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import AccessCodeCard from "../../dashboard/AccessCodeCard";
+import TeamInviteCard from "../../dashboard/TeamInviteCard";
 import { LinkButton, Card } from "@/components/ui";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
         </LinkButton>
       </div>
 
-      <AccessCodeCard />
+      <TeamInviteCard />
 
       <Card>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="muted">No players yet. Share your access code so they can join.</div>
+          <div className="muted">No players yet. Share your invite link so they can join.</div>
         )}
       </Card>
 

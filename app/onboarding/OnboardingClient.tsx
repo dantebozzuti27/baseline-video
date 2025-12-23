@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -14,61 +13,32 @@ const coachSchema = z.object({
 });
 
 const playerSchema = z.object({
-  accessCode: z.string().min(4),
+  invite: z.string().min(8),
   firstName: z.string().min(1),
   lastName: z.string().min(1)
 });
+
+function tokenFromInviteInput(raw: string) {
+  const s = raw.trim();
+  if (!s) return "";
+  const m = s.match(/\/join\/([^/?#]+)/i);
+  if (m?.[1]) return m[1];
+  return s;
+}
 
 export default function OnboardingClient({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const [mode, setMode] = React.useState<"coach" | "player">("player");
 
   const [teamName, setTeamName] = React.useState("");
-  const [accessCode, setAccessCode] = React.useState("");
+  const [invite, setInvite] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const [createdAccessCode, setCreatedAccessCode] = React.useState<string | null>(null);
-
-  const [teamPreview, setTeamPreview] = React.useState<{ teamName: string; coachName: string } | null>(null);
-  const [previewErr, setPreviewErr] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (mode !== "player") return;
-
-    let cancelled = false;
-    async function run() {
-      setPreviewErr(null);
-      setTeamPreview(null);
-
-      const code = accessCode.trim();
-      if (code.length < 4) return;
-
-      try {
-        const resp = await fetch("/api/team/preview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ accessCode: code })
-        });
-        const json = await resp.json().catch(() => ({}));
-        if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to preview team");
-        if (!cancelled && (json as any)?.ok) {
-          setTeamPreview({ teamName: (json as any).teamName, coachName: (json as any).coachName });
-        }
-      } catch (e: any) {
-        if (!cancelled) setPreviewErr(e?.message ?? "Unable to preview team");
-      }
-    }
-
-    const t = setTimeout(run, 300);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [mode, accessCode]);
+  const [createdInviteToken, setCreatedInviteToken] = React.useState<string | null>(null);
 
   async function getAccessToken() {
     const supabase = createSupabaseBrowserClient();
@@ -99,7 +69,10 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
         const json = await resp.json().catch(() => ({}));
         if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to create team.");
 
-        setCreatedAccessCode((json as any)?.accessCode ?? null);
+        const inv = await fetch("/api/team/invite", { method: "GET" });
+        const invJson = await inv.json().catch(() => ({}));
+        if (!inv.ok) throw new Error((invJson as any)?.error ?? "Unable to load invite link.");
+        setCreatedInviteToken((invJson as any)?.token ?? null);
       } catch (err: any) {
         setError(err?.message ?? "Unable to finish setup.");
       } finally {
@@ -109,7 +82,7 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
     }
 
     const parsed = playerSchema.safeParse({
-      accessCode: accessCode.trim(),
+      invite: tokenFromInviteInput(invite),
       firstName,
       lastName
     });
@@ -123,11 +96,11 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
       const token = await getAccessToken();
       if (!token) throw new Error("You’re signed in, but we couldn’t find a session. Please sign out and back in.");
 
-      const resp = await fetch("/api/onboarding/player", {
+      const resp = await fetch("/api/onboarding/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          accessCode: parsed.data.accessCode.toUpperCase(),
+          token: parsed.data.invite,
           firstName: parsed.data.firstName,
           lastName: parsed.data.lastName
         })
@@ -144,7 +117,8 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
     }
   }
 
-  if (createdAccessCode) {
+  if (createdInviteToken) {
+    const url = typeof window !== "undefined" ? `${window.location.origin}/join/${createdInviteToken}` : "";
     return (
       <div className="container" style={{ maxWidth: 520, paddingTop: 56 }}>
         <Card>
@@ -152,17 +126,15 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
             <div>
               <div style={{ fontSize: 18, fontWeight: 900 }}>Team created</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Share this access code with your players.
+                Share this invite link with your players.
               </div>
             </div>
 
             <div className="card">
-              <div className="label">Team access code</div>
-              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "0.08em", marginTop: 6 }}>
-                {createdAccessCode}
-              </div>
+              <div className="label">Invite link</div>
+              <div style={{ marginTop: 6, fontWeight: 800, wordBreak: "break-all" }}>{url}</div>
               <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                Players can sign up at <b>Sign up → I’m a player</b>.
+                Players can sign up using this link.
               </div>
             </div>
 
@@ -176,9 +148,7 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
               Go to dashboard
             </Button>
 
-            <div className="muted" style={{ fontSize: 13 }}>
-              Want to use invite links instead? Go to <Link href="/app/settings">Team settings</Link>.
-            </div>
+            <div className="muted" style={{ fontSize: 13 }}>You can also find this link in Settings.</div>
           </div>
         </Card>
       </div>
@@ -213,24 +183,12 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
             ) : (
               <>
                 <Input
-                  label="Team access code"
-                  name="accessCode"
-                  value={accessCode}
-                  onChange={(v) => setAccessCode(v.toUpperCase())}
-                  placeholder="A1B2C3D4"
+                  label="Invite link (or code)"
+                  name="invite"
+                  value={invite}
+                  onChange={setInvite}
+                  placeholder="https://…/join/abcd…"
                 />
-
-                {teamPreview ? (
-                  <div className="card">
-                    <div className="label">Team</div>
-                    <div style={{ fontWeight: 900, marginTop: 6 }}>{teamPreview.teamName}</div>
-                    <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>Coach: {teamPreview.coachName}</div>
-                  </div>
-                ) : previewErr ? (
-                  <div className="muted" style={{ fontSize: 13 }}>
-                    {previewErr}
-                  </div>
-                ) : null}
               </>
             )}
 

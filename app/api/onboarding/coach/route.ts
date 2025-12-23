@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     }
 
     const row = Array.isArray(data) ? data[0] : data;
-    return NextResponse.json({ teamId: row.team_id, accessCode: row.access_code });
+    return NextResponse.json({ teamId: row.team_id });
   } catch (e: any) {
     console.error("[onboarding/coach] Unhandled", { message: e?.message, stack: e?.stack });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
