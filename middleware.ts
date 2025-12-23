@@ -82,8 +82,6 @@ export async function middleware(request: NextRequest) {
     // Role-safe navigation (server guard): block coach-only pages for players.
     const coachOnly =
       pathname.startsWith("/app/dashboard") ||
-      pathname.startsWith("/app/library") ||
-      pathname.startsWith("/app/settings") ||
       pathname.startsWith("/app/player") ||
       pathname.startsWith("/app/compare");
 

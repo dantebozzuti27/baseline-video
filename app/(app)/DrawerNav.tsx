@@ -52,6 +52,7 @@ export default function DrawerNav({ role, displayName }: Props) {
     }
     return [
       { label: "Feed", href: "/app", match: "exact" },
+      { label: "Library", href: "/app/library", match: "prefix" },
       { label: "Upload", href: "/app/upload", match: "prefix" },
       { label: "Settings", href: "/app/settings", match: "prefix" }
     ];

@@ -13,7 +13,7 @@ export default async function LibraryPage({
 }) {
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
-  if (profile.role !== "coach") redirect("/app");
+  const isCoach = profile.role === "coach";
 
   const category = (searchParams.cat ?? "all") as "all" | VideoCategory;
   const sort = searchParams.sort === "oldest" ? "oldest" : searchParams.sort === "activity" ? "activity" : "recent";
@@ -37,12 +37,12 @@ export default async function LibraryPage({
     <div className="stack">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 900 }}>Coach library</div>
+          <div style={{ fontSize: 18, fontWeight: 900 }}>{isCoach ? "Coach library" : "Team library"}</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            Team-visible reference videos.
+            Reference videos visible to the whole team.
           </div>
         </div>
-        <LinkButton href="/app/dashboard">Back</LinkButton>
+        <LinkButton href={isCoach ? "/app/dashboard" : "/app"}>Back</LinkButton>
       </div>
 
       <Card>
@@ -124,7 +124,13 @@ export default async function LibraryPage({
         <Card>
           <div style={{ fontWeight: 800 }}>No library videos yet</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            Open any video and use <b>Coach controls → Add to library</b>.
+            {isCoach ? (
+              <>
+                Open any video and use <b>Coach controls → Add to library</b>.
+              </>
+            ) : (
+              <>Ask your coach to add a video to the team library.</>
+            )}
           </div>
         </Card>
       )}

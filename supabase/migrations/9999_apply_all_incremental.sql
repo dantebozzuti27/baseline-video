@@ -869,3 +869,71 @@ grant execute on function public.get_or_create_team_invite() to authenticated;
 commit;
 
 
+-- ============================================================
+-- 0014_team_visible_coach_uploads.sql
+-- ============================================================
+-- Players can read coach uploads + library videos on their team.
+
+begin;
+
+create or replace function public.can_read_video(p_video_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, extensions
+as $$
+  select exists (
+    select 1
+    from public.videos v
+    where v.id = p_video_id
+      and v.deleted_at is null
+      and (
+        v.owner_user_id = auth.uid()
+        or (public.is_coach() and v.team_id = public.current_team_id())
+        or (
+          v.team_id = public.current_team_id()
+          and (
+            v.is_library = true
+            or exists (
+              select 1
+              from public.profiles p
+              where p.user_id = v.uploader_user_id
+                and p.team_id = v.team_id
+                and p.role = 'coach'
+            )
+          )
+        )
+      )
+  );
+$$;
+
+grant execute on function public.can_read_video(uuid) to authenticated;
+
+drop policy if exists videos_select_visible on public.videos;
+create policy videos_select_visible on public.videos
+for select
+to authenticated
+using (
+  deleted_at is null
+  and (
+    owner_user_id = auth.uid()
+    or (public.is_coach() and team_id = public.current_team_id())
+    or (
+      team_id = public.current_team_id()
+      and (
+        is_library = true
+        or exists (
+          select 1
+          from public.profiles p
+          where p.user_id = videos.uploader_user_id
+            and p.team_id = videos.team_id
+            and p.role = 'coach'
+        )
+      )
+    )
+  )
+);
+
+commit;
+
