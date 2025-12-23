@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="bvTopBarLeft">
             <DrawerNav role={profile.role} displayName={displayNameFromProfile(profile)} />
             <Link className="brand" href="/app" aria-label="Baseline Video home">
-              <img className="brandLogo" src="/brand-Photoroom.png" alt="Baseline Video" />
+              <img className="bvAppLogo" src="/brand-Photoroom.png" alt="Baseline Video" />
             </Link>
           </div>
           <div className="bvTopBarRight">
