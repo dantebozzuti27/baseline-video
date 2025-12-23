@@ -19,6 +19,19 @@ type UploadItem = {
   progress?: number; // 0..100
 };
 
+function normalizeExternalUrl(input: string) {
+  const raw = String(input ?? "").trim();
+  if (!raw) return "";
+  // Allow users to paste "youtube.com/..." or "www.youtube.com/..." without scheme.
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^\/\//.test(raw)) return `https:${raw}`;
+  // If it looks like a domain/path, assume https.
+  if (/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(\/|$)/i.test(raw) || /^www\./i.test(raw)) {
+    return `https://${raw}`;
+  }
+  return raw;
+}
+
 function formatDateForTitle(d = new Date()) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
@@ -256,8 +269,10 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
 
   async function createLinkVideo() {
     const finalTitle = (quickMode ? (title.trim() || suggestedTitle()) : title.trim()) || suggestedTitle();
-    const url = linkUrl.trim();
+    const url = normalizeExternalUrl(linkUrl);
     if (!url) throw new Error("Paste a video link.");
+    // Update the field so users see the normalized URL (helps avoid repeat errors).
+    if (url !== linkUrl.trim()) setLinkUrl(url);
 
     const resp = await fetch("/api/videos", {
       method: "POST",
@@ -273,7 +288,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       })
     });
     const json = await resp.json().catch(() => ({}));
-    if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to create link video.");
+    if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to add that link.");
     return (json as any).id as string;
   }
 

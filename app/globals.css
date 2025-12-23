@@ -170,7 +170,8 @@ a {
 }
 
 .bvDrawer {
-  width: min(360px, calc(100vw - 36px));
+  /* Leave a generous tap target on the right to dismiss without hunting for “Close”. */
+  width: min(360px, calc(100vw - 120px));
   height: 100%;
   border-right: 1px solid var(--border);
   background: #0b1220;

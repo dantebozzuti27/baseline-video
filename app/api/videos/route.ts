@@ -2,13 +2,23 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+function normalizeExternalUrl(input: unknown) {
+  if (typeof input !== "string") return input;
+  const raw = input.trim();
+  if (!raw) return raw;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^\/\//.test(raw)) return `https:${raw}`;
+  if (/^[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(\/|$)/i.test(raw) || /^www\./i.test(raw)) return `https://${raw}`;
+  return raw;
+}
+
 const createSchema = z
   .object({
     title: z.string().min(1).max(120),
     category: z.enum(["game", "training"]),
     source: z.enum(["upload", "link"]).optional(),
     fileExt: z.string().min(1).max(12).optional(),
-    externalUrl: z.string().url().optional(),
+    externalUrl: z.preprocess(normalizeExternalUrl, z.string().url()).optional(),
     ownerUserId: z.string().uuid().optional(),
     pinned: z.boolean().optional(),
     isLibrary: z.boolean().optional()
@@ -38,7 +48,23 @@ export async function POST(req: Request) {
 
   const json = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(json);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!parsed.success) {
+    const source = (json as any)?.source;
+    if (source === "link") {
+      return NextResponse.json(
+        {
+          error: "That link doesn’t look valid. Try copying the full URL (starts with https://)."
+        },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json(
+      {
+        error: "Please check your input and try again."
+      },
+      { status: 400 }
+    );
+  }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
