@@ -162,7 +162,8 @@ a {
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(0, 0, 0, 0.9);
+  /* Solid (non-glassy) background across the whole screen */
+  background: #050a12;
   display: flex;
   align-items: stretch;
   justify-content: flex-start;
@@ -180,7 +181,7 @@ a {
   flex-direction: column;
   gap: 12px;
   outline: none;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
 }
 
 .bvDrawerHeader {
@@ -202,11 +203,13 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px 12px;
+  padding: 14px 14px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: #111826;
   font-weight: 700;
+  font-size: 16px;
+  line-height: 1.2;
 }
 
 .bvNavItem:hover {
@@ -242,7 +245,7 @@ a {
 }
 
 .bvNavChevron {
-  color: var(--muted);
+  color: rgba(230, 237, 247, 0.75);
   font-weight: 900;
 }
 
@@ -255,6 +258,11 @@ a {
 @media (max-width: 760px) {
   .navInner {
     padding: 12px 14px;
+  }
+
+  /* Wider panel on small screens: easier to read + tap */
+  .bvDrawer {
+    width: calc(100vw - 56px);
   }
 }
 
