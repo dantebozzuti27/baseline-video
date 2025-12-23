@@ -124,41 +124,112 @@ a {
   gap: 12px;
 }
 
-/* Mobile-only header actions (hide on desktop to avoid redundant nav) */
-.bvMobileHeaderActions {
-  display: none;
+/* App top bar layout */
+.bvTopBarLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bvTopBarRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bvHamburger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  width: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.bvHamburger:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.bvDrawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+
+.bvDrawer {
+  width: min(360px, calc(100vw - 36px));
+  height: 100%;
+  border-right: 1px solid var(--border);
+  background: rgba(17, 24, 38, 0.98);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  outline: none;
+}
+
+.bvDrawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bvDrawerList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.bvNavItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 700;
+}
+
+.bvNavItem:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.bvNavItemActive {
+  border-color: rgba(99, 179, 255, 0.35);
+  background: rgba(99, 179, 255, 0.14);
+}
+
+.bvNavChevron {
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.bvDrawerFooter {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
 @media (max-width: 760px) {
-  .bvDesktopNav {
-    display: none;
-  }
-
-  .bvMobileHeaderActions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .bvMobileSheetBackdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    background: rgba(0, 0, 0, 0.55);
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 16px 12px calc(env(safe-area-inset-bottom) + 12px);
-  }
-
-  .bvMobileSheet {
-    width: 100%;
-    max-width: 980px;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    background: rgba(17, 24, 38, 0.98);
-    padding: 14px;
-    margin-top: 70px;
+  .navInner {
+    padding: 12px 14px;
   }
 }
 
@@ -170,7 +241,7 @@ a {
 }
 
 .brandLogo {
-  height: 26px;
+  height: 28px;
   width: auto;
   max-width: 220px;
   object-fit: contain;
@@ -179,7 +250,7 @@ a {
 
 @media (max-width: 760px) {
   .brandLogo {
-    height: 22px;
+    height: 24px;
     max-width: 170px;
   }
 }
