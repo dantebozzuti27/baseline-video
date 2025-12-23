@@ -1,5 +1,6 @@
 :root {
-  --bg: #0b0f14;
+  /* Match brand image background */
+  --bg: #070c14;
   --card: #111826;
   --text: #e6edf7;
   --muted: #a9b4c3;
@@ -20,8 +21,8 @@ body {
   padding: 0;
   margin: 0;
   height: 100%;
-  background: radial-gradient(1000px 600px at 20% 0%, rgba(99, 179, 255, 0.12), transparent),
-    radial-gradient(900px 500px at 100% 0%, rgba(255, 107, 107, 0.08), transparent),
+  background:
+    radial-gradient(900px 520px at 50% 20%, rgba(255, 255, 255, 0.05), transparent 60%),
     var(--bg);
   color: var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
@@ -109,7 +110,7 @@ a {
   top: 0;
   z-index: 10;
   backdrop-filter: blur(10px);
-  background: rgba(11, 15, 20, 0.75);
+  background: rgba(7, 12, 20, 0.78);
   border-bottom: 1px solid var(--border);
 }
 
@@ -164,6 +165,23 @@ a {
 .brand {
   font-weight: 800;
   letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
+}
+
+.brandLogo {
+  height: 26px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .brandLogo {
+    height: 22px;
+    max-width: 170px;
+  }
 }
 
 .pill {

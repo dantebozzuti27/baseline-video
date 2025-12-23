@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="nav">
         <div className="navInner">
           <Link className="brand" href="/app">
-            Baseline Video
+            <img className="brandLogo" src="/brand.png" alt="Baseline Video" />
           </Link>
           <div className="bvDesktopNav row" style={{ alignItems: "center" }}>
             {profile?.role === "coach" ? (
