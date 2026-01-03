@@ -1957,6 +1957,49 @@ select:focus-visible {
   color: #fff;
 }
 
+/* Keyboard shortcuts */
+.bvKbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.bvKbdGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Divider line */
+.bvDividerLine {
+  border: none;
+  height: 1px;
+  background: var(--border);
+}
+
+.bvDivider-sm {
+  margin: 8px 0;
+}
+
+.bvDivider-md {
+  margin: 16px 0;
+}
+
+.bvDivider-lg {
+  margin: 24px 0;
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;
