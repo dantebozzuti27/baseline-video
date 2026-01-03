@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card, Input, Modal } from "@/components/ui";
 
 export default function ProfileClient({
   initialFirstName,
@@ -25,6 +25,7 @@ export default function ProfileClient({
   const [confirm, setConfirm] = React.useState("");
   const [deleting, setDeleting] = React.useState(false);
   const [deleteErr, setDeleteErr] = React.useState<string | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
 
   async function save() {
     setSaving(true);
@@ -51,14 +52,6 @@ export default function ProfileClient({
 
   async function deleteAccount() {
     setDeleteErr(null);
-
-    const scary = role === "coach";
-    const ok = window.confirm(
-      scary
-        ? "Delete your account AND your entire team (including all players and videos)? This cannot be undone."
-        : "Delete your account? This cannot be undone."
-    );
-    if (!ok) return;
 
     setDeleting(true);
     try {
@@ -128,9 +121,43 @@ export default function ProfileClient({
 
           {deleteErr ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{deleteErr}</div> : null}
 
-          <Button variant="danger" onClick={deleteAccount} disabled={deleting}>
+          <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} disabled={deleting}>
             {deleting ? "Deleting…" : "Delete my account"}
           </Button>
+
+          <Modal
+            open={confirmDeleteOpen}
+            title="Delete account"
+            onClose={() => setConfirmDeleteOpen(false)}
+            footer={
+              <>
+                <Button onClick={() => setConfirmDeleteOpen(false)} disabled={deleting}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    setConfirmDeleteOpen(false);
+                    deleteAccount();
+                  }}
+                  disabled={deleting || confirm.trim().toUpperCase() !== "DELETE"}
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </Button>
+              </>
+            }
+          >
+            <div className="stack">
+              <div className="muted" style={{ fontSize: 13 }}>
+                {role === "coach"
+                  ? "This will delete your account and your entire team (including players and videos). This cannot be undone."
+                  : "This will delete your account. This cannot be undone."}
+              </div>
+              <div className="muted" style={{ fontSize: 13 }}>
+                To continue, type <b>DELETE</b> in the field on this page.
+              </div>
+            </div>
+          </Modal>
         </div>
       </Card>
     </div>

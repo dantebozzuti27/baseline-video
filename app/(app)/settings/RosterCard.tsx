@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, Modal } from "@/components/ui";
 
 export default function RosterCard({
   players
@@ -9,11 +9,16 @@ export default function RosterCard({
   players: Array<{ user_id: string; display_name: string; is_active?: boolean }>;
 }) {
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
+  const [confirm, setConfirm] = React.useState<{ userId: string; nextActive: boolean } | null>(null);
 
   async function setActive(userId: string, active: boolean) {
-    const ok = window.confirm(active ? "Reactivate this player?" : "Deactivate this player?");
-    if (!ok) return;
+    setConfirm({ userId, nextActive: active });
+  }
 
+  async function doSetActive() {
+    if (!confirm) return;
+    const userId = confirm.userId;
+    const active = confirm.nextActive;
     setLoadingId(userId);
     try {
       const resp = await fetch("/api/team/players", {
@@ -28,6 +33,7 @@ export default function RosterCard({
       console.error("update player active failed", e);
     } finally {
       setLoadingId(null);
+      setConfirm(null);
     }
   }
 
@@ -44,6 +50,7 @@ export default function RosterCard({
         <div className="stack">
           {players.map((p) => {
             const active = p.is_active !== false;
+            const isWorking = loadingId === p.user_id;
             return (
               <div key={p.user_id} className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                 <div>
@@ -54,15 +61,39 @@ export default function RosterCard({
                 </div>
                 <Button
                   variant={active ? "danger" : "primary"}
-                  disabled={loadingId === p.user_id}
+                  disabled={isWorking}
                   onClick={() => setActive(p.user_id, !active)}
                 >
-                  {loadingId === p.user_id ? "Working…" : active ? "Deactivate" : "Reactivate"}
+                  {isWorking ? "Working…" : active ? "Deactivate" : "Reactivate"}
                 </Button>
               </div>
             );
           })}
         </div>
+
+        <Modal
+          open={Boolean(confirm)}
+          title={confirm?.nextActive ? "Reactivate player" : "Deactivate player"}
+          onClose={() => setConfirm(null)}
+          footer={
+            <>
+              <Button onClick={() => setConfirm(null)} disabled={Boolean(loadingId)}>
+                Cancel
+              </Button>
+              <Button
+                variant={confirm?.nextActive ? "primary" : "danger"}
+                onClick={doSetActive}
+                disabled={Boolean(loadingId)}
+              >
+                {confirm?.nextActive ? "Reactivate" : "Deactivate"}
+              </Button>
+            </>
+          }
+        >
+          <div className="muted" style={{ fontSize: 13 }}>
+            {confirm?.nextActive ? "This player will regain access to the app." : "This player won’t be able to access the app."}
+          </div>
+        </Modal>
       </div>
     </Card>
   );

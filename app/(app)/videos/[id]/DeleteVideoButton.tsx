@@ -2,17 +2,19 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { Button, Modal } from "@/components/ui";
 import { toast } from "../../toast";
 
 export default function DeleteVideoButton({ videoId }: { videoId: string }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
 
   async function onDelete() {
-    const ok = window.confirm("Move this video to Trash? You can restore it from Trash.");
-    if (!ok) return;
+    setOpen(true);
+  }
 
+  async function doDelete() {
     setLoading(true);
     try {
       const resp = await fetch(`/api/videos/${videoId}`, { method: "DELETE" });
@@ -31,9 +33,28 @@ export default function DeleteVideoButton({ videoId }: { videoId: string }) {
 
   return (
     <div className="stack" style={{ gap: 8 }}>
-      <Button variant="danger" onClick={onDelete} disabled={loading}>
-        {loading ? "Moving…" : "Move to Trash"}
-      </Button>
+      <>
+        <Button variant="danger" onClick={onDelete} disabled={loading}>
+          {loading ? "Moving…" : "Move to Trash"}
+        </Button>
+        <Modal
+          open={open}
+          title="Move to Trash"
+          onClose={() => setOpen(false)}
+          footer={
+            <>
+              <Button onClick={() => setOpen(false)} disabled={loading}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={doDelete} disabled={loading}>
+                {loading ? "Moving…" : "Move to Trash"}
+              </Button>
+            </>
+          }
+        >
+          <div className="muted">You can restore it later from Trash.</div>
+        </Modal>
+      </>
     </div>
   );
 }
