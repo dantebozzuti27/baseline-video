@@ -450,7 +450,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public, extensions
-as $
+as $$
 declare
   v_team_id uuid;
   v_id uuid;
@@ -490,7 +490,7 @@ begin
 
   return v_id;
 end;
-$;
+$$;
 
 revoke all on function public.create_program_template(text, integer) from public;
 grant execute on function public.create_program_template(text, integer) to authenticated;
@@ -505,7 +505,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, extensions
-as $
+as $$
 declare
   v_team_id uuid;
   v_weeks_count integer;
@@ -545,7 +545,7 @@ begin
         assignments_json = excluded.assignments_json,
         updated_at = now();
 end;
-$;
+$$;
 
 revoke all on function public.update_program_template_week(uuid, integer, jsonb, jsonb) from public;
 grant execute on function public.update_program_template_week(uuid, integer, jsonb, jsonb) to authenticated;
@@ -559,7 +559,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public, extensions
-as $
+as $$
 declare
   v_team_id uuid;
   v_enrollment_id uuid;
@@ -612,7 +612,7 @@ exception
   when unique_violation then
     raise exception 'already_enrolled';
 end;
-$;
+$$;
 
 revoke all on function public.enroll_player_in_program(uuid, uuid, timestamptz) from public;
 grant execute on function public.enroll_player_in_program(uuid, uuid, timestamptz) to authenticated;
@@ -622,7 +622,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, extensions
-as $
+as $$
 declare
   v_team_id uuid;
 begin
@@ -646,7 +646,7 @@ begin
     raise exception 'not_found';
   end if;
 end;
-$;
+$$;
 
 revoke all on function public.set_enrollment_status(uuid, public.program_enrollment_status) from public;
 grant execute on function public.set_enrollment_status(uuid, public.program_enrollment_status) to authenticated;
@@ -661,7 +661,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, extensions
-as $
+as $$
 declare
   v_team_id uuid;
   v_template_id uuid;
@@ -711,7 +711,7 @@ begin
         assignments_json = excluded.assignments_json,
         updated_at = now();
 end;
-$;
+$$;
 
 revoke all on function public.set_program_week_override(uuid, integer, jsonb, jsonb) from public;
 grant execute on function public.set_program_week_override(uuid, integer, jsonb, jsonb) to authenticated;
@@ -726,7 +726,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = public, extensions
-as $
+as $$
 declare
   v_team_id uuid;
   v_template_id uuid;
@@ -785,7 +785,7 @@ begin
 
   return v_submission_id;
 end;
-$;
+$$;
 
 revoke all on function public.submit_program_video(uuid, integer, uuid, text) from public;
 grant execute on function public.submit_program_video(uuid, integer, uuid, text) to authenticated;
@@ -798,7 +798,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public, extensions
-as $
+as $$
 declare
   v_team_id uuid;
   v_enrollment_id uuid;
@@ -831,7 +831,7 @@ begin
         coach_user_id = excluded.coach_user_id,
         updated_at = now();
 end;
-$;
+$$;
 
 revoke all on function public.mark_program_submission_reviewed(uuid, text) from public;
 grant execute on function public.mark_program_submission_reviewed(uuid, text) to authenticated;
