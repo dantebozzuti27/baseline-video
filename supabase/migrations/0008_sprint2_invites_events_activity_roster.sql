@@ -5,6 +5,25 @@ begin;
 
 create extension if not exists pgcrypto with schema extensions;
 
+-- Helper: check if a given user is in the current user's team.
+create or replace function public.is_in_my_team(p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.user_id = p_user_id
+      and p.team_id = public.current_team_id()
+  );
+$$;
+
+revoke all on function public.is_in_my_team(uuid) from public;
+grant execute on function public.is_in_my_team(uuid) to authenticated;
+
 -- 1) Roster: allow deactivation via RPC (avoid direct profile updates)
 alter table public.profiles
   add column if not exists is_active boolean not null default true;

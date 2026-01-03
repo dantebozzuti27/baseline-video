@@ -44,6 +44,7 @@ export default function DrawerNav({ role, displayName }: Props) {
     if (isCoach) {
       return [
         { label: "Dashboard", href: "/app/dashboard", match: "prefix" },
+        { label: "Lessons", href: "/app/lessons", match: "prefix" },
         { label: "Library", href: "/app/library", match: "prefix" },
         { label: "Upload", href: "/app/upload", match: "prefix" },
         { label: "Compare", href: "/app/compare", match: "prefix" },
@@ -52,6 +53,7 @@ export default function DrawerNav({ role, displayName }: Props) {
     }
     return [
       { label: "Feed", href: "/app", match: "exact" },
+      { label: "Lessons", href: "/app/lessons", match: "prefix" },
       { label: "Library", href: "/app/library", match: "prefix" },
       { label: "Upload", href: "/app/upload", match: "prefix" },
       { label: "Settings", href: "/app/settings", match: "prefix" }
