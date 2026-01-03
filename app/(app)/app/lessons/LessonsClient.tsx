@@ -62,6 +62,25 @@ function parseLocalDateTime(input: string) {
   return Number.isFinite(d.getTime()) ? d : null;
 }
 
+function startOfWeekMonday(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay(); // 0 Sun .. 6 Sat
+  const diff = (day + 6) % 7; // Mon=0
+  x.setDate(x.getDate() - diff);
+  return x;
+}
+
+function addDays(d: Date, days: number) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + days);
+  return x;
+}
+
+function sameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 export default function LessonsClient({
   role,
   myUserId,
@@ -88,6 +107,10 @@ export default function LessonsClient({
       return "UTC";
     }
   }, []);
+
+  const [view, setView] = React.useState<"week" | "list">("week");
+  const [weekStart, setWeekStart] = React.useState<Date>(() => startOfWeekMonday(new Date()));
+  const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
 
   const [coachUserId, setCoachUserId] = React.useState<string>(coaches[0]?.user_id ?? "");
   const [mode, setMode] = React.useState<"in_person" | "remote">("in_person");
@@ -135,13 +158,56 @@ export default function LessonsClient({
     return ps.find((p) => p.user_id === myUserId) ?? null;
   }
 
+  function primaryPlayerId(lessonId: string) {
+    const ps = participantsByLesson.get(lessonId) ?? [];
+    return ps.find((p) => p.is_primary)?.user_id ?? null;
+  }
+
   function playersLabel(lessonId: string) {
-    const ps = (participantsByLesson.get(lessonId) ?? []).filter((p) => !p.is_primary || p.is_primary);
+    const ps = participantsByLesson.get(lessonId) ?? [];
     const names = ps
       .map((p) => peopleById[p.user_id]?.display_name ?? "Player")
       .filter(Boolean);
     return names.length ? names.join(" + ") : "Players";
   }
+
+  function lessonTitle(l: Lesson) {
+    if (role === "coach") return playersLabel(l.id);
+    const coachName = l.coach_user_id ? personLabel(l.coach_user_id) : "Coach";
+    const ps = participantsByLesson.get(l.id) ?? [];
+    const isTwoOnOne = ps.filter((p) => !p.is_primary).length > 0;
+    return isTwoOnOne ? `2-on-1 with ${coachName}` : `Lesson with ${coachName}`;
+  }
+
+  const weekDays = React.useMemo(() => new Array(7).fill(0).map((_, i) => addDays(weekStart, i)), [weekStart]);
+
+  const startHour = 6;
+  const endHour = 21;
+  const hours = React.useMemo(() => new Array(endHour - startHour + 1).fill(0).map((_, i) => startHour + i), []);
+
+  const weekLessons = React.useMemo(() => {
+    const start = new Date(weekStart);
+    const end = addDays(start, 7);
+    const a = start.getTime();
+    const b = end.getTime();
+    return lessons.filter((l) => {
+      const s = new Date(l.start_at).getTime();
+      const e = new Date(l.end_at).getTime();
+      return Number.isFinite(s) && Number.isFinite(e) && e > a && s < b && (l.status === "approved" || l.status === "requested");
+    });
+  }, [lessons, weekStart]);
+
+  const weekBlocks = React.useMemo(() => {
+    const start = new Date(weekStart);
+    const end = addDays(start, 7);
+    const a = start.getTime();
+    const b = end.getTime();
+    return (blocks ?? []).filter((bl) => {
+      const s = new Date(bl.start_at).getTime();
+      const e = new Date(bl.end_at).getTime();
+      return Number.isFinite(s) && Number.isFinite(e) && e > a && s < b;
+    });
+  }, [blocks, weekStart]);
 
   async function requestLesson() {
     setError(null);
@@ -357,14 +423,255 @@ export default function LessonsClient({
     return peopleById[userId]?.display_name ?? "User";
   }
 
+  function isInHourRange(dtIso: string) {
+    const d = new Date(dtIso);
+    const h = d.getHours() + d.getMinutes() / 60;
+    return h >= startHour && h <= endHour + 1;
+  }
+
+  function topFor(dt: Date) {
+    const mins = dt.getHours() * 60 + dt.getMinutes();
+    const startMins = startHour * 60;
+    return Math.round(((mins - startMins) / 60) * 56); // 56px per hour
+  }
+
+  function heightForMinutes(mins: number) {
+    return Math.max(22, Math.round((mins / 60) * 56));
+  }
+
+  const selectedLesson = selectedLessonId ? lessons.find((l) => l.id === selectedLessonId) ?? null : null;
+
   return (
     <div className="stack">
-      <div>
-        <div style={{ fontSize: 18, fontWeight: 900 }}>Lessons</div>
-        <div className="muted" style={{ marginTop: 6 }}>
-          {role === "coach" ? "Approve requests and keep your schedule clean." : "Request a lesson and track approvals."}
+      <div className="bvCalTop">
+        <div className="bvCalTitle">
+          <div style={{ fontSize: 18, fontWeight: 900 }}>Lessons</div>
+          <div className="muted" style={{ marginTop: 6 }}>
+            {role === "coach" ? "Your schedule and requests." : "Request lessons and track invites."} • {tz}
+          </div>
+        </div>
+        <div className="bvCalToolbar">
+          <Button
+            onClick={() => {
+              setWeekStart(startOfWeekMonday(new Date()));
+            }}
+          >
+            Today
+          </Button>
+          <Button onClick={() => setWeekStart(addDays(weekStart, -7))}>‹</Button>
+          <Button onClick={() => setWeekStart(addDays(weekStart, 7))}>›</Button>
+          <div className="pill" style={{ userSelect: "none" }}>
+            {weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })} –{" "}
+            {addDays(weekStart, 6).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+          </div>
+          <Button variant={view === "week" ? "primary" : "default"} onClick={() => setView("week")}>
+            Week
+          </Button>
+          <Button variant={view === "list" ? "primary" : "default"} onClick={() => setView("list")}>
+            List
+          </Button>
         </div>
       </div>
+
+      {view === "week" ? (
+        <div className="bvCalWrap">
+          <div className="bvCalGrid">
+            <div className="bvCalHeader">
+              <div className="bvCalHeaderGutter" />
+              {weekDays.map((d) => {
+                const isToday = sameDay(d, new Date());
+                return (
+                  <div key={d.toISOString()} className={isToday ? "bvCalHeaderDay bvCalHeaderDayToday" : "bvCalHeaderDay"}>
+                    <div className="bvCalDow">{d.toLocaleDateString(undefined, { weekday: "short" })}</div>
+                    <div className="bvCalDom">{d.getDate()}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bvCalBody">
+              <div className="bvCalTimes">
+                {hours.map((h) => (
+                  <div key={h} className="bvCalTimeRow">
+                    <div className="bvCalTimeLabel">
+                      {new Date(0, 0, 0, h).toLocaleTimeString(undefined, { hour: "numeric" })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bvCalDays">
+                {weekDays.map((day) => {
+                  const dayKey = day.toISOString();
+                  const dayStart = new Date(day);
+                  dayStart.setHours(0, 0, 0, 0);
+                  const dayEnd = addDays(dayStart, 1);
+
+                  const dayLessons = weekLessons.filter((l) => {
+                    const s = new Date(l.start_at);
+                    return s >= dayStart && s < dayEnd;
+                  });
+                  const dayBlocks = weekBlocks.filter((b) => {
+                    const s = new Date(b.start_at);
+                    return s >= dayStart && s < dayEnd;
+                  });
+
+                  return (
+                    <div key={dayKey} className="bvCalDayCol">
+                      {hours.map((h) => (
+                        <div key={h} className="bvCalHourLine" />
+                      ))}
+
+                      {dayBlocks.map((b) => {
+                        const s = new Date(b.start_at);
+                        const e = new Date(b.end_at);
+                        if (!isInHourRange(b.start_at) && !isInHourRange(b.end_at)) return null;
+                        const top = topFor(s);
+                        const mins = Math.max(15, Math.round((e.getTime() - s.getTime()) / 60000));
+                        return (
+                          <button
+                            key={b.id}
+                            className="bvCalEvent bvCalBlock"
+                            style={{ top, height: heightForMinutes(mins) }}
+                            onClick={() => {
+                              if (role === "coach") deleteBlock(b.id);
+                            }}
+                            type="button"
+                            title={role === "coach" ? "Click to remove block" : "Blocked time"}
+                          >
+                            <div className="bvCalEventTitle">Blocked</div>
+                            {b.note ? <div className="bvCalEventSub">{b.note}</div> : null}
+                          </button>
+                        );
+                      })}
+
+                      {dayLessons.map((l) => {
+                        const s = new Date(l.start_at);
+                        const e = new Date(l.end_at);
+                        if (!isInHourRange(l.start_at) && !isInHourRange(l.end_at)) return null;
+                        const top = topFor(s);
+                        const mins = Math.max(15, Math.round((e.getTime() - s.getTime()) / 60000));
+                        const mine = myInviteStatus(l.id);
+                        const statusPill =
+                          l.status === "approved"
+                            ? "APPROVED"
+                            : l.status === "requested"
+                              ? "REQUESTED"
+                              : l.status.toUpperCase();
+                        const invitePill =
+                          role === "player" && mine && !mine.is_primary ? mine.invite_status.toUpperCase() : null;
+                        return (
+                          <button
+                            key={l.id}
+                            className={selectedLessonId === l.id ? "bvCalEvent bvCalEventSelected" : "bvCalEvent"}
+                            style={{ top, height: heightForMinutes(mins) }}
+                            onClick={() => setSelectedLessonId(l.id)}
+                            type="button"
+                          >
+                            <div className="bvCalEventTitle">{lessonTitle(l)}</div>
+                            <div className="bvCalEventSub">
+                              {statusPill}
+                              {invitePill ? ` • ${invitePill}` : ""} • {l.mode === "remote" ? "Remote" : "In-person"}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="bvCalSide">
+            <Card>
+              <div className="stack">
+                <div style={{ fontWeight: 900 }}>Details</div>
+                {selectedLesson ? (
+                  <>
+                    <div style={{ fontWeight: 800 }}>{lessonTitle(selectedLesson)}</div>
+                    <div className="muted" style={{ fontSize: 12 }}>
+                      {fmt(selectedLesson.start_at)} • {minutesBetween(selectedLesson.start_at, selectedLesson.end_at) ?? "?"} min
+                    </div>
+                    <div className="row" style={{ alignItems: "center" }}>
+                      <div className="pill">{selectedLesson.status.toUpperCase()}</div>
+                      <div className="pill">{selectedLesson.mode === "remote" ? "REMOTE" : "IN-PERSON"}</div>
+                    </div>
+                    <div className="stack" style={{ gap: 8 }}>
+                      <Button disabled={loading} onClick={() => reschedule(selectedLesson.id)}>
+                        Reschedule
+                      </Button>
+                      <Button disabled={loading} onClick={() => cancel(selectedLesson.id)}>
+                        Cancel
+                      </Button>
+                      {(() => {
+                        const mine = myInviteStatus(selectedLesson.id);
+                        if (role === "player" && mine && !mine.is_primary && mine.invite_status === "invited") {
+                          return (
+                            <div className="row">
+                              <Button disabled={loading} variant="primary" onClick={() => respondInvite(selectedLesson.id, true)}>
+                                Accept invite
+                              </Button>
+                              <Button disabled={loading} onClick={() => respondInvite(selectedLesson.id, false)}>
+                                Decline
+                              </Button>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </>
+                ) : (
+                  <div className="muted" style={{ fontSize: 13 }}>
+                    Click a lesson on the calendar to see details and actions.
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {role === "coach" ? (
+              <Card>
+                <div className="stack">
+                  <div style={{ fontWeight: 900 }}>Block off time</div>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Shows as “Blocked” on your calendar. Click a blocked block to remove it.
+                  </div>
+                  <div className="stack" style={{ gap: 6 }}>
+                    <div className="label">Start</div>
+                    <input
+                      className="input"
+                      type="datetime-local"
+                      value={blockStartLocal}
+                      onChange={(e) => setBlockStartLocal(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                  <Select
+                    label="Duration"
+                    name="blockMinutes"
+                    value={String(blockMinutes)}
+                    onChange={(v) => setBlockMinutes(Number(v))}
+                    options={[
+                      { value: "30", label: "30 min" },
+                      { value: "60", label: "60 min" },
+                      { value: "90", label: "90 min" },
+                      { value: "120", label: "120 min" }
+                    ]}
+                  />
+                  <div className="stack" style={{ gap: 6 }}>
+                    <div className="label">Note (optional)</div>
+                    <textarea className="textarea" rows={2} value={blockNote} onChange={(e) => setBlockNote(e.target.value)} />
+                  </div>
+                  <Button variant="primary" disabled={loading} onClick={createBlock}>
+                    {loading ? "Saving…" : "Block time"}
+                  </Button>
+                </div>
+              </Card>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       {role === "player" ? (
         <Card>
@@ -532,196 +839,76 @@ export default function LessonsClient({
         </Card>
       ) : null}
 
-      {role === "coach" ? (
-        <Card>
-          <div className="stack">
-            <div style={{ fontWeight: 900 }}>Block off time</div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-              Players can’t request lessons during blocked times. Approvals and reschedules will also be blocked.
-            </div>
-
-            <div className="stack" style={{ gap: 6 }}>
-              <div className="label">Start time</div>
-              <input
-                className="input"
-                type="datetime-local"
-                value={blockStartLocal}
-                onChange={(e) => setBlockStartLocal(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-
-            <Select
-              label="Duration"
-              name="blockMinutes"
-              value={String(blockMinutes)}
-              onChange={(v) => setBlockMinutes(Number(v))}
-              options={[
-                { value: "30", label: "30 min" },
-                { value: "60", label: "60 min" },
-                { value: "90", label: "90 min" },
-                { value: "120", label: "120 min" }
-              ]}
-            />
-
-            <div className="stack" style={{ gap: 6 }}>
-              <div className="label">Note (optional)</div>
-              <textarea
-                className="textarea"
-                rows={2}
-                value={blockNote}
-                onChange={(e) => setBlockNote(e.target.value)}
-                placeholder="e.g., Travel / Team practice / Off day"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="row" style={{ justifyContent: "flex-end" }}>
-              <Button variant="primary" disabled={loading} onClick={createBlock}>
-                {loading ? "Saving…" : "Block time"}
-              </Button>
-            </div>
-
-            {blocks.length ? (
-              <div className="stack" style={{ marginTop: 8 }}>
-                <div style={{ fontWeight: 900 }}>Upcoming blocks</div>
-                {blocks.map((b) => (
-                  <div key={b.id} className="card">
-                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontWeight: 900 }}>
-                          {fmt(b.start_at)} • {minutesBetween(b.start_at, b.end_at) ?? "?"} min
-                        </div>
-                        {b.note ? (
-                          <div className="muted" style={{ marginTop: 6, fontSize: 13, whiteSpace: "pre-wrap" }}>
-                            {b.note}
+      {view === "list" ? (
+        <>
+          <Card>
+            <div className="stack">
+              <div style={{ fontWeight: 900 }}>Upcoming</div>
+              {upcoming.length ? (
+                <div className="stack" style={{ marginTop: 12 }}>
+                  {upcoming.map((l) => (
+                    <div key={l.id} className="card">
+                      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontWeight: 900 }}>{lessonTitle(l)}</div>
+                          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                            {fmt(l.start_at)} • {minutesBetween(l.start_at, l.end_at) ?? "?"} min
                           </div>
-                        ) : null}
+                        </div>
+                        <div className="row" style={{ alignItems: "center" }}>
+                          <div className="pill">{l.status.toUpperCase()}</div>
+                          <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                            Reschedule
+                          </Button>
+                          <Button disabled={loading} onClick={() => cancel(l.id)}>
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
-                      <Button disabled={loading} onClick={() => deleteBlock(b.id)}>
-                        Remove
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="muted" style={{ marginTop: 10 }}>
+                  No upcoming lessons.
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="stack">
+              <div style={{ fontWeight: 900 }}>Recent</div>
+              {history.length ? (
+                <div className="stack" style={{ marginTop: 12 }}>
+                  {history.map((l) => (
+                    <div key={l.id} className="card">
+                      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontWeight: 900 }}>{lessonTitle(l)}</div>
+                          <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                            {fmt(l.start_at)} • {minutesBetween(l.start_at, l.end_at) ?? "?"} min
+                          </div>
+                        </div>
+                        <div className="row" style={{ alignItems: "center" }}>
+                          <div className="pill">{l.status.toUpperCase()}</div>
+                          <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                            Reschedule
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="muted" style={{ marginTop: 10 }}>
+                  No lesson history yet.
+                </div>
+              )}
+            </div>
+          </Card>
+        </>
       ) : null}
-
-      <Card>
-        <div className="stack">
-          <div style={{ fontWeight: 900 }}>Upcoming</div>
-          {upcoming.length ? (
-            <div className="stack" style={{ marginTop: 12 }}>
-              {upcoming.map((l) => (
-                <div key={l.id} className="card">
-                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontWeight: 900 }}>
-                        {role === "coach" ? playersLabel(l.id) : personLabel(l.coach_user_id)}
-                      </div>
-                      <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                        {fmt(l.start_at)} • {minutesBetween(l.start_at, l.end_at) ?? "?"} min • {l.mode === "remote" ? "Remote" : "In-person"}
-                      </div>
-                    </div>
-                    <div className="row" style={{ alignItems: "center" }}>
-                      <div className="pill">APPROVED</div>
-                      {(() => {
-                        const mine = myInviteStatus(l.id);
-                        if (role === "player" && mine && !mine.is_primary && mine.invite_status === "invited") {
-                          return (
-                            <>
-                              <Button disabled={loading} onClick={() => respondInvite(l.id, true)}>
-                                Accept
-                              </Button>
-                              <Button disabled={loading} onClick={() => respondInvite(l.id, false)}>
-                                Decline
-                              </Button>
-                            </>
-                          );
-                        }
-                        return null;
-                      })()}
-                      <Button disabled={loading} onClick={() => reschedule(l.id)}>
-                        Reschedule
-                      </Button>
-                      <Button disabled={loading} onClick={() => cancel(l.id)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="muted" style={{ marginTop: 10 }}>
-              No upcoming lessons.
-            </div>
-          )}
-        </div>
-      </Card>
-
-      <Card>
-        <div className="stack">
-          <div style={{ fontWeight: 900 }}>Recent</div>
-          {history.length ? (
-            <div className="stack" style={{ marginTop: 12 }}>
-              {history.map((l) => (
-                <div key={l.id} className="card">
-                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontWeight: 900 }}>
-                        {role === "coach" ? playersLabel(l.id) : personLabel(l.coach_user_id)}
-                      </div>
-                      <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                        {fmt(l.start_at)} • {minutesBetween(l.start_at, l.end_at) ?? "?"} min • {l.mode === "remote" ? "Remote" : "In-person"}
-                      </div>
-                    </div>
-                    <div className="row" style={{ alignItems: "center" }}>
-                      <div className="pill">{String(l.status).toUpperCase()}</div>
-                      {(() => {
-                        const mine = myInviteStatus(l.id);
-                        if (role === "player" && mine && !mine.is_primary && mine.invite_status === "invited") {
-                          return (
-                            <>
-                              <Button disabled={loading} onClick={() => respondInvite(l.id, true)}>
-                                Accept
-                              </Button>
-                              <Button disabled={loading} onClick={() => respondInvite(l.id, false)}>
-                                Decline
-                              </Button>
-                            </>
-                          );
-                        }
-                        return null;
-                      })()}
-                      <Button disabled={loading} onClick={() => reschedule(l.id)}>
-                        Reschedule
-                      </Button>
-                      {l.status !== "cancelled" ? (
-                        <Button disabled={loading} onClick={() => cancel(l.id)}>
-                          Cancel
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                  {l.coach_response_note ? (
-                    <div className="muted" style={{ marginTop: 10, fontSize: 13, whiteSpace: "pre-wrap" }}>
-                      Coach note: {l.coach_response_note}
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="muted" style={{ marginTop: 10 }}>
-              No lesson history yet.
-            </div>
-          )}
-        </div>
-      </Card>
     </div>
   );
 }
