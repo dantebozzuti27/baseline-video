@@ -5,12 +5,12 @@ begin;
 
 create or replace function public.create_lesson_as_coach(
   p_primary_player_user_id uuid,
-  p_second_player_user_id uuid default null,
   p_mode public.lesson_mode,
   p_start_at timestamptz,
   p_minutes integer,
   p_timezone text default 'UTC',
-  p_notes text default null
+  p_notes text default null,
+  p_second_player_user_id uuid default null
 )
 returns uuid
 language plpgsql
@@ -134,8 +134,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_lesson_as_coach(uuid, uuid, public.lesson_mode, timestamptz, integer, text, text) from public;
-grant execute on function public.create_lesson_as_coach(uuid, uuid, public.lesson_mode, timestamptz, integer, text, text) to authenticated;
+revoke all on function public.create_lesson_as_coach(uuid, public.lesson_mode, timestamptz, integer, text, text, uuid) from public;
+grant execute on function public.create_lesson_as_coach(uuid, public.lesson_mode, timestamptz, integer, text, text, uuid) to authenticated;
 
 commit;
 
