@@ -77,6 +77,29 @@ export default function TemplateEditorClient({
   // Assignment delete confirmation
   const [deleteAssignId, setDeleteAssignId] = React.useState<string | null>(null);
 
+  // Inline create focus modal
+  const [createFocusOpen, setCreateFocusOpen] = React.useState(false);
+  const [newFocusName, setNewFocusName] = React.useState("");
+  const [newFocusDesc, setNewFocusDesc] = React.useState("");
+
+  // Inline create drill modal
+  const [createDrillOpen, setCreateDrillOpen] = React.useState(false);
+  const [newDrillTitle, setNewDrillTitle] = React.useState("");
+  const [newDrillCategory, setNewDrillCategory] = React.useState<"hitting" | "throwing" | "fielding" | "other">("hitting");
+  const [newDrillGoal, setNewDrillGoal] = React.useState("");
+
+  // Local copies of focuses/drills that we can update after inline creation
+  const [localFocuses, setLocalFocuses] = React.useState(focuses);
+  const [localDrills, setLocalDrills] = React.useState(drills);
+
+  React.useEffect(() => {
+    setLocalFocuses(focuses);
+  }, [focuses]);
+
+  React.useEffect(() => {
+    setLocalDrills(drills);
+  }, [drills]);
+
   const weekMap = React.useMemo(() => {
     const m = new Map<number, { goals: string[]; assignments: string[] }>();
     for (const w of weeks) m.set(w.week_index, { goals: w.goals, assignments: w.assignments });
@@ -91,9 +114,9 @@ export default function TemplateEditorClient({
 
   const drillById = React.useMemo(() => {
     const m: Record<string, { title: string; category: string }> = {};
-    for (const d of drills) m[d.id] = { title: d.title, category: d.category };
+    for (const d of localDrills) m[d.id] = { title: d.title, category: d.category };
     return m;
-  }, [drills]);
+  }, [localDrills]);
 
   const assignmentsForDay = React.useMemo(() => {
     return (dayAssignments ?? [])
@@ -113,6 +136,69 @@ export default function TemplateEditorClient({
     setGoals(listToLines(w?.goals ?? []));
     setAssignments(listToLines(w?.assignments ?? []));
     setOpenWeek(weekIndex);
+  }
+
+  async function createFocusInline() {
+    if (!newFocusName.trim()) return;
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/programs/focuses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newFocusName.trim(),
+          description: newFocusDesc.trim() || undefined,
+          cues: []
+        })
+      });
+      const json = await resp.json();
+      if (resp.ok && json.id) {
+        toast("Focus created.");
+        // Add to local list and auto-select it
+        setLocalFocuses((prev) => [...prev, { id: json.id, name: newFocusName.trim() }]);
+        setDayFocusId(json.id);
+        setCreateFocusOpen(false);
+        setNewFocusName("");
+        setNewFocusDesc("");
+      }
+    } catch (e) {
+      console.error("create focus inline failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createDrillInline() {
+    if (!newDrillTitle.trim()) return;
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/programs/drills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newDrillTitle.trim(),
+          category: newDrillCategory,
+          goal: newDrillGoal.trim() || undefined,
+          equipment: [],
+          cues: [],
+          mistakes: []
+        })
+      });
+      const json = await resp.json();
+      if (resp.ok && json.id) {
+        toast("Drill created.");
+        // Add to local list and auto-select it
+        setLocalDrills((prev) => [...prev, { id: json.id, title: newDrillTitle.trim(), category: newDrillCategory }]);
+        setAssignDrillId(json.id);
+        setCreateDrillOpen(false);
+        setNewDrillTitle("");
+        setNewDrillGoal("");
+      }
+    } catch (e) {
+      console.error("create drill inline failed", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function saveSettings() {
@@ -318,18 +404,13 @@ export default function TemplateEditorClient({
                   onChange={setDayFocusId}
                   options={[
                     { value: "", label: "None" },
-                    ...(focuses ?? []).map((f) => ({ value: f.id, label: f.name }))
+                    ...(localFocuses ?? []).map((f) => ({ value: f.id, label: f.name }))
                   ]}
                 />
-                {focuses.length === 0 ? (
-                  <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                    No focuses yet.{" "}
-                    <Link href="/app/programs/library" style={{ color: "var(--primary)" }}>
-                      Create focuses in the Library
-                    </Link>
-                  </div>
-                ) : null}
               </div>
+              <Button onClick={() => setCreateFocusOpen(true)} disabled={loading}>
+                + New focus
+              </Button>
               <Button onClick={saveDay} disabled={loading}>
                 Save day
               </Button>
@@ -424,13 +505,23 @@ export default function TemplateEditorClient({
         }
       >
         <div className="stack">
-          <Select
-            label="Drill"
-            name="drill"
-            value={assignDrillId}
-            onChange={setAssignDrillId}
-            options={(drills ?? []).map((d) => ({ value: d.id, label: `${d.title}` }))}
-          />
+          <div className="row" style={{ gap: 10, alignItems: "flex-end" }}>
+            <div style={{ flex: 1 }}>
+              <Select
+                label="Drill"
+                name="drill"
+                value={assignDrillId}
+                onChange={setAssignDrillId}
+                options={[
+                  { value: "", label: "— Select a drill —" },
+                  ...(localDrills ?? []).map((d) => ({ value: d.id, label: d.title }))
+                ]}
+              />
+            </div>
+            <Button onClick={() => setCreateDrillOpen(true)} disabled={loading}>
+              + New drill
+            </Button>
+          </div>
           <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
             <div style={{ minWidth: 120, flex: 1 }}>
               <Input label="Sets" name="sets" type="number" value={assignSets} onChange={setAssignSets} placeholder="3" />
@@ -586,6 +677,80 @@ export default function TemplateEditorClient({
       >
         <div className="muted" style={{ fontSize: 13 }}>
           Remove this drill from the day plan?
+        </div>
+      </Modal>
+
+      {/* Inline create focus */}
+      <Modal
+        open={createFocusOpen}
+        title="Create new focus"
+        onClose={() => (loading ? null : setCreateFocusOpen(false))}
+        footer={
+          <>
+            <Button onClick={() => setCreateFocusOpen(false)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={createFocusInline} disabled={loading || !newFocusName.trim()}>
+              {loading ? "Creating…" : "Create"}
+            </Button>
+          </>
+        }
+      >
+        <div className="stack">
+          <Input label="Focus name" name="focusName" value={newFocusName} onChange={setNewFocusName} placeholder="Timing" />
+          <div>
+            <div className="label">Description (optional)</div>
+            <textarea
+              className="input"
+              style={{ marginTop: 8, minHeight: 80 }}
+              value={newFocusDesc}
+              onChange={(e) => setNewFocusDesc(e.target.value)}
+              placeholder="What should the player focus on?"
+            />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Inline create drill */}
+      <Modal
+        open={createDrillOpen}
+        title="Create new drill"
+        onClose={() => (loading ? null : setCreateDrillOpen(false))}
+        footer={
+          <>
+            <Button onClick={() => setCreateDrillOpen(false)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={createDrillInline} disabled={loading || !newDrillTitle.trim()}>
+              {loading ? "Creating…" : "Create"}
+            </Button>
+          </>
+        }
+      >
+        <div className="stack">
+          <Input label="Drill name" name="drillTitle" value={newDrillTitle} onChange={setNewDrillTitle} placeholder="Tee work: inside pitch" />
+          <Select
+            label="Category"
+            name="drillCategory"
+            value={newDrillCategory}
+            onChange={(v) => setNewDrillCategory(v as any)}
+            options={[
+              { value: "hitting", label: "Hitting" },
+              { value: "throwing", label: "Throwing" },
+              { value: "fielding", label: "Fielding" },
+              { value: "other", label: "Other" }
+            ]}
+          />
+          <div>
+            <div className="label">Goal (optional)</div>
+            <textarea
+              className="input"
+              style={{ marginTop: 8, minHeight: 80 }}
+              value={newDrillGoal}
+              onChange={(e) => setNewDrillGoal(e.target.value)}
+              placeholder="What should this drill accomplish?"
+            />
+          </div>
         </div>
       </Modal>
     </div>
