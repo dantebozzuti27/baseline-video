@@ -1709,6 +1709,51 @@ select:focus-visible {
   background: var(--border);
 }
 
+/* Role selection cards */
+.bvRoleCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.bvRoleCard:hover {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+
+.bvRoleCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--border);
+  color: var(--fg);
+}
+
+.bvRoleCard:hover .bvRoleCardIcon {
+  background: var(--primary);
+  color: #fff;
+}
+
+.bvRoleCardArrow {
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.bvRoleCard:hover .bvRoleCardArrow {
+  transform: translateX(4px);
+  color: var(--primary);
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;

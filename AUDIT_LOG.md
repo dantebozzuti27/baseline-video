@@ -2,7 +2,7 @@
 
 > Started: January 2026  
 > Status: In Progress  
-> Issues Fixed: ~70 of 95
+> Issues Fixed: ~75 of 95
 
 ---
 
@@ -294,6 +294,24 @@
 **18:55** — Enhanced coach sign-up with pill, centered layout, toast  
 **18:57** — Enhanced player sign-up with pill, divider sections  
 **18:58** — Enhanced join page with invite pill and better spacing  
+
+---
+
+## Session 13: Additional Pages
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| - | Inactive page | Added icon, pill, centered card layout | Jan 3 |
+| - | Sign-up chooser | Added role cards with icons, arrows, hover effects | Jan 3 |
+| - | Role card CSS | Added bvRoleCard component styles | Jan 3 |
+
+### Detailed Log
+
+**19:05** — Enhanced inactive page with PauseCircle icon and warning pill  
+**19:07** — Enhanced sign-up chooser with role cards  
+**19:08** — Added role card CSS with hover animations  
 
 ---
 
