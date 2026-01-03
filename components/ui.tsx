@@ -106,3 +106,60 @@ export function Select({
     </div>
   );
 }
+
+export function Modal({
+  open,
+  title,
+  children,
+  footer,
+  onClose
+}: {
+  open: boolean;
+  title?: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  onClose: () => void;
+}) {
+  const panelRef = React.useRef<HTMLDivElement | null>(null);
+  const previouslyFocused = React.useRef<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const t = window.setTimeout(() => panelRef.current?.focus(), 0);
+    return () => window.clearTimeout(t);
+  }, [open]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      previouslyFocused.current?.focus?.();
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+  return (
+    <div
+      className="bvModalBackdrop"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bvModal" role="dialog" aria-modal="true" tabIndex={-1} ref={panelRef}>
+        <div className="bvModalHeader">
+          <div className="bvModalTitle">{title ?? ""}</div>
+          <button className="bvModalClose" type="button" onClick={onClose} aria-label="Close dialog">
+            ×
+          </button>
+        </div>
+        <div className="bvModalBody">{children}</div>
+        {footer ? <div className="bvModalFooter">{footer}</div> : null}
+      </div>
+    </div>
+  );
+}

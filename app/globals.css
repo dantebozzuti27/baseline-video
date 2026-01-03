@@ -511,6 +511,79 @@ a {
   pointer-events: none;
 }
 
+/* Modal (themed, non-native popups) */
+.bvModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(5, 10, 18, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.bvModal {
+  width: min(560px, 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0b1220;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75);
+  outline: none;
+}
+
+.bvModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bvModalTitle {
+  font-weight: 900;
+  font-size: 15px;
+}
+
+.bvModalClose {
+  height: 34px;
+  width: 38px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #111826;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.bvModalClose:hover {
+  background: #162033;
+}
+
+.bvModalBody {
+  padding: 14px;
+}
+
+.bvModalFooter {
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .bvModalBackdrop {
+    align-items: flex-end;
+    padding: 12px;
+  }
+  .bvModal {
+    border-radius: 16px 16px 14px 14px;
+  }
+}
 .bvCalHourLine {
   height: var(--bvCalHourPx);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);

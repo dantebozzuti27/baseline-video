@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Button, Card, Select } from "@/components/ui";
+import { Button, Card, Modal, Select } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { toast } from "../../toast";
 
@@ -93,6 +93,12 @@ function snapMinutes(mins: number, step: number) {
 function toLocalInputValue(dt: Date) {
   return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
+
+type DialogState =
+  | { type: "respond"; lessonId: string; approve: boolean; note: string }
+  | { type: "reschedule"; lessonId: string; startLocal: string; minutes: number; note: string }
+  | { type: "cancel"; lessonId: string }
+  | { type: "deleteBlock"; blockId: string };
 
 export default function LessonsClient({
   role,
@@ -217,6 +223,7 @@ export default function LessonsClient({
     return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   });
   const [blockNote, setBlockNote] = React.useState<string>("");
+  const [dialog, setDialog] = React.useState<DialogState | null>(null);
 
   const pending = lessons.filter((l) => l.status === "requested");
   const upcoming = lessons
@@ -468,79 +475,19 @@ export default function LessonsClient({
     }
   }
 
-  async function respond(id: string, approve: boolean) {
-    const note = window.prompt(approve ? "Optional note for the player (leave blank if none):" : "Optional decline note:");
-    setLoading(true);
-    try {
-      const resp = await fetch(`/api/lessons/${id}/respond`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ approve, note: note?.trim() || undefined })
-      });
-      const json = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to update request.");
-      toast(approve ? "Lesson approved." : "Lesson declined.");
-      window.location.reload();
-    } catch (e: any) {
-      console.error("respond failed", e);
-    } finally {
-      setLoading(false);
-    }
+  function openRespond(lessonId: string, approve: boolean) {
+    setDialog({ type: "respond", lessonId, approve, note: "" });
   }
 
-  async function cancel(id: string) {
-    const ok = window.confirm("Cancel this lesson?");
-    if (!ok) return;
-    setLoading(true);
-    try {
-      const resp = await fetch(`/api/lessons/${id}/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
-      const json = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to cancel lesson.");
-      toast("Lesson cancelled.");
-      window.location.reload();
-    } catch (e: any) {
-      console.error("cancel failed", e);
-    } finally {
-      setLoading(false);
-    }
+  function openCancel(lessonId: string) {
+    setDialog({ type: "cancel", lessonId });
   }
 
-  async function reschedule(id: string) {
-    const start = window.prompt("New start time (YYYY-MM-DDTHH:mm). Example: 2026-01-03T14:00");
-    if (!start) return;
-    const minsRaw = window.prompt("Duration minutes (15–180)", "60");
-    if (!minsRaw) return;
-    const mins = Number(minsRaw);
-    if (!Number.isFinite(mins) || mins < 15 || mins > 180) return;
-    const note = window.prompt("Optional note (leave blank if none):") ?? "";
-
-    setLoading(true);
-    try {
-      const startDt = parseLocalDateTime(start);
-      if (!startDt) return;
-      const resp = await fetch(`/api/lessons/${id}/reschedule`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          startAt: startDt.toISOString(),
-          minutes: mins,
-          timezone: tz,
-          note: note.trim() || undefined
-        })
-      });
-      const json = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to reschedule.");
-      toast(role === "coach" ? "Lesson rescheduled." : "Reschedule requested.");
-      window.location.reload();
-    } catch (e: any) {
-      console.error("reschedule failed", e);
-    } finally {
-      setLoading(false);
-    }
+  function openReschedule(lessonId: string, initialStartIso?: string) {
+    const base = initialStartIso ? new Date(initialStartIso) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+    base.setSeconds(0, 0);
+    const startLocal = toLocalInputValue(base);
+    setDialog({ type: "reschedule", lessonId, startLocal, minutes: 60, note: "" });
   }
 
   async function createBlock() {
@@ -571,22 +518,84 @@ export default function LessonsClient({
     }
   }
 
-  async function deleteBlock(id: string) {
-    const ok = window.confirm("Remove this blocked time?");
-    if (!ok) return;
+  function openDeleteBlock(blockId: string) {
+    setDialog({ type: "deleteBlock", blockId });
+  }
+
+  async function submitRespond(d: Extract<DialogState, { type: "respond" }>) {
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/lessons/${d.lessonId}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approve: d.approve, note: d.note.trim() || undefined })
+      });
+      if (resp.ok) toast(d.approve ? "Lesson approved." : "Lesson declined.");
+      router.refresh();
+      setDialog(null);
+    } catch (e: any) {
+      console.error("submitRespond failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitReschedule(d: Extract<DialogState, { type: "reschedule" }>) {
+    const startDt = parseLocalDateTime(d.startLocal);
+    if (!startDt) return;
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/lessons/${d.lessonId}/reschedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startAt: startDt.toISOString(),
+          minutes: d.minutes,
+          timezone: tz,
+          note: d.note.trim() || undefined
+        })
+      });
+      if (resp.ok) toast(role === "coach" ? "Lesson rescheduled." : "Reschedule requested.");
+      router.refresh();
+      setDialog(null);
+    } catch (e: any) {
+      console.error("submitReschedule failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitCancel(d: Extract<DialogState, { type: "cancel" }>) {
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/lessons/${d.lessonId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      if (resp.ok) toast("Lesson cancelled.");
+      router.refresh();
+      setDialog(null);
+    } catch (e: any) {
+      console.error("submitCancel failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function submitDeleteBlock(d: Extract<DialogState, { type: "deleteBlock" }>) {
     setLoading(true);
     try {
       const resp = await fetch("/api/lessons/blocks", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id: d.blockId })
       });
-      const json = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to remove blocked time.");
-      toast("Blocked time removed.");
-      window.location.reload();
+      if (resp.ok) toast("Blocked time removed.");
+      router.refresh();
+      setDialog(null);
     } catch (e: any) {
-      console.error("deleteBlock failed", e);
+      console.error("submitDeleteBlock failed", e);
     } finally {
       setLoading(false);
     }
@@ -624,6 +633,131 @@ export default function LessonsClient({
 
   return (
     <div className="stack">
+      <Modal
+        open={dialog?.type === "respond"}
+        title={dialog?.type === "respond" ? (dialog.approve ? "Approve lesson" : "Decline lesson") : ""}
+        onClose={() => setDialog(null)}
+        footer={
+          dialog?.type === "respond" ? (
+            <>
+              <Button onClick={() => setDialog(null)} disabled={loading}>
+                Cancel
+              </Button>
+              <Button
+                variant={dialog.approve ? "primary" : "danger"}
+                disabled={loading}
+                onClick={() => submitRespond(dialog)}
+              >
+                {dialog.approve ? "Approve" : "Decline"}
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        {dialog?.type === "respond" ? (
+          <div className="stack">
+            <div className="muted" style={{ fontSize: 13 }}>
+              Optional note (fits your tone and stays in the lesson record).
+            </div>
+            <textarea
+              className="textarea"
+              rows={4}
+              value={dialog.note}
+              onChange={(e) => setDialog({ ...dialog, note: e.target.value })}
+              placeholder="Optional note…"
+            />
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={dialog?.type === "reschedule"}
+        title={dialog?.type === "reschedule" ? "Reschedule lesson" : ""}
+        onClose={() => setDialog(null)}
+        footer={
+          dialog?.type === "reschedule" ? (
+            <>
+              <Button onClick={() => setDialog(null)} disabled={loading}>
+                Cancel
+              </Button>
+              <Button variant="primary" disabled={loading} onClick={() => submitReschedule(dialog)}>
+                Save
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        {dialog?.type === "reschedule" ? (
+          <div className="stack">
+            <div className="stack" style={{ gap: 6 }}>
+              <div className="label">Start</div>
+              <input
+                className="input"
+                type="datetime-local"
+                value={dialog.startLocal}
+                onChange={(e) => setDialog({ ...dialog, startLocal: e.target.value })}
+              />
+            </div>
+            <Select
+              label="Duration"
+              name="rescheduleMinutes"
+              value={String(dialog.minutes)}
+              onChange={(v) => setDialog({ ...dialog, minutes: Number(v) })}
+              options={[
+                { value: "30", label: "30 min" },
+                { value: "45", label: "45 min" },
+                { value: "60", label: "60 min" },
+                { value: "90", label: "90 min" }
+              ]}
+            />
+            <div className="stack" style={{ gap: 6 }}>
+              <div className="label">Note (optional)</div>
+              <textarea className="textarea" rows={3} value={dialog.note} onChange={(e) => setDialog({ ...dialog, note: e.target.value })} />
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={dialog?.type === "cancel"}
+        title={dialog?.type === "cancel" ? "Cancel lesson" : ""}
+        onClose={() => setDialog(null)}
+        footer={
+          dialog?.type === "cancel" ? (
+            <>
+              <Button onClick={() => setDialog(null)} disabled={loading}>
+                Keep
+              </Button>
+              <Button variant="danger" disabled={loading} onClick={() => submitCancel(dialog)}>
+                Cancel lesson
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        {dialog?.type === "cancel" ? <div className="muted">This cancels the lesson for everyone.</div> : null}
+      </Modal>
+
+      <Modal
+        open={dialog?.type === "deleteBlock"}
+        title={dialog?.type === "deleteBlock" ? "Remove blocked time" : ""}
+        onClose={() => setDialog(null)}
+        footer={
+          dialog?.type === "deleteBlock" ? (
+            <>
+              <Button onClick={() => setDialog(null)} disabled={loading}>
+                Keep
+              </Button>
+              <Button variant="danger" disabled={loading} onClick={() => submitDeleteBlock(dialog)}>
+                Remove
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        {dialog?.type === "deleteBlock" ? <div className="muted">This removes the block from your calendar.</div> : null}
+      </Modal>
+
       <div className="bvCalTop">
         <div className="bvCalTitle">
           <div style={{ fontSize: 18, fontWeight: 900 }}>Lessons</div>
@@ -737,7 +871,7 @@ export default function LessonsClient({
                             className="bvCalEvent bvCalBlock"
                             style={{ top: clamped.top, height: clamped.height }}
                             onClick={() => {
-                              if (role === "coach") deleteBlock(b.id);
+                              if (role === "coach") openDeleteBlock(b.id);
                             }}
                             type="button"
                             title={role === "coach" ? "Click to remove block" : "Blocked time"}
@@ -801,10 +935,10 @@ export default function LessonsClient({
                       <div className="pill">{selectedLesson.mode === "remote" ? "REMOTE" : "IN-PERSON"}</div>
                     </div>
                     <div className="stack" style={{ gap: 8 }}>
-                      <Button disabled={loading} onClick={() => reschedule(selectedLesson.id)}>
+                      <Button disabled={loading} onClick={() => openReschedule(selectedLesson.id, selectedLesson.start_at)}>
                         Reschedule
                       </Button>
-                      <Button disabled={loading} onClick={() => cancel(selectedLesson.id)}>
+                      <Button disabled={loading} onClick={() => openCancel(selectedLesson.id)}>
                         Cancel
                       </Button>
                       {(() => {
@@ -1162,13 +1296,13 @@ export default function LessonsClient({
                         </div>
                       </div>
                       <div className="row" style={{ alignItems: "center" }}>
-                        <Button disabled={loading} onClick={() => respond(l.id, false)}>
+                        <Button disabled={loading} onClick={() => openRespond(l.id, false)}>
                           Decline
                         </Button>
-                        <Button variant="primary" disabled={loading} onClick={() => respond(l.id, true)}>
+                        <Button variant="primary" disabled={loading} onClick={() => openRespond(l.id, true)}>
                           Approve
                         </Button>
-                      <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                      <Button disabled={loading} onClick={() => openReschedule(l.id, l.start_at)}>
                         Reschedule
                       </Button>
                       </div>
@@ -1249,10 +1383,10 @@ export default function LessonsClient({
                         </div>
                         <div className="row" style={{ alignItems: "center" }}>
                           <div className="pill">{l.status.toUpperCase()}</div>
-                          <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                          <Button disabled={loading} onClick={() => openReschedule(l.id, l.start_at)}>
                             Reschedule
                           </Button>
-                          <Button disabled={loading} onClick={() => cancel(l.id)}>
+                          <Button disabled={loading} onClick={() => openCancel(l.id)}>
                             Cancel
                           </Button>
                         </div>
@@ -1284,7 +1418,7 @@ export default function LessonsClient({
                         </div>
                         <div className="row" style={{ alignItems: "center" }}>
                           <div className="pill">{l.status.toUpperCase()}</div>
-                          <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                          <Button disabled={loading} onClick={() => openReschedule(l.id, l.start_at)}>
                             Reschedule
                           </Button>
                         </div>
