@@ -7,6 +7,7 @@ import DrawerNav from "./DrawerNav";
 import BottomNav from "./BottomNav";
 import UploadFAB from "./UploadFAB";
 import SearchCommand from "./SearchCommand";
+import KeyboardHelp from "./KeyboardHelp";
 import ToastClient from "./ToastClient";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <UploadFAB />
       <BottomNav role={profile.role} />
       <ToastClient />
+      <KeyboardHelp />
     </div>
   );
 }

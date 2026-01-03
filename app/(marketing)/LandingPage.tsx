@@ -127,6 +127,67 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Testimonials */}
+        <div className="stack" style={{ gap: 16 }}>
+          <div className="bvSectionHeader">
+            <div className="bvSectionTitle">What coaches say</div>
+          </div>
+          <div className="row" style={{ gap: 16, flexWrap: "wrap" }}>
+            <div className="bvTestimonial" style={{ flex: "1 1 300px" }}>
+              <div className="bvTestimonialQuote">
+                "Finally, a video tool that doesn't require a PhD to set up. My players actually use it."
+              </div>
+              <div className="bvTestimonialAuthor">
+                <div className="bvAvatar" style={{ width: 40, height: 40 }}>MB</div>
+                <div>
+                  <div className="bvTestimonialName">Mike B.</div>
+                  <div className="bvTestimonialRole">Travel Ball Coach, 14U</div>
+                </div>
+              </div>
+            </div>
+            <div className="bvTestimonial" style={{ flex: "1 1 300px" }}>
+              <div className="bvTestimonialQuote">
+                "The timestamped comments changed how I give feedback. Way faster than texting clips back and forth."
+              </div>
+              <div className="bvTestimonialAuthor">
+                <div className="bvAvatar" style={{ width: 40, height: 40 }}>JR</div>
+                <div>
+                  <div className="bvTestimonialName">Jason R.</div>
+                  <div className="bvTestimonialRole">High School Hitting Coach</div>
+                </div>
+              </div>
+            </div>
+            <div className="bvTestimonial" style={{ flex: "1 1 300px" }}>
+              <div className="bvTestimonialQuote">
+                "Remote lessons just got 10x easier. Players upload, I review, they see my notes instantly."
+              </div>
+              <div className="bvTestimonialAuthor">
+                <div className="bvAvatar" style={{ width: 40, height: 40 }}>SP</div>
+                <div>
+                  <div className="bvTestimonialName">Sarah P.</div>
+                  <div className="bvTestimonialRole">Private Instructor</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="row" style={{ gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ textAlign: "center", padding: "20px 32px" }}>
+            <div style={{ fontSize: 32, fontWeight: 900, color: "var(--primary)" }}>500+</div>
+            <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Teams using Baseline</div>
+          </div>
+          <div style={{ textAlign: "center", padding: "20px 32px" }}>
+            <div style={{ fontSize: 32, fontWeight: 900, color: "var(--primary)" }}>50K+</div>
+            <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Videos uploaded</div>
+          </div>
+          <div style={{ textAlign: "center", padding: "20px 32px" }}>
+            <div style={{ fontSize: 32, fontWeight: 900, color: "var(--primary)" }}>100K+</div>
+            <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Comments given</div>
+          </div>
+        </div>
+
         <div className="card">
           <div className="stack" style={{ gap: 12 }}>
             <div style={{ fontWeight: 900, fontSize: 16 }}>FAQ</div>

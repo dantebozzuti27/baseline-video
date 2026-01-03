@@ -1407,6 +1407,151 @@ a {
   }
 }
 
+/* Typography Scale */
+.bvHeadline {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.bvTitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.bvSubtitle {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.bvBody {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.bvCaption {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.bvLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* Keyboard shortcut hint */
+.bvKbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--muted);
+}
+
+/* Relative time badge */
+.bvTimeAgo {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bvTimeAgoRecent {
+  color: var(--primary);
+}
+
+/* Divider */
+.bvDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+/* Section header */
+.bvSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.bvSectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* Progress bar */
+.bvProgressBar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bvProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, #4ac7a7 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Testimonial card */
+.bvTestimonial {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.bvTestimonialQuote {
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.bvTestimonialAuthor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bvTestimonialName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.bvTestimonialRole {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;
