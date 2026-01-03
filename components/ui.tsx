@@ -56,7 +56,11 @@ export function Input({
   type,
   value,
   onChange,
-  placeholder
+  placeholder,
+  error,
+  hint,
+  required,
+  disabled
 }: {
   label: string;
   name: string;
@@ -64,19 +68,39 @@ export function Input({
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  error?: string;
+  hint?: string;
+  required?: boolean;
+  disabled?: boolean;
 }) {
   return (
-    <div className="stack" style={{ gap: 6 }}>
-      <div className="label">{label}</div>
+    <div className="bvInputWrap">
+      <div className="label">
+        {label}
+        {required && <span className="bvRequired">*</span>}
+      </div>
       <input
-        className="input"
+        className={error ? "input inputError" : "input"}
         name={name}
         type={type ?? "text"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete="on"
+        disabled={disabled}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
       />
+      {error && (
+        <div id={`${name}-error`} className="bvInputError">
+          {error}
+        </div>
+      )}
+      {!error && hint && (
+        <div id={`${name}-hint`} className="bvInputHint">
+          {hint}
+        </div>
+      )}
     </div>
   );
 }

@@ -46,6 +46,35 @@ a {
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cardInteractive {
+  cursor: pointer;
+}
+
+.cardInteractive:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cardTitle {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.cardSubtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
 }
 
 .row {
@@ -126,10 +155,48 @@ a {
   color: var(--text);
   padding: 10px 12px;
   outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 179, 255, 0.15);
+}
+
+.inputError {
+  border-color: var(--danger) !important;
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
 }
 
 .label {
   font-size: 13px;
+  color: var(--muted);
+}
+
+/* Input wrapper for validation states */
+.bvInputWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bvRequired {
+  color: var(--danger);
+  margin-left: 3px;
+}
+
+.bvInputError {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.bvInputHint {
+  font-size: 12px;
   color: var(--muted);
 }
 
@@ -413,6 +480,72 @@ a {
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
   font-size: 13px;
+}
+
+/* Status pills */
+.pillSuccess {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+}
+
+.pillWarning {
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.pillDanger {
+  border-color: rgba(255, 107, 107, 0.4);
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff9999;
+}
+
+.pillInfo {
+  border-color: rgba(99, 179, 255, 0.4);
+  background: rgba(99, 179, 255, 0.12);
+  color: #63b3ff;
+}
+
+.pillMuted {
+  border-color: rgba(169, 180, 195, 0.25);
+  background: rgba(169, 180, 195, 0.08);
+  color: var(--muted);
+}
+
+/* Avatars */
+.bvAvatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.bvAvatarInitials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.bvAvatarOverflow {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--muted);
+}
+
+.bvAvatarGroup {
+  display: flex;
+  align-items: center;
+}
+
+.bvAvatarGroup .bvAvatar {
+  margin-left: -8px;
+  border: 2px solid var(--bg);
+}
+
+.bvAvatarGroup .bvAvatar:first-child {
+  margin-left: 0;
 }
 
 
