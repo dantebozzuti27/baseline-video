@@ -77,23 +77,29 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="row" style={{ gap: 12 }}>
-          <div className="card" style={{ flex: "1 1 240px" }}>
-            <div style={{ fontWeight: 900 }}>Clean team library</div>
+        <div className="row bvStagger" style={{ gap: 12 }}>
+          <div className="card cardInteractive" style={{ flex: "1 1 240px" }}>
+            <div style={{ fontWeight: 900 }}>📚 Team library</div>
             <div className="muted" style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45 }}>
-              Keep a shared library for drills, reference swings, and clips you want everyone to see.
+              Shared drills, reference swings, and clips everyone can access.
             </div>
           </div>
-          <div className="card" style={{ flex: "1 1 240px" }}>
-            <div style={{ fontWeight: 900 }}>Permission-first</div>
+          <div className="card cardInteractive" style={{ flex: "1 1 240px" }}>
+            <div style={{ fontWeight: 900 }}>📅 Lesson booking</div>
             <div className="muted" style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45 }}>
-              Coaches and players only see what they should. No “social feed” distractions.
+              Players request lessons, coaches approve. Built-in calendar and scheduling.
             </div>
           </div>
-          <div className="card" style={{ flex: "1 1 240px" }}>
-            <div style={{ fontWeight: 900 }}>Mobile-first</div>
+          <div className="card cardInteractive" style={{ flex: "1 1 240px" }}>
+            <div style={{ fontWeight: 900 }}>🎯 Remote programs</div>
             <div className="muted" style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45 }}>
-              Built for the dugout and the cage — fast uploads, clear layout, touch-friendly controls.
+              Week-by-week training plans with drills, video uploads, and coach review.
+            </div>
+          </div>
+          <div className="card cardInteractive" style={{ flex: "1 1 240px" }}>
+            <div style={{ fontWeight: 900 }}>📱 Mobile-first</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13, lineHeight: 1.45 }}>
+              Built for the dugout and cage — fast uploads, touch-friendly controls.
             </div>
           </div>
         </div>
