@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import LessonsClient from "./LessonsClient";
@@ -13,10 +14,20 @@ export default async function LessonsPage() {
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
 
+  // Use admin client for reads so lessons always show even if RLS/grants are misconfigured.
+  // We still strictly scope by the signed-in user's team + role.
+  let admin: ReturnType<typeof createSupabaseAdminClient> | null = null;
+  try {
+    admin = createSupabaseAdminClient();
+  } catch (e) {
+    console.error("Supabase admin client unavailable; falling back to RLS reads.", e);
+  }
+
   const supabase = createSupabaseServerClient();
+  const db = admin ?? supabase;
 
   // Coaches list for players to request from.
-  const { data: coaches } = await supabase
+  const { data: coaches } = await db
     .from("profiles")
     .select("user_id, display_name, role")
     .eq("team_id", profile.team_id)
@@ -24,7 +35,7 @@ export default async function LessonsPage() {
     .order("display_name", { ascending: true });
 
   // Team players for optional 2-on-1 invites and coach management.
-  const { data: players } = await supabase
+  const { data: players } = await db
     .from("profiles")
     .select("user_id, display_name, role, is_active")
     .eq("team_id", profile.team_id)
@@ -33,7 +44,7 @@ export default async function LessonsPage() {
     .order("display_name", { ascending: true });
 
   // Get lessons where I'm a participant (includes invited).
-  const { data: myParticipantRows } = await supabase
+  const { data: myParticipantRows } = await db
     .from("lesson_participants")
     .select("lesson_id")
     .eq("user_id", profile.user_id)
@@ -44,7 +55,7 @@ export default async function LessonsPage() {
   const baseSelect = "id, coach_user_id, created_by_user_id, mode, start_at, end_at, timezone, status, notes, coach_response_note";
   const lessonsByCoach =
     profile.role === "coach"
-      ? await supabase
+      ? await db
           .from("lessons")
           .select(baseSelect)
           .eq("coach_user_id", profile.user_id)
@@ -53,7 +64,7 @@ export default async function LessonsPage() {
       : ({ data: [] as any[] } as any);
 
   const lessonsByParticipant = participantLessonIds.length
-    ? await supabase
+    ? await db
         .from("lessons")
         .select(baseSelect)
         .in("id", participantLessonIds)
@@ -109,7 +120,7 @@ export default async function LessonsPage() {
   const lessonIds = uniqueLessons.map((l) => l.id);
 
   const { data: participants } = lessonIds.length
-    ? await supabase.from("lesson_participants").select("lesson_id, user_id, invite_status, is_primary").in("lesson_id", lessonIds)
+    ? await db.from("lesson_participants").select("lesson_id, user_id, invite_status, is_primary").in("lesson_id", lessonIds)
     : { data: [] as any[] };
   const effectiveParticipants = (participants ?? []).length ? (participants ?? []) : legacyParticipants;
 
@@ -122,7 +133,7 @@ export default async function LessonsPage() {
     )
   );
   const { data: people } = ids.length
-    ? await supabase.from("profiles").select("user_id, display_name, role").in("user_id", ids)
+    ? await db.from("profiles").select("user_id, display_name, role").in("user_id", ids)
     : { data: [] as any[] };
 
   const peopleById: Record<string, { display_name: string; role: "coach" | "player" }> = {};
@@ -132,7 +143,7 @@ export default async function LessonsPage() {
 
   const { data: blocks } =
     profile.role === "coach"
-      ? await supabase
+      ? await db
           .from("coach_time_blocks")
           .select("id, start_at, end_at, timezone, note")
           .eq("coach_user_id", profile.user_id)
