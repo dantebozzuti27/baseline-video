@@ -2,7 +2,7 @@
 
 > Started: January 2026  
 > Status: In Progress  
-> Issues Fixed: ~65 of 95
+> Issues Fixed: ~70 of 95
 
 ---
 
@@ -276,6 +276,24 @@
 **18:42** — Enhanced sign-in form with centered layout and divider  
 **18:44** — Added xl size to Avatar component  
 **18:45** — Added auth and divider CSS styles  
+
+---
+
+## Session 12: Auth Flow Polish
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| - | Coach sign-up | Added centered card, role pill, success state | Jan 3 |
+| - | Player sign-up | Added centered card, role pill, divider | Jan 3 |
+| - | Join page | Added centered card, invite pill, better layout | Jan 3 |
+
+### Detailed Log
+
+**18:55** — Enhanced coach sign-up with pill, centered layout, toast  
+**18:57** — Enhanced player sign-up with pill, divider sections  
+**18:58** — Enhanced join page with invite pill and better spacing  
 
 ---
 

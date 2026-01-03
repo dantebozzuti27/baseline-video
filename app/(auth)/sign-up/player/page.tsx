@@ -4,7 +4,7 @@ import * as React from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card, Input, Pill } from "@/components/ui";
 
 const schema = z.object({
   invite: z.string().min(8),
@@ -77,37 +77,46 @@ export default function PlayerSignUpPage() {
   }
 
   return (
-    <Card>
-      <div className="stack">
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>Player sign up</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            Paste the invite link from your coach.
+    <Card className="bvAuthCard">
+      <div className="stack" style={{ gap: 20 }}>
+        <div style={{ textAlign: "center" }}>
+          <Pill variant="success">PLAYER</Pill>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em", marginTop: 12 }}>
+            Join your team
+          </div>
+          <div className="muted" style={{ marginTop: 8, fontSize: 14 }}>
+            Paste the invite link your coach sent you
           </div>
         </div>
 
-        <form className="stack" onSubmit={onSubmit}>
+        <form className="stack" style={{ gap: 16 }} onSubmit={onSubmit}>
           <Input
-            label="Invite link (or code)"
+            label="Invite link"
             name="invite"
             value={invite}
             onChange={setInvite}
-            placeholder="https://…/join/abcd…"
+            placeholder="https://…/join/abc123"
           />
 
+          <div className="bvDivider">
+            <span>your info</span>
+          </div>
+
           <div className="row">
-            <div style={{ flex: 1, minWidth: 180 }}>
-              <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} placeholder="Jane" />
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} />
             </div>
-            <div style={{ flex: 1, minWidth: 180 }}>
-              <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} placeholder="Doe" />
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} />
             </div>
           </div>
-          <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
-          <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
-          <Button variant="primary" type="submit" disabled={loading}>
-            {loading ? "Joining…" : "Join team"}
-          </Button>
+          <Input label="Email" name="email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
+          <Input label="Password" name="password" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
+          <div style={{ marginTop: 8 }}>
+            <Button variant="primary" type="submit" disabled={loading}>
+              {loading ? "Joining…" : "Join team"}
+            </Button>
+          </div>
         </form>
       </div>
     </Card>

@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card, Input, Pill } from "@/components/ui";
 
 const schema = z.object({
   firstName: z.string().min(1),
@@ -65,31 +65,36 @@ export default function JoinByInvitePage({ params }: { params: { token: string }
   }
 
   return (
-    <div className="container" style={{ maxWidth: 520, paddingTop: 56 }}>
-      <Card>
-        <div className="stack">
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 900 }}>Join team</div>
-            <div className="muted" style={{ marginTop: 6 }}>
-              You were invited by your coach.
+    <div className="container" style={{ maxWidth: 440, paddingTop: 56 }}>
+      <Card className="bvAuthCard">
+        <div className="stack" style={{ gap: 20 }}>
+          <div style={{ textAlign: "center" }}>
+            <Pill variant="success">INVITED</Pill>
+            <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em", marginTop: 12 }}>
+              Join your team
+            </div>
+            <div className="muted" style={{ marginTop: 8, fontSize: 14 }}>
+              Your coach invited you — create your account to get started
             </div>
           </div>
 
-          <form className="stack" onSubmit={onSubmit}>
+          <form className="stack" style={{ gap: 16 }} onSubmit={onSubmit}>
             <div className="row">
-              <div style={{ flex: 1, minWidth: 180 }}>
+              <div style={{ flex: 1, minWidth: 160 }}>
                 <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} />
               </div>
-              <div style={{ flex: 1, minWidth: 180 }}>
+              <div style={{ flex: 1, minWidth: 160 }}>
                 <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} />
               </div>
             </div>
-            <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
-            <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
+            <Input label="Email" name="email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
+            <Input label="Password" name="password" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
 
-            <Button variant="primary" type="submit" disabled={loading}>
-              {loading ? "Joining…" : "Create account & join"}
-            </Button>
+            <div style={{ marginTop: 8 }}>
+              <Button variant="primary" type="submit" disabled={loading}>
+                {loading ? "Joining…" : "Create account & join"}
+              </Button>
+            </div>
           </form>
         </div>
       </Card>

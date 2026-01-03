@@ -4,7 +4,8 @@ import * as React from "react";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card, Input, Pill } from "@/components/ui";
+import { toast } from "@/app/(app)/toast";
 
 const schema = z.object({
   teamName: z.string().min(2),
@@ -80,30 +81,35 @@ export default function CoachSignUpPage() {
   const inviteUrl = inviteToken ? `${siteOrigin()}/join/${inviteToken}` : null;
 
   return (
-    <Card>
-      <div className="stack">
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>Coach sign up</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            Create your team and get a permanent invite link for players.
+    <Card className="bvAuthCard">
+      <div className="stack" style={{ gap: 20 }}>
+        <div style={{ textAlign: "center" }}>
+          <Pill variant="info">COACH</Pill>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em", marginTop: 12 }}>
+            Create your team
+          </div>
+          <div className="muted" style={{ marginTop: 8, fontSize: 14 }}>
+            Set up your coaching account and invite players
           </div>
         </div>
 
         {inviteUrl ? (
-          <div className="stack">
-            <div className="card">
-              <div className="label">Invite link</div>
-              <div style={{ marginTop: 6, fontWeight: 800, wordBreak: "break-all" }}>{inviteUrl}</div>
-              <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                Share this with your players. They’ll create an account and join your team.
+          <div className="stack" style={{ gap: 16 }}>
+            <div className="card" style={{ background: "var(--surface)", textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "var(--success)", fontWeight: 600, marginBottom: 8 }}>
+                ✓ Team created successfully
+              </div>
+              <div className="label">Your invite link</div>
+              <div style={{ marginTop: 8, fontWeight: 700, wordBreak: "break-all", fontSize: 14 }}>{inviteUrl}</div>
+              <div className="muted" style={{ marginTop: 10, fontSize: 13 }}>
+                Share this with your players to let them join
               </div>
             </div>
             <Button
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(inviteUrl);
-                  setCopied(true);
-                  window.setTimeout(() => setCopied(false), 1800);
+                  toast("Invite link copied");
                 } catch {
                   // ignore
                 }
@@ -111,7 +117,6 @@ export default function CoachSignUpPage() {
             >
               Copy invite link
             </Button>
-            {copied ? <div className="muted" style={{ fontSize: 13 }}>Copied.</div> : null}
             <Button
               variant="primary"
               onClick={() => {
@@ -119,25 +124,27 @@ export default function CoachSignUpPage() {
                 router.refresh();
               }}
             >
-              Go to dashboard
+              Go to dashboard →
             </Button>
           </div>
         ) : (
-          <form className="stack" onSubmit={onSubmit}>
-            <Input label="Team name" name="teamName" value={teamName} onChange={setTeamName} placeholder="Putsky Hitting" />
+          <form className="stack" style={{ gap: 16 }} onSubmit={onSubmit}>
+            <Input label="Team name" name="teamName" value={teamName} onChange={setTeamName} placeholder="Elite Hitting Academy" />
             <div className="row">
-              <div style={{ flex: 1, minWidth: 180 }}>
-                <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} placeholder="Dan" />
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} />
               </div>
-              <div style={{ flex: 1, minWidth: 180 }}>
-                <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} placeholder="Putsky" />
+              <div style={{ flex: 1, minWidth: 160 }}>
+                <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} />
               </div>
             </div>
-            <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
-            <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
-            <Button variant="primary" type="submit" disabled={loading}>
-              {loading ? "Creating…" : "Create team"}
-            </Button>
+            <Input label="Email" name="email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
+            <Input label="Password" name="password" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
+            <div style={{ marginTop: 8 }}>
+              <Button variant="primary" type="submit" disabled={loading}>
+                {loading ? "Creating…" : "Create team"}
+              </Button>
+            </div>
           </form>
         )}
       </div>
