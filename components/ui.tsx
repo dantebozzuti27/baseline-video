@@ -2,8 +2,8 @@ import * as React from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
-export function Card({ children }: { children: React.ReactNode }) {
-  return <div className="card">{children}</div>;
+export function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className ? `card ${className}` : "card"}>{children}</div>;
 }
 
 type ButtonVariant = "default" | "primary" | "danger";
