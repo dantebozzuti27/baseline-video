@@ -2,7 +2,7 @@
 
 > Started: January 2026  
 > Status: In Progress  
-> Issues Fixed: ~82 of 95
+> Issues Fixed: ~85 of 95
 
 ---
 
@@ -348,6 +348,24 @@
 **19:26** — Added fullWidth and className props to LinkButton  
 **19:27** — Added btnFull CSS class  
 **19:28** — Enhanced focus-visible styles for a11y  
+
+---
+
+## Session 16: New Components
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| - | Textarea | Added Textarea component with error/hint | Jan 3 |
+| - | Skeleton | Added Skeleton, SkeletonText, SkeletonCard | Jan 3 |
+| - | Skeleton CSS | Added shimmer animation | Jan 3 |
+
+### Detailed Log
+
+**19:35** — Added Textarea component to ui.tsx  
+**19:36** — Created Skeleton.tsx with variants  
+**19:37** — Added skeleton CSS with shimmer animation  
 
 ---
 

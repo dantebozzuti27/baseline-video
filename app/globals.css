@@ -219,6 +219,7 @@ a {
 
 .input,
 .select,
+.textarea,
 .textarea {
   width: 100%;
   border-radius: 12px;
@@ -1769,6 +1770,38 @@ select:focus-visible {
 .bvRoleCard:hover .bvRoleCardArrow {
   transform: translateX(4px);
   color: var(--primary);
+}
+
+/* Skeleton loading */
+.bvSkeleton {
+  background: linear-gradient(90deg, var(--border) 25%, color-mix(in srgb, var(--border) 80%, var(--fg)) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: bvShimmer 1.5s ease infinite;
+}
+
+@keyframes bvShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.bvSkeletonText {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bvSkeletonCard {
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* Bottom navigation (mobile) */

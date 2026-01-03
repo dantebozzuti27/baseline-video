@@ -115,6 +115,60 @@ export function Input({
   );
 }
 
+export function Textarea({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+  error,
+  hint,
+  required,
+  disabled
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  rows?: number;
+  error?: string;
+  hint?: string;
+  required?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="bvInputWrap">
+      <div className="label">
+        {label}
+        {required && <span className="bvRequired">*</span>}
+      </div>
+      <textarea
+        className={error ? "textarea textareaError" : "textarea"}
+        name={name}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        disabled={disabled}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${name}-error` : hint ? `${name}-hint` : undefined}
+      />
+      {error && (
+        <div id={`${name}-error`} className="bvInputError">
+          {error}
+        </div>
+      )}
+      {!error && hint && (
+        <div id={`${name}-hint`} className="bvInputHint">
+          {hint}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Select({
   label,
   name,
