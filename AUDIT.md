@@ -1,8 +1,8 @@
 # Baseline Video — Comprehensive App Audit
 
 > **Audit Date**: January 2026  
-> **Objective**: Transform this app into a $50/month no-brainer for baseball coaches  
-> **Total Issues Identified**: 100
+> **Objective**: Transform this app into a no-brainer for baseball coaches  
+> **Total Issues Identified**: 95
 
 ---
 
@@ -13,8 +13,8 @@ Baseline Video has solid foundational architecture but suffers from fragmented U
 1. **Fragmented workflows** — Features require too many clicks and page jumps
 2. **Missing "coach-first" polish** — Coaches need faster, more visual tools
 3. **Incomplete program feature** — The remote program builder is half-baked
-4. **No monetization infrastructure** — No subscription, billing, or tier system
-5. **Generic UI** — Feels like a developer tool, not a premium coaching platform
+4. **Generic UI** — Feels like a developer tool, not a premium coaching platform
+5. **No mobile-first design** — Web-only with no PWA or native app support
 
 ---
 
@@ -29,7 +29,6 @@ Baseline Video has solid foundational architecture but suffers from fragmented U
 | 🟣 Lesson Booking Gaps | 10 | Medium |
 | ⚪ UI/Design Polish | 15 | Medium |
 | 🟤 Performance/Technical | 8 | Low |
-| ⚫ Business/Monetization | 5 | Critical |
 
 ---
 
@@ -536,35 +535,6 @@ Baseline Video has solid foundational architecture but suffers from fragmented U
 
 ---
 
-## ⚫ BUSINESS/MONETIZATION (96-100)
-
-### 96. No Subscription/Billing System
-**Current**: Free for all  
-**Expected**: Stripe integration, tiered pricing  
-**Fix**: Add Stripe, subscription management
-
-### 97. No Usage Limits by Tier
-**Current**: Unlimited everything  
-**Expected**: Free tier limits, paid unlocks  
-**Fix**: Add usage tracking, tier enforcement
-
-### 98. No Trial Period Flow
-**Current**: No trial  
-**Expected**: 14-day free trial with full access  
-**Fix**: Add trial state to teams
-
-### 99. No Upgrade Prompts
-**Current**: Nothing to upgrade to  
-**Expected**: "Upgrade to Pro for X feature"  
-**Fix**: Add upgrade CTAs at limit points
-
-### 100. No Coach Referral Program
-**Current**: No referral system  
-**Expected**: "Invite a coach, get 1 month free"  
-**Fix**: Add referral tracking, rewards
-
----
-
 ## Priority Action Plan
 
 ### Week 1: Critical UX Fixes
@@ -585,24 +555,25 @@ Baseline Video has solid foundational architecture but suffers from fragmented U
 - [ ] Comment threading (#53)
 - [ ] Drawing annotations (#22)
 
-### Week 4: Monetization
-- [ ] Stripe integration (#96)
-- [ ] Tier system (#97)
-- [ ] Trial flow (#98)
-- [ ] Upgrade prompts (#99)
+### Week 4: Polish & PWA
+- [ ] Mobile PWA with offline support (#26)
+- [ ] Keyboard shortcuts / command palette (#14)
+- [ ] Loading states and skeletons (#7, #75)
+- [ ] Custom error pages (#86)
 
 ---
 
 ## Conclusion
 
-This app has a solid technical foundation but feels like an MVP. To justify $50/month:
+This app has a solid technical foundation but feels like an MVP. To make it a premium product:
 
 1. **Make it delightful** — Animations, polish, pro design
 2. **Make it faster** — Fewer clicks, inline actions, keyboard shortcuts
 3. **Make it smarter** — Analytics, insights, recommendations
 4. **Make it essential** — Features coaches can't live without
+5. **Make it mobile** — PWA with offline support for dugout use
 
-The remote program feature is the biggest differentiator — get that right and coaches will pay.
+The remote program feature is the biggest differentiator — get that right and coaches will love it.
 
 ---
 
