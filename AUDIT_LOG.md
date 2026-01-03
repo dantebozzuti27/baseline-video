@@ -2,7 +2,7 @@
 
 > Started: January 2026  
 > Status: In Progress  
-> Issues Fixed: ~60 of 95
+> Issues Fixed: ~65 of 95
 
 ---
 
@@ -256,6 +256,26 @@
 
 **18:30** — Enhanced compare page with breadcrumbs and better layout  
 **18:32** — Added CSS grid for compare panes with responsive breakpoint  
+
+---
+
+## Session 11: Profile & Auth Polish
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| - | Profile page | Added avatar, breadcrumbs, card headers, danger zone | Jan 3 |
+| - | Sign-in page | Centered card, better typography, divider | Jan 3 |
+| - | Avatar sizes | Added "xl" size (72px) | Jan 3 |
+| - | Auth card | Added bvAuthCard and bvDivider CSS | Jan 3 |
+
+### Detailed Log
+
+**18:40** — Enhanced profile page with avatar, breadcrumbs, card sections  
+**18:42** — Enhanced sign-in form with centered layout and divider  
+**18:44** — Added xl size to Avatar component  
+**18:45** — Added auth and divider CSS styles  
 
 ---
 

@@ -45,25 +45,36 @@ export default function SignInForm({ nextUrl }: { nextUrl: string }) {
   }
 
   return (
-    <Card>
-      <div className="stack">
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>Sign in</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            Get back to your video feed.
+    <Card className="bvAuthCard">
+      <div className="stack" style={{ gap: 20 }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.02em" }}>Welcome back</div>
+          <div className="muted" style={{ marginTop: 8, fontSize: 14 }}>
+            Sign in to access your team
           </div>
         </div>
 
-        <form className="stack" onSubmit={onSubmit}>
-          <Input label="Email" name="email" type="email" value={email} onChange={setEmail} placeholder="coach@team.com" />
-          <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
-          <Button variant="primary" type="submit" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
+        <form className="stack" style={{ gap: 16 }} onSubmit={onSubmit}>
+          <Input label="Email" name="email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
+          <Input label="Password" name="password" type="password" value={password} onChange={setPassword} placeholder="••••••••" />
+          <div style={{ marginTop: 8 }}>
+            <Button variant="primary" type="submit" disabled={loading}>
+              {loading ? "Signing in…" : "Sign in"}
+            </Button>
+          </div>
         </form>
 
-        <div className="muted" style={{ fontSize: 13 }}>
-          New here? <Link href="/sign-up">Create an account</Link>
+        <div className="bvDivider">
+          <span>or</span>
+        </div>
+
+        <div style={{ textAlign: "center" }}>
+          <div className="muted" style={{ fontSize: 14 }}>
+            Don't have an account?{" "}
+            <Link href="/sign-up" style={{ color: "var(--primary)", fontWeight: 600 }}>
+              Sign up
+            </Link>
+          </div>
         </div>
       </div>
     </Card>

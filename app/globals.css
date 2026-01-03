@@ -1685,6 +1685,30 @@ select:focus-visible {
   }
 }
 
+/* Auth card styling */
+.bvAuthCard {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 32px !important;
+}
+
+/* Divider with text */
+.bvDivider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.bvDivider::before,
+.bvDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;

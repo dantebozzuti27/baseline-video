@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, Input, Modal } from "@/components/ui";
+import { Button, Card, Input, Modal, Pill } from "@/components/ui";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Avatar } from "@/components/Avatar";
+import { toast } from "../toast";
 
 export default function ProfileClient({
   initialFirstName,
@@ -19,16 +22,15 @@ export default function ProfileClient({
   const [firstName, setFirstName] = React.useState(initialFirstName);
   const [lastName, setLastName] = React.useState(initialLastName);
   const [saving, setSaving] = React.useState(false);
-  const [saveMsg, setSaveMsg] = React.useState<string | null>(null);
-  // Per request: do not show error/failure messages in the UI.
 
   const [confirm, setConfirm] = React.useState("");
   const [deleting, setDeleting] = React.useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
 
+  const displayName = `${firstName} ${lastName}`.trim() || email;
+
   async function save() {
     setSaving(true);
-    setSaveMsg(null);
 
     try {
       const resp = await fetch("/api/profile", {
@@ -38,8 +40,7 @@ export default function ProfileClient({
       });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to save");
-      setSaveMsg("Saved.");
-      setTimeout(() => setSaveMsg(null), 2000);
+      toast("Profile saved");
       router.refresh();
     } catch (e: any) {
       console.error("save profile failed", e);
@@ -70,21 +71,40 @@ export default function ProfileClient({
     }
   }
 
+  const isCoach = role === "coach";
+
   return (
     <div className="stack">
-      <div>
-        <div style={{ fontSize: 18, fontWeight: 900 }}>Profile</div>
-        <div className="muted" style={{ marginTop: 6 }}>
-          Manage your name and account.
-        </div>
-      </div>
+      <Breadcrumbs
+        items={[
+          { label: isCoach ? "Dashboard" : "Feed", href: isCoach ? "/app/dashboard" : "/app" },
+          { label: "Profile" }
+        ]}
+      />
 
-      <Card>
-        <div className="stack">
-          <div className="muted" style={{ fontSize: 13 }}>
-            Signed in as <b>{email}</b> ({String(role).toUpperCase()})
+      {/* Profile header with avatar */}
+      <Card className="cardInteractive">
+        <div className="row" style={{ gap: 20, alignItems: "center" }}>
+          <Avatar name={displayName} size="xl" />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 20, fontWeight: 900 }}>{displayName}</div>
+            <div className="muted" style={{ marginTop: 4 }}>{email}</div>
+            <div style={{ marginTop: 8 }}>
+              <Pill variant={isCoach ? "info" : "success"}>
+                {role.toUpperCase()}
+              </Pill>
+            </div>
           </div>
+        </div>
+      </Card>
 
+      {/* Edit profile */}
+      <Card>
+        <div className="cardHeader">
+          <div className="cardTitle">Edit Profile</div>
+          <div className="cardSubtitle">Update your display name</div>
+        </div>
+        <div className="stack" style={{ marginTop: 16 }}>
           <div className="row">
             <div style={{ flex: 1, minWidth: 180 }}>
               <Input label="First name" name="firstName" value={firstName} onChange={setFirstName} />
@@ -94,22 +114,24 @@ export default function ProfileClient({
             </div>
           </div>
 
-          {saveMsg ? <div style={{ color: "var(--primary)", fontSize: 13 }}>{saveMsg}</div> : null}
-
           <div className="row" style={{ alignItems: "center" }}>
             <Button variant="primary" onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? "Saving…" : "Save changes"}
             </Button>
           </div>
         </div>
       </Card>
 
+      {/* Danger zone */}
       <Card>
-        <div className="stack">
-          <div style={{ fontWeight: 900 }}>Delete account</div>
+        <div className="cardHeader">
+          <div className="cardTitle" style={{ color: "var(--danger)" }}>Danger Zone</div>
+          <div className="cardSubtitle">Permanent account deletion</div>
+        </div>
+        <div className="stack" style={{ marginTop: 16 }}>
           <div className="muted" style={{ fontSize: 13 }}>
             Type <b>DELETE</b> to confirm.
-            {role === "coach" ? " This will also delete your entire team." : null}
+            {isCoach ? " This will also delete your entire team, including all players and videos." : null}
           </div>
 
           <Input label="Confirmation" name="confirm" value={confirm} onChange={setConfirm} placeholder="DELETE" />

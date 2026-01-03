@@ -2,18 +2,20 @@
 
 import * as React from "react";
 
-type Size = "sm" | "md" | "lg";
+type Size = "sm" | "md" | "lg" | "xl";
 
 const SIZES: Record<Size, number> = {
   sm: 28,
   md: 40,
-  lg: 56
+  lg: 56,
+  xl: 72
 };
 
 const FONT_SIZES: Record<Size, number> = {
   sm: 11,
   md: 14,
-  lg: 20
+  lg: 20,
+  xl: 26
 };
 
 function getInitials(name: string): string {
