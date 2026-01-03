@@ -59,6 +59,10 @@ export async function POST(req: Request) {
     const { data: videos } = await admin.from("videos").select("storage_path").eq("team_id", teamId);
     const paths = (videos ?? []).map((v: any) => v.storage_path).filter(Boolean);
 
+    // Delete audit/invite rows up front (these have auth.users FKs and can block auth user deletion).
+    await admin.from("events").delete().eq("team_id", teamId);
+    await admin.from("invites").delete().eq("team_id", teamId);
+
     // Delete videos (cascades comments)
     await admin.from("videos").delete().eq("team_id", teamId);
 
@@ -75,6 +79,9 @@ export async function POST(req: Request) {
     // Delete auth users for everyone on the team
     for (const uid of userIds) {
       try {
+        // Defensive cleanup: if any per-user rows remain, remove them so auth deletion can't be blocked.
+        await admin.from("events").delete().eq("actor_user_id", uid);
+        await admin.from("invites").delete().eq("created_by_user_id", uid);
         // @ts-ignore
         await admin.auth.admin.deleteUser(uid);
       } catch {
@@ -86,6 +93,10 @@ export async function POST(req: Request) {
   }
 
   // Player delete: delete own comments + videos, then delete user.
+  // NOTE: events/invites have auth.users FKs and can block auth deletion if left behind.
+  await admin.from("events").delete().eq("actor_user_id", user.id);
+  await admin.from("invites").delete().eq("created_by_user_id", user.id);
+
   const { data: myComments } = await admin.from("comments").select("id").eq("author_user_id", user.id);
   if (myComments?.length) await admin.from("comments").delete().eq("author_user_id", user.id);
 

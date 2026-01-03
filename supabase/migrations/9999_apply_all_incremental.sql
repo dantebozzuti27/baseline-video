@@ -870,6 +870,49 @@ commit;
 
 
 -- ============================================================
+-- 0015_relax_auth_user_fks_for_deletes.sql
+-- ============================================================
+-- Allow deleting auth.users without being blocked by "restrict" FKs.
+
+begin;
+
+alter table public.videos
+  drop constraint if exists videos_uploader_user_id_fkey;
+alter table public.videos
+  add constraint videos_uploader_user_id_fkey
+  foreign key (uploader_user_id) references auth.users(id) on delete cascade;
+
+alter table public.videos
+  drop constraint if exists videos_owner_user_id_fkey;
+alter table public.videos
+  add constraint videos_owner_user_id_fkey
+  foreign key (owner_user_id) references auth.users(id) on delete cascade;
+
+alter table public.comments
+  drop constraint if exists comments_author_user_id_fkey;
+alter table public.comments
+  add constraint comments_author_user_id_fkey
+  foreign key (author_user_id) references auth.users(id) on delete cascade;
+
+alter table public.invites
+  alter column created_by_user_id drop not null;
+alter table public.invites
+  drop constraint if exists invites_created_by_user_id_fkey;
+alter table public.invites
+  add constraint invites_created_by_user_id_fkey
+  foreign key (created_by_user_id) references auth.users(id) on delete set null;
+
+alter table public.events
+  alter column actor_user_id drop not null;
+alter table public.events
+  drop constraint if exists events_actor_user_id_fkey;
+alter table public.events
+  add constraint events_actor_user_id_fkey
+  foreign key (actor_user_id) references auth.users(id) on delete set null;
+
+commit;
+
+-- ============================================================
 -- 0014_team_visible_coach_uploads.sql
 -- ============================================================
 -- Players can read coach uploads + library videos on their team.
