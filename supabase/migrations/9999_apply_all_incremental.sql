@@ -1295,11 +1295,11 @@ revoke all on function public.set_program_template_day(uuid, integer, integer, u
 grant execute on function public.set_program_template_day(uuid, integer, integer, uuid, text) to authenticated;
 
 create or replace function public.upsert_program_template_day_assignment(
-  p_assignment_id uuid default null,
   p_template_id uuid,
   p_week_index integer,
   p_day_index integer,
   p_drill_id uuid,
+  p_assignment_id uuid default null,
   p_sets integer default null,
   p_reps integer default null,
   p_duration_min integer default null,
@@ -1368,8 +1368,8 @@ begin
   return p_assignment_id;
 end;
 $$;
-revoke all on function public.upsert_program_template_day_assignment(uuid, uuid, integer, integer, uuid, integer, integer, integer, boolean, text, text, integer) from public;
-grant execute on function public.upsert_program_template_day_assignment(uuid, uuid, integer, integer, uuid, integer, integer, integer, boolean, text, text, integer) to authenticated;
+revoke all on function public.upsert_program_template_day_assignment(uuid, integer, integer, uuid, uuid, integer, integer, integer, boolean, text, text, integer) from public;
+grant execute on function public.upsert_program_template_day_assignment(uuid, integer, integer, uuid, uuid, integer, integer, integer, boolean, text, text, integer) to authenticated;
 
 create or replace function public.delete_program_template_day_assignment(p_assignment_id uuid)
 returns void
