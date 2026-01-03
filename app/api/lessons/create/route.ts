@@ -38,22 +38,45 @@ export async function POST(req: Request) {
 
   if (error) {
     console.error("create_lesson_as_coach failed", error);
+    const raw = String((error as any)?.message ?? "");
     const msg =
-      (error as any)?.message?.includes("invalid_primary_player")
+      raw.includes("function public.create_lesson_as_coach")
+        ? "Scheduling is not enabled in your database yet. Run the latest Supabase migrations (0023)."
+        : raw.includes("permission denied") || raw.includes("forbidden")
+          ? "Only coaches can schedule lessons."
+          : raw.includes("missing_profile")
+            ? "Your account is missing a team profile. Recreate your team/profile and try again."
+            : raw.includes("invalid_primary_player")
         ? "Choose a valid player on your team."
-        : (error as any)?.message?.includes("invalid_second_player")
+        : raw.includes("invalid_second_player")
           ? "Choose a valid second player."
-          : (error as any)?.message?.includes("blocked")
+          : raw.includes("blocked")
             ? "That time is blocked off."
-            : (error as any)?.message?.includes("conflict")
+            : raw.includes("conflict")
               ? "You already have a lesson at that time."
-              : (error as any)?.message?.includes("invalid_duration")
+              : raw.includes("invalid_duration")
                 ? "Choose a duration between 15 and 180 minutes."
                 : "Unable to schedule lesson.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, id: data });
+  // Sanity check: ensure lesson row exists & is visible after creation.
+  const lessonId = data as string | null;
+  if (!lessonId) return NextResponse.json({ error: "Unable to schedule lesson." }, { status: 500 });
+
+  const { data: row, error: selErr } = await supabase.from("lessons").select("id").eq("id", lessonId).maybeSingle();
+  if (selErr) {
+    console.error("post-create lessons select failed", selErr);
+    return NextResponse.json({ ok: true, id: lessonId });
+  }
+  if (!row) {
+    return NextResponse.json(
+      { error: "Lesson was created but is not visible. Check RLS/current_team_id and that migrations 0021–0023 ran." },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ ok: true, id: lessonId });
 }
 
 
