@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Card, LinkButton } from "@/components/ui";
 import { LocalDateTime } from "@/components/LocalDateTime";
+import { EmptyState } from "@/components/EmptyState";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import type { VideoCategory } from "@/lib/db/types";
@@ -75,38 +76,40 @@ export default async function LibraryPage({
       {pinned.length > 0 ? (
         <div className="stack">
           <div style={{ fontWeight: 900 }}>Pinned</div>
-          {pinned.map((v: any) => (
-            <Link key={v.id} href={`/app/videos/${v.id}`}>
-              <div className="card">
-                <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontWeight: 800 }}>{v.title}</div>
-                  <div className="row" style={{ alignItems: "center" }}>
-                    <div className="pill">LIBRARY</div>
-                    <div className="pill">PINNED</div>
-                    <div className="pill">{String(v.category).toUpperCase()}</div>
+          <div className="stack bvStagger">
+            {pinned.map((v: any) => (
+              <Link key={v.id} href={`/app/videos/${v.id}`}>
+                <div className="card cardInteractive">
+                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontWeight: 800 }}>{v.title}</div>
+                    <div className="row" style={{ alignItems: "center" }}>
+                      <div className="pill pillInfo">LIBRARY</div>
+                      <div className="pill pillWarning">PINNED</div>
+                      <div className="pill">{String(v.category).toUpperCase()}</div>
+                    </div>
+                  </div>
+                  <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+                    Visible to: Team
+                  </div>
+                  <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                    <LocalDateTime value={v.created_at} />
                   </div>
                 </div>
-                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                  Visible to: Team
-                </div>
-                <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                  <LocalDateTime value={v.created_at} />
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
+          </div>
         </div>
       ) : null}
 
       {rest && rest.length > 0 ? (
-        <div className="stack">
+        <div className="stack bvStagger">
           {rest.map((v: any) => (
             <Link key={v.id} href={`/app/videos/${v.id}`}>
-              <div className="card">
+              <div className="card cardInteractive">
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 800 }}>{v.title}</div>
                   <div className="row" style={{ alignItems: "center" }}>
-                    <div className="pill">LIBRARY</div>
+                    <div className="pill pillInfo">LIBRARY</div>
                     <div className="pill">{String(v.category).toUpperCase()}</div>
                   </div>
                 </div>
@@ -121,18 +124,16 @@ export default async function LibraryPage({
           ))}
         </div>
       ) : (
-        <Card>
-          <div style={{ fontWeight: 800 }}>No library videos yet</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            {isCoach ? (
-              <>
-                Open any video and use <b>Coach controls → Add to library</b>.
-              </>
-            ) : (
-              <>Ask your coach to add a video to the team library.</>
-            )}
-          </div>
-        </Card>
+        <EmptyState
+          variant="library"
+          title="No library videos yet"
+          message={isCoach
+            ? "Open any video and use Coach controls → Add to library."
+            : "Ask your coach to add a video to the team library."
+          }
+          actionLabel={isCoach ? "Go to dashboard" : undefined}
+          actionHref={isCoach ? "/app/dashboard" : undefined}
+        />
       )}
     </div>
   );

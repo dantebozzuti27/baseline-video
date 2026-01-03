@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, Modal } from "@/components/ui";
+import { EmptyState } from "@/components/EmptyState";
 import { toast } from "../../toast";
 
 type Template = {
@@ -38,7 +39,7 @@ export default function ProgramsListClient({ templates }: { templates: Template[
 
   return (
     <>
-      <div className="stack" style={{ marginTop: 14 }}>
+      <div className="stack bvStagger" style={{ marginTop: 14 }}>
         {templates.length ? (
           templates.map((t) => (
             <Card key={t.id}>
@@ -60,19 +61,13 @@ export default function ProgramsListClient({ templates }: { templates: Template[
             </Card>
           ))
         ) : (
-          <Card>
-            <div className="stack">
-              <div style={{ fontWeight: 900 }}>No programs yet</div>
-              <div className="muted" style={{ fontSize: 13 }}>
-                Create a week-by-week template, then enroll players into it.
-              </div>
-              <div>
-                <Link className="btn btnPrimary" href="/app/programs/new">
-                  Create your first program
-                </Link>
-              </div>
-            </div>
-          </Card>
+          <EmptyState
+            variant="programs"
+            title="No programs yet"
+            message="Create a week-by-week template, then enroll players into it."
+            actionLabel="Create your first program"
+            actionHref="/app/programs/new"
+          />
         )}
 
         <Card>

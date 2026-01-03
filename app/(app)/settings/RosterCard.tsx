@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Modal } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
+import { EmptyState } from "@/components/EmptyState";
 import { toast } from "../toast";
 
 export default function RosterCard({
@@ -51,29 +53,40 @@ export default function RosterCard({
           </div>
         </div>
 
-        <div className="stack">
-          {players.map((p) => {
-            const active = p.is_active !== false;
-            const isWorking = loadingId === p.user_id;
-            return (
-              <div key={p.user_id} className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: 800 }}>{p.display_name}</div>
-                  <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                    {active ? "Active" : "Inactive"}
+        {players.length > 0 ? (
+          <div className="stack bvStagger">
+            {players.map((p) => {
+              const active = p.is_active !== false;
+              const isWorking = loadingId === p.user_id;
+              return (
+                <div key={p.user_id} className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="row" style={{ alignItems: "center", gap: 12 }}>
+                    <Avatar name={p.display_name} size="md" />
+                    <div>
+                      <div style={{ fontWeight: 800 }}>{p.display_name}</div>
+                      <div className={active ? "pill pillSuccess" : "pill pillMuted"} style={{ marginTop: 6 }}>
+                        {active ? "Active" : "Inactive"}
+                      </div>
+                    </div>
                   </div>
+                  <Button
+                    variant={active ? "danger" : "primary"}
+                    disabled={isWorking}
+                    onClick={() => setActive(p.user_id, !active)}
+                  >
+                    {isWorking ? "Working…" : active ? "Deactivate" : "Reactivate"}
+                  </Button>
                 </div>
-                <Button
-                  variant={active ? "danger" : "primary"}
-                  disabled={isWorking}
-                  onClick={() => setActive(p.user_id, !active)}
-                >
-                  {isWorking ? "Working…" : active ? "Deactivate" : "Reactivate"}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            variant="roster"
+            title="No players yet"
+            message="Share your invite link to bring players onto your team."
+          />
+        )}
 
         <Modal
           open={Boolean(confirm)}
