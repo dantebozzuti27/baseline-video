@@ -17,15 +17,20 @@ export function Button({
   variant,
   type,
   disabled,
-  onClick
+  onClick,
+  fullWidth,
+  className
 }: {
   children: React.ReactNode;
   variant?: ButtonVariant;
   type?: "button" | "submit";
   disabled?: boolean;
   onClick?: () => void;
+  fullWidth?: boolean;
+  className?: string;
 }) {
-  const cls = getButtonClass(variant);
+  const base = getButtonClass(variant);
+  const cls = [base, fullWidth && "btnFull", className].filter(Boolean).join(" ");
   return (
     <button className={cls} type={type ?? "button"} disabled={disabled} onClick={onClick}>
       {children}
@@ -36,13 +41,18 @@ export function Button({
 export function LinkButton({
   href,
   children,
-  variant
+  variant,
+  fullWidth,
+  className
 }: {
   href: string;
   children: React.ReactNode;
   variant?: ButtonVariant;
+  fullWidth?: boolean;
+  className?: string;
 }) {
-  const cls = getButtonClass(variant);
+  const base = getButtonClass(variant);
+  const cls = [base, fullWidth && "btnFull", className].filter(Boolean).join(" ");
   return (
     <Link className={cls} href={href}>
       {children}

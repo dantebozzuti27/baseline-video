@@ -2,7 +2,7 @@
 
 > Started: January 2026  
 > Status: In Progress  
-> Issues Fixed: ~78 of 95
+> Issues Fixed: ~82 of 95
 
 ---
 
@@ -328,6 +328,26 @@
 
 **19:15** — Updated landing page feature cards with new features  
 **19:16** — Added cardInteractive class and stagger animation  
+
+---
+
+## Session 15: Component API & Accessibility
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| - | Button fullWidth | Added fullWidth and className props | Jan 3 |
+| - | LinkButton fullWidth | Added fullWidth and className props | Jan 3 |
+| - | Focus-visible | Enhanced focus styles for accessibility | Jan 3 |
+| - | btnFull CSS | Added full-width button class | Jan 3 |
+
+### Detailed Log
+
+**19:25** — Added fullWidth and className props to Button  
+**19:26** — Added fullWidth and className props to LinkButton  
+**19:27** — Added btnFull CSS class  
+**19:28** — Enhanced focus-visible styles for a11y  
 
 ---
 
