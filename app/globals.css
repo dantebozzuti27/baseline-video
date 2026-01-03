@@ -1279,6 +1279,43 @@ a {
   background: rgba(99, 179, 255, 0.2);
 }
 
+/* Error pages */
+.bvErrorPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.bvErrorContent {
+  max-width: 440px;
+}
+
+.bvErrorCode {
+  font-size: 72px;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1;
+  margin-bottom: 16px;
+  text-shadow: 0 0 40px rgba(99, 179, 255, 0.3);
+}
+
+.bvErrorTitle {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+.bvErrorMessage {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;

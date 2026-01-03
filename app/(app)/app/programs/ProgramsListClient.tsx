@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Copy } from "lucide-react";
 import { Button, Card, Modal } from "@/components/ui";
 import { EmptyState } from "@/components/EmptyState";
 import { toast } from "../../toast";
@@ -18,6 +19,7 @@ type Template = {
 export default function ProgramsListClient({ templates }: { templates: Template[] }) {
   const router = useRouter();
   const [deleteDialog, setDeleteDialog] = React.useState<Template | null>(null);
+  const [duplicating, setDuplicating] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   async function deleteProgram() {
@@ -37,6 +39,22 @@ export default function ProgramsListClient({ templates }: { templates: Template[
     }
   }
 
+  async function duplicateProgram(templateId: string) {
+    setDuplicating(templateId);
+    try {
+      const resp = await fetch(`/api/programs/templates/${templateId}/duplicate`, { method: "POST" });
+      const json = await resp.json();
+      if (resp.ok) {
+        toast("Program duplicated.");
+        router.push(`/app/programs/${json.id}`);
+      }
+    } catch (e) {
+      console.error("duplicate program failed", e);
+    } finally {
+      setDuplicating(null);
+    }
+  }
+
   return (
     <>
       <div className="stack bvStagger" style={{ marginTop: 14 }}>
@@ -52,6 +70,13 @@ export default function ProgramsListClient({ templates }: { templates: Template[
                   </div>
                 </div>
                 <div className="row" style={{ gap: 8 }}>
+                  <Button
+                    onClick={() => duplicateProgram(t.id)}
+                    disabled={duplicating === t.id}
+                  >
+                    <Copy size={16} />
+                    {duplicating === t.id ? "Copying…" : "Duplicate"}
+                  </Button>
                   <Button onClick={() => setDeleteDialog(t)}>Delete</Button>
                   <Link className="btn btnPrimary" href={`/app/programs/${t.id}`}>
                     Edit

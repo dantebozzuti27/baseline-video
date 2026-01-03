@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { Download } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 
 function parseSeekSecondsFromHash() {
@@ -149,9 +150,26 @@ export default function VideoClient({ videoId }: { videoId: string }) {
     );
   }
 
+  function downloadVideo() {
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   return (
     <Card>
       <video ref={videoRef} src={url ?? undefined} controls playsInline style={{ width: "100%", borderRadius: 12 }} />
+      <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+        <Button onClick={downloadVideo}>
+          <Download size={16} />
+          Download
+        </Button>
+      </div>
     </Card>
   );
 }
