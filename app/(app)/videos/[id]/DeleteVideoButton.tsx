@@ -8,14 +8,12 @@ import { toast } from "../../toast";
 export default function DeleteVideoButton({ videoId }: { videoId: string }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   async function onDelete() {
     const ok = window.confirm("Move this video to Trash? You can restore it from Trash.");
     if (!ok) return;
 
     setLoading(true);
-    setError(null);
     try {
       const resp = await fetch(`/api/videos/${videoId}`, { method: "DELETE" });
       const json = await resp.json().catch(() => ({}));
@@ -25,8 +23,7 @@ export default function DeleteVideoButton({ videoId }: { videoId: string }) {
       router.replace("/app/trash");
       router.refresh();
     } catch (e: any) {
-      setError(e?.message ?? "Unable to move video to Trash.");
-      toast("Unable to move video to Trash.");
+      console.error("move to trash failed", e);
     } finally {
       setLoading(false);
     }
@@ -37,7 +34,6 @@ export default function DeleteVideoButton({ videoId }: { videoId: string }) {
       <Button variant="danger" onClick={onDelete} disabled={loading}>
         {loading ? "Moving…" : "Move to Trash"}
       </Button>
-      {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
     </div>
   );
 }

@@ -20,7 +20,6 @@ export default function CommentForm({ videoId }: { videoId: string }) {
   const [timestampSeconds, setTimestampSeconds] = React.useState<string>("");
   const [visibility, setVisibility] = React.useState<"team" | "player_private" | "coach_only">("team");
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
 
   const [role, setRole] = React.useState<"coach" | "player" | null>(null);
@@ -48,17 +47,14 @@ export default function CommentForm({ videoId }: { videoId: string }) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setSuccess(null);
 
     if (!body.trim()) {
-      setError("Write a comment.");
       return;
     }
 
     const ts = timestampSeconds.trim() ? Number(timestampSeconds.trim()) : null;
     if (ts !== null && (!Number.isFinite(ts) || ts < 0)) {
-      setError("Timestamp must be a positive number of seconds.");
       return;
     }
 
@@ -80,8 +76,7 @@ export default function CommentForm({ videoId }: { videoId: string }) {
       setTimeout(() => setSuccess(null), 2000);
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Unable to post comment.");
-      toast("Unable to post comment.");
+      console.error("post comment failed", err);
     } finally {
       setLoading(false);
     }
@@ -170,7 +165,6 @@ export default function CommentForm({ videoId }: { videoId: string }) {
           </div>
         ) : null}
 
-        {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
         {success ? <div style={{ color: "var(--primary)", fontSize: 13 }}>{success}</div> : null}
       </form>
     </Card>

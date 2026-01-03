@@ -166,7 +166,7 @@ export default function LessonsClient({
   const [minutes, setMinutes] = React.useState<number>(60);
   const [notes, setNotes] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
 
   const [assistantOpen, setAssistantOpen] = React.useState(false);
   const [assistantDay, setAssistantDay] = React.useState<Date>(() => {
@@ -298,19 +298,15 @@ export default function LessonsClient({
   }, [blocks, visibleDays]);
 
   async function requestLesson() {
-    setError(null);
     if (!coachUserId) {
-      setError("Choose a coach.");
       return;
     }
     if (!startLocal) {
-      setError("Choose a time.");
       return;
     }
 
     const start = parseLocalDateTime(startLocal);
     if (!start || !Number.isFinite(start.getTime())) {
-      setError("Choose a valid time.");
       return;
     }
 
@@ -334,9 +330,7 @@ export default function LessonsClient({
       toast("Lesson requested.");
       window.location.reload();
     } catch (e: any) {
-      const msg = e?.message ?? "Unable to request lesson.";
-      setError(msg);
-      toast(msg);
+      console.error("requestLesson failed", e);
     } finally {
       setLoading(false);
     }
@@ -360,7 +354,7 @@ export default function LessonsClient({
       setAssistantSettings(((json as any)?.settings ?? assistantSettings) as CoachScheduleSettings);
       setAssistantOpen(true);
     } catch (e: any) {
-      toast(e?.message ?? "Unable to load availability.");
+      console.error("loadAssistant failed", e);
     } finally {
       setAssistantLoading(false);
     }
@@ -383,7 +377,7 @@ export default function LessonsClient({
       setMySchedule(next);
       toast("Working hours saved.");
     } catch (e: any) {
-      toast(e?.message ?? "Unable to save working hours.");
+      console.error("saveMySchedule failed", e);
     } finally {
       setLoading(false);
     }
@@ -391,18 +385,15 @@ export default function LessonsClient({
 
   async function coachCreateLesson() {
     if (!schedPrimaryPlayerUserId) {
-      toast("Choose a player.");
       return;
     }
     const start = parseLocalDateTime(schedStartLocal);
     const end = parseLocalDateTime(schedEndLocal);
     if (!start || !end || end <= start) {
-      toast("Choose a valid start/end time.");
       return;
     }
     const minutes = Math.round((end.getTime() - start.getTime()) / 60000);
     if (minutes < 15 || minutes > 180) {
-      toast("Duration must be 15–180 minutes.");
       return;
     }
 
@@ -433,7 +424,7 @@ export default function LessonsClient({
       toast("Lesson scheduled.");
       router.refresh();
     } catch (e: any) {
-      toast(e?.message ?? "Unable to schedule lesson.");
+      console.error("coachCreateLesson failed", e);
     } finally {
       setLoading(false);
     }
@@ -452,7 +443,7 @@ export default function LessonsClient({
       toast(accept ? "Invite accepted." : "Invite declined.");
       window.location.reload();
     } catch (e: any) {
-      toast(e?.message ?? "Unable to respond.");
+      console.error("respondInvite failed", e);
     } finally {
       setLoading(false);
     }
@@ -471,7 +462,7 @@ export default function LessonsClient({
       toast(present ? "Player invited." : "Player removed.");
       window.location.reload();
     } catch (e: any) {
-      toast(e?.message ?? "Unable to update participants.");
+      console.error("coachSetSecond failed", e);
     } finally {
       setLoading(false);
     }
@@ -491,8 +482,7 @@ export default function LessonsClient({
       toast(approve ? "Lesson approved." : "Lesson declined.");
       window.location.reload();
     } catch (e: any) {
-      const msg = e?.message ?? "Unable to update request.";
-      toast(msg);
+      console.error("respond failed", e);
     } finally {
       setLoading(false);
     }
@@ -513,7 +503,7 @@ export default function LessonsClient({
       toast("Lesson cancelled.");
       window.location.reload();
     } catch (e: any) {
-      toast(e?.message ?? "Unable to cancel lesson.");
+      console.error("cancel failed", e);
     } finally {
       setLoading(false);
     }
@@ -525,16 +515,13 @@ export default function LessonsClient({
     const minsRaw = window.prompt("Duration minutes (15–180)", "60");
     if (!minsRaw) return;
     const mins = Number(minsRaw);
-    if (!Number.isFinite(mins) || mins < 15 || mins > 180) {
-      toast("Invalid duration.");
-      return;
-    }
+    if (!Number.isFinite(mins) || mins < 15 || mins > 180) return;
     const note = window.prompt("Optional note (leave blank if none):") ?? "";
 
     setLoading(true);
     try {
       const startDt = parseLocalDateTime(start);
-      if (!startDt) throw new Error("Invalid start time.");
+      if (!startDt) return;
       const resp = await fetch(`/api/lessons/${id}/reschedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -550,7 +537,7 @@ export default function LessonsClient({
       toast(role === "coach" ? "Lesson rescheduled." : "Reschedule requested.");
       window.location.reload();
     } catch (e: any) {
-      toast(e?.message ?? "Unable to reschedule.");
+      console.error("reschedule failed", e);
     } finally {
       setLoading(false);
     }
@@ -578,7 +565,7 @@ export default function LessonsClient({
       toast("Time blocked off.");
       window.location.reload();
     } catch (e: any) {
-      toast(e?.message ?? "Unable to block time.");
+      console.error("createBlock failed", e);
     } finally {
       setLoading(false);
     }
@@ -599,7 +586,7 @@ export default function LessonsClient({
       toast("Blocked time removed.");
       window.location.reload();
     } catch (e: any) {
-      toast(e?.message ?? "Unable to remove blocked time.");
+      console.error("deleteBlock failed", e);
     } finally {
       setLoading(false);
     }
@@ -1140,8 +1127,6 @@ export default function LessonsClient({
               <div className="label">Note (optional)</div>
               <textarea className="textarea" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What should the coach focus on?" />
             </div>
-
-            {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
 
             <div className="row" style={{ justifyContent: "flex-end" }}>
               <Button variant="primary" disabled={loading} onClick={requestLesson}>

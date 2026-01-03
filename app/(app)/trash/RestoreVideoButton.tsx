@@ -8,11 +8,9 @@ import { toast } from "../toast";
 export default function RestoreVideoButton({ videoId }: { videoId: string }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   async function onRestore() {
     setLoading(true);
-    setError(null);
     try {
       const resp = await fetch(`/api/videos/${videoId}/restore`, { method: "POST" });
       const json = await resp.json().catch(() => ({}));
@@ -20,8 +18,7 @@ export default function RestoreVideoButton({ videoId }: { videoId: string }) {
       toast("Restored.");
       router.refresh();
     } catch (e: any) {
-      setError(e?.message ?? "Unable to restore.");
-      toast("Unable to restore.");
+      console.error("restore failed", e);
     } finally {
       setLoading(false);
     }
@@ -32,7 +29,6 @@ export default function RestoreVideoButton({ videoId }: { videoId: string }) {
       <Button variant="primary" onClick={onRestore} disabled={loading}>
         {loading ? "Restoring…" : "Restore"}
       </Button>
-      {error ? <div style={{ color: "var(--danger)", fontSize: 12 }}>{error}</div> : null}
     </div>
   );
 }

@@ -9,14 +9,12 @@ export default function RosterCard({
   players: Array<{ user_id: string; display_name: string; is_active?: boolean }>;
 }) {
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
 
   async function setActive(userId: string, active: boolean) {
     const ok = window.confirm(active ? "Reactivate this player?" : "Deactivate this player?");
     if (!ok) return;
 
     setLoadingId(userId);
-    setError(null);
     try {
       const resp = await fetch("/api/team/players", {
         method: "POST",
@@ -27,7 +25,7 @@ export default function RosterCard({
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to update player");
       window.location.reload();
     } catch (e: any) {
-      setError(e?.message ?? "Unable to update player");
+      console.error("update player active failed", e);
     } finally {
       setLoadingId(null);
     }
@@ -42,8 +40,6 @@ export default function RosterCard({
             Deactivated players can’t access the app.
           </div>
         </div>
-
-        {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
 
         <div className="stack">
           {players.map((p) => {

@@ -51,7 +51,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
   const [category, setCategory] = React.useState<"game" | "training">("training");
   const [items, setItems] = React.useState<UploadItem[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
 
   const [role, setRole] = React.useState<string | null>(null);
   const [playerMode, setPlayerMode] = React.useState<"in_person" | "hybrid" | "remote" | null>(null);
@@ -296,7 +296,6 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
   }
 
   async function retryOne(idx: number) {
-    setError(null);
     const it = items[idx];
     if (!it) return;
     try {
@@ -307,22 +306,20 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
         router.refresh();
       }
     } catch (err: any) {
-      setItems((prev) => prev.map((x, j) => (j === idx ? { ...x, status: "error", error: err?.message } : x)));
+      console.error("retry upload failed", err);
+      setItems((prev) => prev.map((x, j) => (j === idx ? { ...x, status: "error", error: undefined } : x)));
     }
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     if (uploadKind === "file" && items.length === 0) {
-      setError("Choose at least one video file.");
       return;
     }
 
     const parsed = schema.safeParse({ title, category });
     if (!parsed.success) {
-      setError("Select a category and keep the title under 120 characters.");
       return;
     }
 
@@ -368,7 +365,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       }
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Upload failed.");
+      console.error("upload submit failed", err);
     } finally {
       setLoading(false);
     }
@@ -416,7 +413,6 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
               className={uploadKind === "file" ? "pill" : "btn"}
               onClick={() => {
                 setUploadKind("file");
-                setError(null);
               }}
               disabled={loading}
             >
@@ -427,7 +423,6 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
               className={uploadKind === "link" ? "pill" : "btn"}
               onClick={() => {
                 setUploadKind("link");
-                setError(null);
               }}
               disabled={loading}
             >
@@ -568,15 +563,9 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
                     </div>
 
                     <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
-                      <div className="pill">
-                        {it.status === "queued"
-                          ? "Queued"
-                          : it.status === "uploading"
-                            ? "Uploading"
-                            : it.status === "done"
-                              ? "Done"
-                              : "Error"}
-                      </div>
+                      {it.status === "queued" || it.status === "uploading" || it.status === "done" ? (
+                        <div className="pill">{it.status === "queued" ? "Queued" : it.status === "uploading" ? "Uploading" : "Done"}</div>
+                      ) : null}
                       {it.status === "error" ? (
                         <Button onClick={() => retryOne(i)} disabled={loading}>
                           Retry
@@ -598,18 +587,14 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
                       </div>
                     </div>
 
-                    {it.status === "error" && it.error ? (
-                      <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                        {it.error}
-                      </div>
-                    ) : null}
+                    {/* Intentionally do not show error/failure messages. */}
                   </div>
                 ))}
               </div>
             </div>
           ) : null}
 
-          {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
+          {/* Intentionally do not show error/failure messages. */}
 
           <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
             <div className="muted" style={{ fontSize: 12 }}>

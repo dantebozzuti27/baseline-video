@@ -19,12 +19,10 @@ export default function PlayerModeCard({
 }) {
   const [mode, setMode] = React.useState<PlayerMode>((initialMode ?? "in_person") as PlayerMode);
   const [saving, setSaving] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   async function save(next: PlayerMode) {
     setMode(next);
     setSaving(true);
-    setError(null);
     try {
       const resp = await fetch(`/api/team/players/${userId}/mode`, {
         method: "PATCH",
@@ -35,8 +33,7 @@ export default function PlayerModeCard({
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to update player category");
       toast(`Player category set to ${labelFor(next)}`);
     } catch (e: any) {
-      setError(e?.message ?? "Unable to update player category");
-      toast("Unable to update player category");
+      console.error("set player category failed", e);
     } finally {
       setSaving(false);
     }
@@ -51,8 +48,6 @@ export default function PlayerModeCard({
             Used for coaching workflow defaults (not permissions).
           </div>
         </div>
-
-        {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
 
         <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
           {(["in_person", "hybrid", "remote"] as PlayerMode[]).map((m) => (

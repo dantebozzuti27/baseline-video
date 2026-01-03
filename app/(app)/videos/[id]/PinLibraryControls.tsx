@@ -15,11 +15,9 @@ export default function PinLibraryControls({
   const [pinned, setPinned] = React.useState(initialPinned);
   const [isLibrary, setIsLibrary] = React.useState(initialIsLibrary);
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   async function update(next: { pinned?: boolean; isLibrary?: boolean }) {
     setLoading(true);
-    setError(null);
     try {
       const resp = await fetch(`/api/videos/${videoId}`, {
         method: "PATCH",
@@ -31,7 +29,7 @@ export default function PinLibraryControls({
       if (typeof next.pinned === "boolean") setPinned(next.pinned);
       if (typeof next.isLibrary === "boolean") setIsLibrary(next.isLibrary);
     } catch (e: any) {
-      setError(e?.message ?? "Unable to update");
+      console.error("pin/library update failed", e);
     } finally {
       setLoading(false);
     }
@@ -49,7 +47,6 @@ export default function PinLibraryControls({
       <Button disabled={loading} onClick={() => update({ isLibrary: !isLibrary })}>
         {isLibrary ? "Remove from library" : "Add to library"}
       </Button>
-      {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
     </div>
   );
 }

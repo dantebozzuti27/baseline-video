@@ -12,12 +12,10 @@ function siteOrigin() {
 export default function TeamInviteCard() {
   const [token, setToken] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
 
   async function load() {
     setLoading(true);
-    setError(null);
     setCopied(false);
     try {
       const resp = await fetch("/api/team/invite", { method: "GET" });
@@ -25,7 +23,7 @@ export default function TeamInviteCard() {
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to load invite");
       setToken((json as any).token as string);
     } catch (e: any) {
-      setError(e?.message ?? "Unable to load invite");
+      console.error("load invite failed", e);
     } finally {
       setLoading(false);
     }
@@ -58,8 +56,6 @@ export default function TeamInviteCard() {
         ) : (
           <div className="muted" style={{ fontSize: 13 }}>{loading ? "Loading…" : "Invite not loaded yet."}</div>
         )}
-
-        {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
 
         <div className="row" style={{ alignItems: "center" }}>
           <Button

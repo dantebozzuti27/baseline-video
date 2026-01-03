@@ -11,7 +11,6 @@ function siteOrigin() {
 export default function InviteCard() {
   const [token, setToken] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
 
   async function loadInvite() {
     try {
@@ -52,15 +51,12 @@ export default function InviteCard() {
           <div className="muted" style={{ fontSize: 13 }}>Loading…</div>
         )}
 
-        {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
-
         <div className="row" style={{ alignItems: "center" }}>
           <Button
             variant="primary"
             onClick={async () => {
               if (!inviteUrl) return;
               setLoading(true);
-              setError(null);
               try {
                 await navigator.clipboard.writeText(inviteUrl);
                 toast("Invite link copied.");
