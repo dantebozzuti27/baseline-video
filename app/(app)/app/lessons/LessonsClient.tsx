@@ -121,8 +121,13 @@ export default function LessonsClient({
   }, []);
 
   const [view, setView] = React.useState<"day" | "3day" | "week" | "list">("week");
-  const [weekStart, setWeekStart] = React.useState<Date>(() => startOfWeekMonday(new Date()));
+  const [anchorDate, setAnchorDate] = React.useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
   const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
+  const [pxPerHour, setPxPerHour] = React.useState<number>(56);
 
   // Default to Day view on small screens so it fits like Outlook mobile.
   React.useEffect(() => {
@@ -130,6 +135,21 @@ export default function LessonsClient({
     if (window.innerWidth < 760) {
       setView((v) => (v === "week" ? "day" : v));
     }
+  }, []);
+
+  // Keep event positioning math in sync with CSS (mobile uses a smaller hour height).
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const el = document.querySelector(".bvCalGrid") as HTMLElement | null;
+    const read = () => {
+      const target = el ?? document.documentElement;
+      const v = window.getComputedStyle(target).getPropertyValue("--bvCalHourPx").trim();
+      const n = Number.parseFloat(v.replace("px", ""));
+      if (Number.isFinite(n) && n > 10) setPxPerHour(n);
+    };
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
   }, []);
 
   const [coachUserId, setCoachUserId] = React.useState<string>(coaches[0]?.user_id ?? "");
@@ -243,16 +263,17 @@ export default function LessonsClient({
 
   const visibleDays = React.useMemo(() => {
     const n = view === "day" ? 1 : view === "3day" ? 3 : 7;
-    return new Array(n).fill(0).map((_, i) => addDays(weekStart, i));
-  }, [weekStart, view]);
+    const start = view === "week" ? startOfWeekMonday(anchorDate) : new Date(anchorDate);
+    return new Array(n).fill(0).map((_, i) => addDays(start, i));
+  }, [anchorDate, view]);
 
   const startHour = Math.max(0, Math.min(23, Math.floor(mySchedule.work_start_min / 60) - 1));
   const endHour = Math.max(startHour + 1, Math.min(23, Math.ceil(mySchedule.work_end_min / 60) + 1));
   const hours = React.useMemo(() => new Array(endHour - startHour + 1).fill(0).map((_, i) => startHour + i), [startHour, endHour]);
 
   const weekLessons = React.useMemo(() => {
-    const start = new Date(weekStart);
-    const end = addDays(start, view === "day" ? 1 : view === "3day" ? 3 : 7);
+    const start = new Date(visibleDays[0] ?? new Date());
+    const end = addDays(start, visibleDays.length);
     const a = start.getTime();
     const b = end.getTime();
     return lessons.filter((l) => {
@@ -260,11 +281,11 @@ export default function LessonsClient({
       const e = new Date(l.end_at).getTime();
       return Number.isFinite(s) && Number.isFinite(e) && e > a && s < b && (l.status === "approved" || l.status === "requested");
     });
-  }, [lessons, weekStart, view]);
+  }, [lessons, visibleDays]);
 
   const weekBlocks = React.useMemo(() => {
-    const start = new Date(weekStart);
-    const end = addDays(start, view === "day" ? 1 : view === "3day" ? 3 : 7);
+    const start = new Date(visibleDays[0] ?? new Date());
+    const end = addDays(start, visibleDays.length);
     const a = start.getTime();
     const b = end.getTime();
     return (blocks ?? []).filter((bl) => {
@@ -272,7 +293,7 @@ export default function LessonsClient({
       const e = new Date(bl.end_at).getTime();
       return Number.isFinite(s) && Number.isFinite(e) && e > a && s < b;
     });
-  }, [blocks, weekStart, view]);
+  }, [blocks, visibleDays]);
 
   async function requestLesson() {
     setError(null);
@@ -580,20 +601,27 @@ export default function LessonsClient({
     return peopleById[userId]?.display_name ?? "User";
   }
 
-  function isInHourRange(dtIso: string) {
-    const d = new Date(dtIso);
-    const h = d.getHours() + d.getMinutes() / 60;
-    return h >= startHour && h <= endHour + 1;
-  }
-
   function topFor(dt: Date) {
     const mins = dt.getHours() * 60 + dt.getMinutes();
     const startMins = startHour * 60;
-    return Math.round(((mins - startMins) / 60) * 56); // 56px per hour
+    return Math.round(((mins - startMins) / 60) * pxPerHour);
   }
 
   function heightForMinutes(mins: number) {
-    return Math.max(22, Math.round((mins / 60) * 56));
+    return Math.max(22, Math.round((mins / 60) * pxPerHour));
+  }
+
+  function clampToVisibleWindow(start: Date, end: Date) {
+    const winStart = startHour * 60;
+    const winEnd = (endHour + 1) * 60;
+    const s = start.getHours() * 60 + start.getMinutes();
+    const e = end.getHours() * 60 + end.getMinutes();
+    const a = Math.max(s, winStart);
+    const b = Math.min(e, winEnd);
+    if (b <= a) return null;
+    const top = Math.round(((a - winStart) / 60) * pxPerHour);
+    const height = Math.max(22, Math.round(((b - a) / 60) * pxPerHour));
+    return { top, height };
   }
 
   const selectedLesson = selectedLessonId ? lessons.find((l) => l.id === selectedLessonId) ?? null : null;
@@ -610,16 +638,32 @@ export default function LessonsClient({
         <div className="bvCalToolbar">
           <Button
             onClick={() => {
-              setWeekStart(startOfWeekMonday(new Date()));
+              const d = new Date();
+              d.setHours(0, 0, 0, 0);
+              setAnchorDate(d);
             }}
           >
             Today
           </Button>
-          <Button onClick={() => setWeekStart(addDays(weekStart, -7))}>‹</Button>
-          <Button onClick={() => setWeekStart(addDays(weekStart, 7))}>›</Button>
+          <Button
+            onClick={() => {
+              const delta = view === "day" ? -1 : view === "3day" ? -3 : -7;
+              setAnchorDate((d) => addDays(d, delta));
+            }}
+          >
+            ‹
+          </Button>
+          <Button
+            onClick={() => {
+              const delta = view === "day" ? 1 : view === "3day" ? 3 : 7;
+              setAnchorDate((d) => addDays(d, delta));
+            }}
+          >
+            ›
+          </Button>
           <div className="pill" style={{ userSelect: "none" }}>
-            {weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })} –{" "}
-            {addDays(weekStart, 6).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            {visibleDays[0]?.toLocaleDateString(undefined, { month: "short", day: "numeric" })} –{" "}
+            {visibleDays[visibleDays.length - 1]?.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </div>
           <Button variant={view === "day" ? "primary" : "default"} onClick={() => setView("day")}>
             Day
@@ -688,14 +732,14 @@ export default function LessonsClient({
                       {dayBlocks.map((b) => {
                         const s = new Date(b.start_at);
                         const e = new Date(b.end_at);
-                        if (!isInHourRange(b.start_at) && !isInHourRange(b.end_at)) return null;
-                        const top = topFor(s);
+                        const clamped = clampToVisibleWindow(s, e);
+                        if (!clamped) return null;
                         const mins = Math.max(15, Math.round((e.getTime() - s.getTime()) / 60000));
                         return (
                           <button
                             key={b.id}
                             className="bvCalEvent bvCalBlock"
-                            style={{ top, height: heightForMinutes(mins) }}
+                            style={{ top: clamped.top, height: clamped.height }}
                             onClick={() => {
                               if (role === "coach") deleteBlock(b.id);
                             }}
@@ -711,8 +755,8 @@ export default function LessonsClient({
                       {dayLessons.map((l) => {
                         const s = new Date(l.start_at);
                         const e = new Date(l.end_at);
-                        if (!isInHourRange(l.start_at) && !isInHourRange(l.end_at)) return null;
-                        const top = topFor(s);
+                        const clamped = clampToVisibleWindow(s, e);
+                        if (!clamped) return null;
                         const mins = Math.max(15, Math.round((e.getTime() - s.getTime()) / 60000));
                         const mine = myInviteStatus(l.id);
                         const statusPill =
@@ -727,7 +771,7 @@ export default function LessonsClient({
                           <button
                             key={l.id}
                             className={selectedLessonId === l.id ? "bvCalEvent bvCalEventSelected" : "bvCalEvent"}
-                            style={{ top, height: heightForMinutes(mins) }}
+                            style={{ top: clamped.top, height: clamped.height }}
                             onClick={() => setSelectedLessonId(l.id)}
                             type="button"
                           >
