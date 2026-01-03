@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { LocalDateTime } from "@/components/LocalDateTime";
 import { LinkButton, Card } from "@/components/ui";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Avatar } from "@/components/Avatar";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
@@ -64,22 +66,28 @@ export default async function VideoDetailPage({ params }: { params: { id: string
 
   return (
     <div className="stack">
+      <Breadcrumbs
+        items={[
+          { label: isCoach ? "Dashboard" : "Feed", href: isCoach ? "/app/dashboard" : "/app" },
+          { label: video.title }
+        ]}
+      />
+
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>{video.title}</div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-            {video.category.toUpperCase()} • <LocalDateTime value={video.created_at} />
-          </div>
-          <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-            <span className="pill" style={{ marginRight: 8 }}>
+          <div className="row" style={{ marginTop: 8, gap: 8, alignItems: "center" }}>
+            <div className="pill">{video.category.toUpperCase()}</div>
+            <div className={visibilityBadge === "LIBRARY" ? "pill pillInfo" : visibilityBadge === "COACH-SHARED" ? "pill pillWarning" : "pill"}>
               {visibilityBadge}
+            </div>
+            <span className="muted" style={{ fontSize: 13 }}>
+              <LocalDateTime value={video.created_at} />
             </span>
-            Visible to: {visibleToLabel}
           </div>
         </div>
         <div className="row" style={{ alignItems: "center" }}>
           <ShareVideoButton videoId={video.id} />
-          <LinkButton href={myProfile?.role === "coach" ? "/app/dashboard" : "/app"}>Back</LinkButton>
         </div>
       </div>
 
@@ -114,33 +122,40 @@ export default async function VideoDetailPage({ params }: { params: { id: string
       <div className="stack" style={{ gap: 10 }}>
         <div style={{ fontWeight: 900 }}>Comments</div>
         {comments && comments.length > 0 ? (
-          <div className="stack">
+          <div className="stack bvStagger">
             {comments.map((c) => {
               const author = authorMap.get(c.author_user_id);
-              const label = author
-                ? `${displayNameFromProfile(author)} (${String(author.role).toUpperCase()})`
-                : "User";
+              const authorName = author ? displayNameFromProfile(author) : "User";
+              const authorRole = author?.role ?? "user";
               const canDeleteComment = isCoach || c.author_user_id === user.id;
 
               return (
                 <div key={c.id} className="card">
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontWeight: 800 }}>{label}</div>
-                    <div className="row" style={{ alignItems: "center" }}>
-                      {c.visibility === "player_private" ? <div className="pill">PRIVATE</div> : null}
-                      {c.visibility === "coach_only" ? <div className="pill">COACH NOTE</div> : null}
+                    <div className="row" style={{ alignItems: "center", gap: 10 }}>
+                      <Avatar name={authorName} size="sm" />
+                      <div>
+                        <div style={{ fontWeight: 800 }}>{authorName}</div>
+                        <div className={authorRole === "coach" ? "pill pillInfo" : "pill"} style={{ marginTop: 4 }}>
+                          {String(authorRole).toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="row" style={{ alignItems: "center", gap: 8 }}>
+                      {c.visibility === "player_private" && <div className="pill pillMuted">PRIVATE</div>}
+                      {c.visibility === "coach_only" && <div className="pill pillWarning">COACH NOTE</div>}
                       <div className="muted" style={{ fontSize: 12 }}>
                         <LocalDateTime value={c.created_at} />
                       </div>
-                      {canDeleteComment ? <DeleteCommentButton commentId={c.id} /> : null}
+                      {canDeleteComment && <DeleteCommentButton commentId={c.id} />}
                     </div>
                   </div>
-                  {c.timestamp_seconds !== null ? (
-                    <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                      <a href={`#t=${c.timestamp_seconds}`} className="pill">@{c.timestamp_seconds}s</a>
+                  {c.timestamp_seconds !== null && (
+                    <div style={{ marginTop: 8 }}>
+                      <a href={`#t=${c.timestamp_seconds}`} className="pill pillSuccess">@{c.timestamp_seconds}s</a>
                     </div>
-                  ) : null}
-                  <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{c.body}</div>
+                  )}
+                  <div style={{ marginTop: 10, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{c.body}</div>
                 </div>
               );
             })}

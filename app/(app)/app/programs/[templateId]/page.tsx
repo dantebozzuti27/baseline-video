@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import TemplateEditorClient from "./TemplateEditorClient";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +73,14 @@ export default async function ProgramTemplatePage({ params }: { params: { templa
     .limit(8000);
 
   return (
-    <TemplateEditorClient
+    <div className="stack">
+      <Breadcrumbs
+        items={[
+          { label: "Programs", href: "/app/programs" },
+          { label: tmpl.title }
+        ]}
+      />
+      <TemplateEditorClient
       template={{
         id: tmpl.id,
         title: tmpl.title,
@@ -105,7 +113,8 @@ export default async function ProgramTemplatePage({ params }: { params: { templa
         notes_to_player: a.notes_to_player ?? "",
         sort_order: a.sort_order ?? 0
       }))}
-    />
+      />
+    </div>
   );
 }
 

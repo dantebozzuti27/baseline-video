@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
+import ProgramsNav from "../ProgramsNav";
 import EnrollmentsClient from "./EnrollmentsClient";
 
 export const dynamic = "force-dynamic";
@@ -49,11 +50,20 @@ export default async function ProgramEnrollmentsPage() {
     .limit(300);
 
   return (
-    <EnrollmentsClient
-      templates={(templates ?? []) as any}
-      players={(players ?? []).map((p: any) => ({ user_id: p.user_id, display_name: p.display_name }))}
-      enrollments={(enrollments ?? []) as any}
-    />
+    <div className="stack">
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Programs</div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          Manage player enrollments
+        </div>
+      </div>
+      <ProgramsNav />
+      <EnrollmentsClient
+        templates={(templates ?? []) as any}
+        players={(players ?? []).map((p: any) => ({ user_id: p.user_id, display_name: p.display_name }))}
+        enrollments={(enrollments ?? []) as any}
+      />
+    </div>
   );
 }
 

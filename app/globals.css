@@ -1214,6 +1214,71 @@ a {
   }
 }
 
+/* Spinner */
+@keyframes bvSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.bvSpinner {
+  animation: bvSpin 0.8s linear infinite;
+  color: var(--primary);
+}
+
+.bvSpinnerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(5, 10, 18, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.bvSpinnerMessage {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Tab navigation */
+.bvTabs {
+  display: flex;
+  gap: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.bvTab {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bvTab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.bvTabActive {
+  background: rgba(99, 179, 255, 0.15);
+  color: var(--primary);
+}
+
+.bvTabActive:hover {
+  background: rgba(99, 179, 255, 0.2);
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;

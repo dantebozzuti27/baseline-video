@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
+import ProgramsNav from "../ProgramsNav";
 import LibraryClient from "./LibraryClient";
 
 export const dynamic = "force-dynamic";
@@ -50,32 +51,41 @@ export default async function ProgramLibraryPage() {
     : ({ data: [] as any[] } as any);
 
   return (
-    <LibraryClient
-      focuses={(focuses ?? []).map((f: any) => ({
-        id: f.id,
-        name: f.name,
-        description: f.description ?? null,
-        cues: Array.isArray(f.cues_json) ? f.cues_json : []
-      }))}
-      drills={(drills ?? []).map((d: any) => ({
-        id: d.id,
-        title: d.title,
-        category: d.category,
-        goal: d.goal ?? null,
-        equipment: Array.isArray(d.equipment_json) ? d.equipment_json : [],
-        cues: Array.isArray(d.cues_json) ? d.cues_json : [],
-        mistakes: Array.isArray(d.common_mistakes_json) ? d.common_mistakes_json : []
-      }))}
-      media={(media ?? []).map((m: any) => ({
-        id: m.id,
-        drill_id: m.drill_id,
-        kind: m.kind,
-        video_id: m.video_id ?? null,
-        external_url: m.external_url ?? null,
-        title: m.title ?? null,
-        sort_order: m.sort_order ?? 0
-      }))}
-    />
+    <div className="stack">
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Programs</div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          Manage focuses, drills, and instruction media
+        </div>
+      </div>
+      <ProgramsNav />
+      <LibraryClient
+        focuses={(focuses ?? []).map((f: any) => ({
+          id: f.id,
+          name: f.name,
+          description: f.description ?? null,
+          cues: Array.isArray(f.cues_json) ? f.cues_json : []
+        }))}
+        drills={(drills ?? []).map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          category: d.category,
+          goal: d.goal ?? null,
+          equipment: Array.isArray(d.equipment_json) ? d.equipment_json : [],
+          cues: Array.isArray(d.cues_json) ? d.cues_json : [],
+          mistakes: Array.isArray(d.common_mistakes_json) ? d.common_mistakes_json : []
+        }))}
+        media={(media ?? []).map((m: any) => ({
+          id: m.id,
+          drill_id: m.drill_id,
+          kind: m.kind,
+          video_id: m.video_id ?? null,
+          external_url: m.external_url ?? null,
+          title: m.title ?? null,
+          sort_order: m.sort_order ?? 0
+        }))}
+      />
+    </div>
   );
 }
 

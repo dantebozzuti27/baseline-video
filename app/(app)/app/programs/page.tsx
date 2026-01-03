@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
+import ProgramsNav from "./ProgramsNav";
 import ProgramsListClient from "./ProgramsListClient";
 
 export const dynamic = "force-dynamic";
@@ -59,29 +60,20 @@ export default async function ProgramsHomePage() {
   }));
 
   return (
-    <div className="container" style={{ paddingTop: 18 }}>
+    <div className="stack">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>Programs</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-            Build a remote plan, enroll players, and review submissions in one place.
+            Build remote plans, enroll players, review submissions.
           </div>
         </div>
-        <div className="row">
-          <Link className="btn" href="/app/programs/feed">
-            Feed
-          </Link>
-          <Link className="btn" href="/app/programs/library">
-            Library
-          </Link>
-          <Link className="btn" href="/app/programs/enrollments">
-            Enrollments
-          </Link>
-          <Link className="btn btnPrimary" href="/app/programs/new">
-            New program
-          </Link>
-        </div>
+        <Link className="btn btnPrimary" href="/app/programs/new">
+          New program
+        </Link>
       </div>
+
+      <ProgramsNav />
 
       <ProgramsListClient templates={templatesWithCounts} />
     </div>

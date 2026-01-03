@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
+import ProgramsNav from "../ProgramsNav";
 import CoachProgramFeedClient from "./CoachProgramFeedClient";
 
 export const dynamic = "force-dynamic";
@@ -74,12 +75,21 @@ export default async function ProgramFeedPage() {
   for (const p of players ?? []) playerById[p.user_id] = p.display_name;
 
   return (
-    <CoachProgramFeedClient
-      enrollments={(enrollments ?? []) as any}
-      submissions={(submissions ?? []).map((s: any) => ({ ...s, assignment: s.assignment_id ? assignmentById[s.assignment_id] : null })) as any}
-      reviews={(reviews ?? []) as any}
-      playerById={playerById}
-    />
+    <div className="stack">
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Programs</div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          Review player submissions
+        </div>
+      </div>
+      <ProgramsNav />
+      <CoachProgramFeedClient
+        enrollments={(enrollments ?? []) as any}
+        submissions={(submissions ?? []).map((s: any) => ({ ...s, assignment: s.assignment_id ? assignmentById[s.assignment_id] : null })) as any}
+        reviews={(reviews ?? []) as any}
+        playerById={playerById}
+      />
+    </div>
   );
 }
 
