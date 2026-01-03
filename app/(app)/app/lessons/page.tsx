@@ -42,6 +42,16 @@ export default async function LessonsPage() {
     peopleById[p.user_id] = { display_name: p.display_name, role: p.role };
   }
 
+  const { data: blocks } =
+    profile.role === "coach"
+      ? await supabase
+          .from("coach_time_blocks")
+          .select("id, start_at, end_at, timezone, note")
+          .eq("coach_user_id", profile.user_id)
+          .order("start_at", { ascending: true })
+          .limit(120)
+      : ({ data: [] as any[] } as any);
+
   return (
     <LessonsClient
       role={profile.role}
@@ -49,6 +59,7 @@ export default async function LessonsPage() {
       coaches={(coaches ?? []).map((c: any) => ({ user_id: c.user_id, display_name: c.display_name }))}
       peopleById={peopleById}
       lessons={(lessons ?? []) as any}
+      blocks={(blocks ?? []) as any}
     />
   );
 }

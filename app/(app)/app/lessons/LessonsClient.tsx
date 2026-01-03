@@ -18,6 +18,14 @@ type Lesson = {
   coach_response_note: string | null;
 };
 
+type Block = {
+  id: string;
+  start_at: string;
+  end_at: string;
+  timezone: string;
+  note: string | null;
+};
+
 function fmt(dtIso: string) {
   try {
     const d = new Date(dtIso);
@@ -39,13 +47,15 @@ export default function LessonsClient({
   myUserId,
   coaches,
   peopleById,
-  lessons
+  lessons,
+  blocks
 }: {
   role: Role;
   myUserId: string;
   coaches: Array<{ user_id: string; display_name: string }>;
   peopleById: Record<string, { display_name: string; role: Role }>;
   lessons: Lesson[];
+  blocks: Block[];
 }) {
   const tz = React.useMemo(() => {
     try {
@@ -67,6 +77,14 @@ export default function LessonsClient({
   const [notes, setNotes] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  const [blockStartLocal, setBlockStartLocal] = React.useState<string>(() => {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    d.setMinutes(0, 0, 0);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  });
+  const [blockMinutes, setBlockMinutes] = React.useState<number>(60);
+  const [blockNote, setBlockNote] = React.useState<string>("");
 
   const pending = lessons.filter((l) => l.status === "requested");
   const upcoming = lessons
@@ -158,6 +176,88 @@ export default function LessonsClient({
       window.location.reload();
     } catch (e: any) {
       toast(e?.message ?? "Unable to cancel lesson.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function reschedule(id: string) {
+    const start = window.prompt("New start time (YYYY-MM-DDTHH:mm). Example: 2026-01-03T14:00");
+    if (!start) return;
+    const minsRaw = window.prompt("Duration minutes (15–180)", "60");
+    if (!minsRaw) return;
+    const mins = Number(minsRaw);
+    if (!Number.isFinite(mins) || mins < 15 || mins > 180) {
+      toast("Invalid duration.");
+      return;
+    }
+    const note = window.prompt("Optional note (leave blank if none):") ?? "";
+
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/lessons/${id}/reschedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startAt: new Date(start).toISOString(),
+          minutes: mins,
+          timezone: tz,
+          note: note.trim() || undefined
+        })
+      });
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to reschedule.");
+      toast(role === "coach" ? "Lesson rescheduled." : "Reschedule requested.");
+      window.location.reload();
+    } catch (e: any) {
+      toast(e?.message ?? "Unable to reschedule.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function createBlock() {
+    setLoading(true);
+    try {
+      const start = new Date(blockStartLocal);
+      if (!Number.isFinite(start.getTime())) throw new Error("Choose a valid time.");
+      const resp = await fetch("/api/lessons/blocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          startAt: start.toISOString(),
+          minutes: blockMinutes,
+          timezone: tz,
+          note: blockNote.trim() || undefined
+        })
+      });
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to block time.");
+      toast("Time blocked off.");
+      window.location.reload();
+    } catch (e: any) {
+      toast(e?.message ?? "Unable to block time.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteBlock(id: string) {
+    const ok = window.confirm("Remove this blocked time?");
+    if (!ok) return;
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/lessons/blocks", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to remove blocked time.");
+      toast("Blocked time removed.");
+      window.location.reload();
+    } catch (e: any) {
+      toast(e?.message ?? "Unable to remove blocked time.");
     } finally {
       setLoading(false);
     }
@@ -269,6 +369,9 @@ export default function LessonsClient({
                         <Button variant="primary" disabled={loading} onClick={() => respond(l.id, true)}>
                           Approve
                         </Button>
+                      <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                        Reschedule
+                      </Button>
                       </div>
                     </div>
                     {l.notes ? (
@@ -284,6 +387,84 @@ export default function LessonsClient({
                 No pending requests.
               </div>
             )}
+          </div>
+        </Card>
+      ) : null}
+
+      {role === "coach" ? (
+        <Card>
+          <div className="stack">
+            <div style={{ fontWeight: 900 }}>Block off time</div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              Players can’t request lessons during blocked times. Approvals and reschedules will also be blocked.
+            </div>
+
+            <div className="stack" style={{ gap: 6 }}>
+              <div className="label">Start time</div>
+              <input
+                className="input"
+                type="datetime-local"
+                value={blockStartLocal}
+                onChange={(e) => setBlockStartLocal(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+
+            <Select
+              label="Duration"
+              name="blockMinutes"
+              value={String(blockMinutes)}
+              onChange={(v) => setBlockMinutes(Number(v))}
+              options={[
+                { value: "30", label: "30 min" },
+                { value: "60", label: "60 min" },
+                { value: "90", label: "90 min" },
+                { value: "120", label: "120 min" }
+              ]}
+            />
+
+            <div className="stack" style={{ gap: 6 }}>
+              <div className="label">Note (optional)</div>
+              <textarea
+                className="textarea"
+                rows={2}
+                value={blockNote}
+                onChange={(e) => setBlockNote(e.target.value)}
+                placeholder="e.g., Travel / Team practice / Off day"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="row" style={{ justifyContent: "flex-end" }}>
+              <Button variant="primary" disabled={loading} onClick={createBlock}>
+                {loading ? "Saving…" : "Block time"}
+              </Button>
+            </div>
+
+            {blocks.length ? (
+              <div className="stack" style={{ marginTop: 8 }}>
+                <div style={{ fontWeight: 900 }}>Upcoming blocks</div>
+                {blocks.map((b) => (
+                  <div key={b.id} className="card">
+                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontWeight: 900 }}>
+                          {fmt(b.start_at)} • {minutesBetween(b.start_at, b.end_at) ?? "?"} min
+                        </div>
+                        {b.note ? (
+                          <div className="muted" style={{ marginTop: 6, fontSize: 13, whiteSpace: "pre-wrap" }}>
+                            {b.note}
+                          </div>
+                        ) : null}
+                      </div>
+                      <Button disabled={loading} onClick={() => deleteBlock(b.id)}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </Card>
       ) : null}
@@ -306,6 +487,9 @@ export default function LessonsClient({
                     </div>
                     <div className="row" style={{ alignItems: "center" }}>
                       <div className="pill">APPROVED</div>
+                      <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                        Reschedule
+                      </Button>
                       <Button disabled={loading} onClick={() => cancel(l.id)}>
                         Cancel
                       </Button>
@@ -340,6 +524,9 @@ export default function LessonsClient({
                     </div>
                     <div className="row" style={{ alignItems: "center" }}>
                       <div className="pill">{String(l.status).toUpperCase()}</div>
+                      <Button disabled={loading} onClick={() => reschedule(l.id)}>
+                        Reschedule
+                      </Button>
                       {l.status !== "cancelled" ? (
                         <Button disabled={loading} onClick={() => cancel(l.id)}>
                           Cancel

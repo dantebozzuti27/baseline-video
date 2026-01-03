@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logEvent } from "@/lib/utils/events";
 
 const schema = z.object({
-  coachUserId: z.string().uuid(),
-  mode: z.enum(["in_person", "remote"]),
-  startAt: z.string().min(1), // ISO string
+  startAt: z.string().min(1),
   minutes: z.number().int().min(15).max(180),
   timezone: z.string().min(1).max(64).optional(),
-  notes: z.string().max(2000).optional()
+  note: z.string().max(2000).optional()
 });
 
-export async function POST(req: Request) {
+export async function POST(req: Request, { params }: { params: { id: string } }) {
   const supabase = createSupabaseServerClient();
   const {
     data: { user }
@@ -25,31 +24,26 @@ export async function POST(req: Request) {
   const startAt = new Date(parsed.data.startAt);
   if (!Number.isFinite(startAt.getTime())) return NextResponse.json({ error: "Invalid start time." }, { status: 400 });
 
-  const { data, error } = await supabase.rpc("request_lesson", {
-    p_coach_user_id: parsed.data.coachUserId,
-    p_mode: parsed.data.mode,
+  const { error } = await supabase.rpc("reschedule_lesson", {
+    p_lesson_id: params.id,
     p_start_at: startAt.toISOString(),
     p_minutes: parsed.data.minutes,
     p_timezone: parsed.data.timezone ?? "UTC",
-    p_notes: parsed.data.notes ?? null
+    p_note: parsed.data.note ?? null
   });
 
   if (error) {
-    console.error("request_lesson failed", error);
-    const msg =
-      (error as any)?.message?.includes("invalid_coach")
-        ? "Choose a coach on your team."
-        : (error as any)?.message?.includes("blocked")
-          ? "That time is blocked off by the coach."
-          : (error as any)?.message?.includes("conflict")
-            ? "That coach is already booked at that time."
-        : (error as any)?.message?.includes("invalid_duration")
-          ? "Choose a duration between 15 and 180 minutes."
-          : "Unable to request lesson.";
+    console.error("reschedule_lesson failed", error);
+    const msg = (error as any)?.message?.includes("conflict")
+      ? "That coach is already booked at that time."
+      : (error as any)?.message?.includes("blocked")
+        ? "That time is blocked off."
+        : "Unable to reschedule lesson.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, id: data });
+  await logEvent("lesson_rescheduled", "lesson_request", params.id, {});
+  return NextResponse.json({ ok: true });
 }
 
 

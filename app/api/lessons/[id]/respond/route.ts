@@ -29,6 +29,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     console.error("respond_to_lesson_request failed", error);
     const msg = (error as any)?.message?.includes("conflict")
       ? "That time conflicts with another approved lesson."
+      : (error as any)?.message?.includes("blocked")
+        ? "That time is blocked off."
       : "Unable to update lesson request.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
