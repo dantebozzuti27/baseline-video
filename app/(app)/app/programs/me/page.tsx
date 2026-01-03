@@ -76,28 +76,77 @@ export default async function MyProgramPage() {
   const weekIndex = clamp(Math.floor((safeDayRaw - 1) / safeCycleDays) + 1, 1, tmpl.weeks_count);
   const dayIndex = clamp(((safeDayRaw - 1) % safeCycleDays) + 1, 1, safeCycleDays);
 
+  // Fetch base template day
   const { data: dayPlan } = await db
     .from("program_template_days")
-    .select("template_id, week_index, day_index, focus_id, note")
+    .select("id, template_id, week_index, day_index, focus_id, day_note")
     .eq("template_id", tmpl.id)
     .eq("week_index", weekIndex)
     .eq("day_index", dayIndex)
     .maybeSingle();
 
-  const { data: focus } = dayPlan?.focus_id
-    ? await db.from("program_focuses").select("id, name, description, cues_json").eq("id", dayPlan.focus_id).maybeSingle()
-    : ({ data: null } as any);
-
-  const { data: dayAssignments } = await db
-    .from("program_template_day_assignments")
-    .select("id, drill_id, sets, reps, duration_min, requires_upload, upload_prompt, notes_to_player, sort_order")
-    .eq("template_id", tmpl.id)
+  // Fetch per-player day override if exists
+  const { data: dayOverride } = await db
+    .from("program_enrollment_day_overrides")
+    .select("id, week_index, day_index, focus_id, day_note, assignments_json")
+    .eq("enrollment_id", enrollment.id)
     .eq("week_index", weekIndex)
     .eq("day_index", dayIndex)
-    .order("sort_order", { ascending: true })
-    .limit(100);
+    .maybeSingle();
 
-  const drillIds = Array.from(new Set((dayAssignments ?? []).map((a: any) => a.drill_id).filter(Boolean)));
+  // Merge: override takes precedence
+  const effectiveFocusId = dayOverride?.focus_id ?? dayPlan?.focus_id ?? null;
+  const effectiveDayNote = dayOverride?.day_note ?? (dayPlan as any)?.day_note ?? "";
+
+  const { data: focus } = effectiveFocusId
+    ? await db.from("program_focuses").select("id, name, description, cues_json").eq("id", effectiveFocusId).maybeSingle()
+    : ({ data: null } as any);
+
+  // Fetch base template day assignments
+  const baseDayId = dayPlan?.id ?? null;
+  const { data: baseAssignments } = baseDayId
+    ? await db
+        .from("program_template_day_assignments")
+        .select("id, template_day_id, drill_id, sets, reps, minutes, requires_upload, upload_prompt, notes, created_at")
+        .eq("template_day_id", baseDayId)
+        .order("created_at", { ascending: true })
+        .limit(100)
+    : { data: [] as any[] };
+
+  // If day override has assignments, use those; otherwise use base
+  const overrideAssignments = Array.isArray((dayOverride as any)?.assignments_json) ? (dayOverride as any).assignments_json : [];
+  const useOverrideAssignments = dayOverride && overrideAssignments.length > 0;
+
+  // Build final assignments list
+  let dayAssignments: any[] = [];
+  if (useOverrideAssignments) {
+    // Override assignments are stored as JSON objects; we need to generate stable IDs
+    dayAssignments = overrideAssignments.map((a: any, idx: number) => ({
+      id: `override-${enrollment.id}-${weekIndex}-${dayIndex}-${idx}`,
+      drill_id: a.drill_id ?? null,
+      sets: a.sets ?? null,
+      reps: a.reps ?? null,
+      duration_min: a.minutes ?? null,
+      requires_upload: Boolean(a.requires_upload),
+      upload_prompt: a.upload_prompt ?? "",
+      notes_to_player: a.notes ?? "",
+      sort_order: idx
+    }));
+  } else {
+    dayAssignments = (baseAssignments ?? []).map((a: any, idx: number) => ({
+      id: a.id,
+      drill_id: a.drill_id ?? null,
+      sets: a.sets ?? null,
+      reps: a.reps ?? null,
+      duration_min: a.minutes ?? null,
+      requires_upload: Boolean(a.requires_upload),
+      upload_prompt: a.upload_prompt ?? "",
+      notes_to_player: a.notes ?? "",
+      sort_order: idx
+    }));
+  }
+
+  const drillIds = Array.from(new Set(dayAssignments.map((a: any) => a.drill_id).filter(Boolean)));
   const { data: drills } = drillIds.length
     ? await db
         .from("program_drills")
@@ -115,7 +164,7 @@ export default async function MyProgramPage() {
         .limit(800)
     : ({ data: [] as any[] } as any);
 
-  const assignmentIds = Array.from(new Set((dayAssignments ?? []).map((a: any) => a.id).filter(Boolean)));
+  const assignmentIds = Array.from(new Set(dayAssignments.map((a: any) => a.id).filter(Boolean)));
   const { data: completions } = assignmentIds.length
     ? await db
         .from("program_assignment_completions")
@@ -152,7 +201,7 @@ export default async function MyProgramPage() {
             }
           : null
       }
-      dayNote={dayPlan?.note ?? ""}
+      dayNote={effectiveDayNote}
       drills={(drills ?? []).map((d: any) => ({
         id: d.id,
         title: d.title,
@@ -170,7 +219,7 @@ export default async function MyProgramPage() {
         title: m.title ?? null,
         sort_order: m.sort_order ?? 0
       }))}
-      assignments={(dayAssignments ?? []).map((a: any) => ({
+      assignments={dayAssignments.map((a: any) => ({
         id: a.id,
         drill_id: a.drill_id,
         sets: a.sets ?? null,
