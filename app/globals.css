@@ -34,6 +34,61 @@ a {
   text-decoration: none;
 }
 
+/* Micro-interactions */
+@keyframes bvFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bvSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bvScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.bvAnimFadeIn {
+  animation: bvFadeIn 0.2s ease-out;
+}
+
+.bvAnimSlideUp {
+  animation: bvSlideUp 0.25s ease-out;
+}
+
+.bvAnimScaleIn {
+  animation: bvScaleIn 0.2s ease-out;
+}
+
+/* Staggered list animation */
+.bvStagger > * {
+  animation: bvSlideUp 0.3s ease-out both;
+}
+
+.bvStagger > *:nth-child(1) { animation-delay: 0ms; }
+.bvStagger > *:nth-child(2) { animation-delay: 40ms; }
+.bvStagger > *:nth-child(3) { animation-delay: 80ms; }
+.bvStagger > *:nth-child(4) { animation-delay: 120ms; }
+.bvStagger > *:nth-child(5) { animation-delay: 160ms; }
+.bvStagger > *:nth-child(6) { animation-delay: 200ms; }
+.bvStagger > *:nth-child(7) { animation-delay: 240ms; }
+.bvStagger > *:nth-child(8) { animation-delay: 280ms; }
+.bvStagger > *:nth-child(n+9) { animation-delay: 320ms; }
+
 .container {
   width: 100%;
   max-width: 980px;
@@ -389,6 +444,29 @@ a {
   border-color: #b93a3a;
 }
 
+/* Toast notifications */
+@keyframes bvToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bvToastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+}
+
 .bvToastWrap {
   position: fixed;
   left: 0;
@@ -403,14 +481,26 @@ a {
 
 .bvToast {
   pointer-events: none;
-  background: #0b1220;
-  border: 1px solid #1a2436;
+  background: linear-gradient(180deg, #0f1a2a 0%, #0b1220 100%);
+  border: 1px solid rgba(99, 179, 255, 0.25);
   color: var(--text);
   border-radius: 999px;
-  padding: 10px 14px;
-  font-weight: 800;
-  font-size: 13px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.3);
+  animation: bvToastIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bvToastSuccess {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.bvToastError {
+  border-color: rgba(255, 107, 107, 0.35);
 }
 
 @media (max-width: 760px) {
@@ -695,6 +785,22 @@ a {
 }
 
 /* Modal (themed, non-native popups) */
+@keyframes bvModalBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bvModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .bvModalBackdrop {
   position: fixed;
   inset: 0;
@@ -704,6 +810,7 @@ a {
   align-items: center;
   justify-content: center;
   padding: 18px;
+  animation: bvModalBackdropIn 0.15s ease-out;
 }
 
 .bvModal {
@@ -713,6 +820,7 @@ a {
   background: #0b1220;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75);
   outline: none;
+  animation: bvModalIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .bvModalHeader {
