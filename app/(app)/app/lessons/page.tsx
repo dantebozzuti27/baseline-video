@@ -47,7 +47,6 @@ export default async function LessonsPage() {
       ? await supabase
           .from("lessons")
           .select(baseSelect)
-          .eq("team_id", profile.team_id)
           .eq("coach_user_id", profile.user_id)
           .order("start_at", { ascending: false })
           .limit(200)
@@ -57,7 +56,6 @@ export default async function LessonsPage() {
     ? await supabase
         .from("lessons")
         .select(baseSelect)
-        .eq("team_id", profile.team_id)
         .in("id", participantLessonIds)
         .order("start_at", { ascending: false })
         .limit(200)
@@ -69,18 +67,57 @@ export default async function LessonsPage() {
   ].filter(Boolean);
   const lessonMap = new Map<string, any>();
   for (const l of lessons) lessonMap.set(l.id, l);
-  const uniqueLessons = Array.from(lessonMap.values());
+  let uniqueLessons = Array.from(lessonMap.values());
+
+  // Fallback for DBs still on the legacy table (best-effort, no user-visible errors).
+  // This makes "lessons exist in DB but not UI" work during partial migrations.
+  let legacyParticipants: any[] = [];
+  if (uniqueLessons.length === 0) {
+    try {
+      const legacyBase =
+        "id, team_id, coach_user_id, player_user_id, mode, start_at, end_at, timezone, status, notes, coach_response_note";
+      const legacyQuery =
+        profile.role === "coach"
+          ? supabase.from("lesson_requests").select(legacyBase).eq("coach_user_id", profile.user_id)
+          : supabase.from("lesson_requests").select(legacyBase).eq("player_user_id", profile.user_id);
+      const { data: legacy } = await legacyQuery.order("start_at", { ascending: false }).limit(200);
+      if (legacy?.length) {
+        uniqueLessons = legacy.map((r: any) => ({
+          id: r.id,
+          coach_user_id: r.coach_user_id,
+          created_by_user_id: r.player_user_id,
+          mode: r.mode,
+          start_at: r.start_at,
+          end_at: r.end_at,
+          timezone: r.timezone,
+          status: r.status,
+          notes: r.notes,
+          coach_response_note: r.coach_response_note
+        }));
+        legacyParticipants = legacy.map((r: any) => ({
+          lesson_id: r.id,
+          user_id: r.player_user_id,
+          invite_status: "accepted",
+          is_primary: true
+        }));
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   const lessonIds = uniqueLessons.map((l) => l.id);
 
   const { data: participants } = lessonIds.length
     ? await supabase.from("lesson_participants").select("lesson_id, user_id, invite_status, is_primary").in("lesson_id", lessonIds)
     : { data: [] as any[] };
+  const effectiveParticipants = (participants ?? []).length ? (participants ?? []) : legacyParticipants;
 
   const ids = Array.from(
     new Set(
       (uniqueLessons ?? [])
         .flatMap((l: any) => [l.coach_user_id, l.created_by_user_id])
-        .concat((participants ?? []).map((p: any) => p.user_id))
+        .concat((effectiveParticipants ?? []).map((p: any) => p.user_id))
         .filter((x: any) => typeof x === "string" && x.length > 0)
     )
   );
@@ -111,7 +148,7 @@ export default async function LessonsPage() {
       players={(players ?? []).map((p: any) => ({ user_id: p.user_id, display_name: p.display_name }))}
       peopleById={peopleById}
       lessons={uniqueLessons as any}
-      participants={(participants ?? []) as any}
+      participants={effectiveParticipants as any}
       blocks={(blocks ?? []) as any}
     />
   );
