@@ -5,10 +5,18 @@ import UploadForm from "../../upload/uploadForm";
 export default async function UploadPage({
   searchParams
 }: {
-  searchParams?: { owner?: string };
+  searchParams?: { owner?: string; programEnrollmentId?: string; programWeek?: string; returnTo?: string };
 }) {
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
 
-  return <UploadForm initialOwnerUserId={searchParams?.owner ?? null} />;
+  const programWeek = searchParams?.programWeek ? Number(searchParams.programWeek) : null;
+  return (
+    <UploadForm
+      initialOwnerUserId={searchParams?.owner ?? null}
+      programEnrollmentId={searchParams?.programEnrollmentId ?? null}
+      programWeekIndex={programWeek && Number.isFinite(programWeek) ? programWeek : null}
+      returnTo={searchParams?.returnTo ?? null}
+    />
+  );
 }

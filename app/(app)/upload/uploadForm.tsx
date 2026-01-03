@@ -40,7 +40,17 @@ function formatDateForTitle(d = new Date()) {
   return `${mm}/${dd}/${yy}`;
 }
 
-export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId: string | null }) {
+export default function UploadForm({
+  initialOwnerUserId,
+  programEnrollmentId,
+  programWeekIndex,
+  returnTo
+}: {
+  initialOwnerUserId: string | null;
+  programEnrollmentId?: string | null;
+  programWeekIndex?: number | null;
+  returnTo?: string | null;
+}) {
   const router = useRouter();
   const formRef = React.useRef<HTMLFormElement | null>(null);
 
@@ -302,7 +312,21 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       const id = await uploadOne(it, idx);
       // If it's a single file and this retry made it done, navigate.
       if (items.length === 1) {
-        router.replace(`/app/videos/${id}`);
+        if (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex)) {
+          try {
+            const resp = await fetch("/api/programs/submissions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
+            });
+            if (resp.ok) toast("Submitted to program.");
+          } catch (e) {
+            console.error("attach to program failed", e);
+          }
+          router.replace(returnTo || "/app/programs/me");
+        } else {
+          router.replace(`/app/videos/${id}`);
+        }
         router.refresh();
       }
     } catch (err: any) {
@@ -328,7 +352,21 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       if (uploadKind === "link") {
         const id = await createLinkVideo();
         toast("Link added.");
-        router.replace(`/app/videos/${id}`);
+        if (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex)) {
+          try {
+            const resp = await fetch("/api/programs/submissions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
+            });
+            if (resp.ok) toast("Submitted to program.");
+          } catch (e) {
+            console.error("attach to program failed", e);
+          }
+          router.replace(returnTo || "/app/programs/me");
+        } else {
+          router.replace(`/app/videos/${id}`);
+        }
         router.refresh();
         return;
       }
@@ -356,7 +394,21 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
       await Promise.all(new Array(concurrency).fill(0).map(() => worker()));
 
       const first = doneIds[0] ?? items.find((it) => it.status === "done")?.videoId;
-      if (first && items.length === 1) {
+      if (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex)) {
+        for (const id of doneIds) {
+          try {
+            await fetch("/api/programs/submissions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
+            });
+          } catch (e) {
+            console.error("attach to program failed", e);
+          }
+        }
+        toast("Upload complete.");
+        router.replace(returnTo || "/app/programs/me");
+      } else if (first && items.length === 1) {
         toast("Upload complete.");
         router.replace(`/app/videos/${first}`);
       } else {

@@ -83,7 +83,8 @@ export async function middleware(request: NextRequest) {
     const coachOnly =
       pathname.startsWith("/app/dashboard") ||
       pathname.startsWith("/app/player") ||
-      pathname.startsWith("/app/compare");
+      pathname.startsWith("/app/compare") ||
+      (pathname.startsWith("/app/programs") && !pathname.startsWith("/app/programs/me"));
 
     if (coachOnly && (profile as any).role !== "coach") {
       const url = request.nextUrl.clone();
