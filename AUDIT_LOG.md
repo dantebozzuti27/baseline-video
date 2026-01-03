@@ -203,3 +203,23 @@
 
 ---
 
+## Session 8: Toast Improvements & Cleanup
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| 11 | Toasts disappear too fast | Increased to 4s, added dismiss button | Jan 3 |
+| - | Fake testimonials | Removed placeholder content from landing | Jan 3 |
+| - | Card className | Fixed type error in Card component | Jan 3 |
+| - | Toast stacking | Toasts now stack (max 3) | Jan 3 |
+
+### Detailed Log
+
+**18:00** — Removed fake testimonials and stats from landing page  
+**18:02** — Fixed Card component to accept className prop  
+**18:05** — Improved toast system: longer duration, dismiss button, stacking  
+**18:08** — Updated toast CSS for new layout  
+
+---
+
