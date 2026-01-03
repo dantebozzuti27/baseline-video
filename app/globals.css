@@ -71,21 +71,49 @@ a {
   gap: 8px;
   border-radius: 12px;
   border: 1px solid var(--border);
-  padding: 10px 12px;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   cursor: pointer;
   font-weight: 600;
+  font-size: 14px;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btnPrimary {
-  border-color: rgba(99, 179, 255, 0.35);
-  background: rgba(99, 179, 255, 0.14);
+  border-color: var(--primary);
+  background: linear-gradient(180deg, rgba(99, 179, 255, 0.32) 0%, rgba(99, 179, 255, 0.18) 100%);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(99, 179, 255, 0.2);
+}
+
+.btnPrimary:hover {
+  background: linear-gradient(180deg, rgba(99, 179, 255, 0.45) 0%, rgba(99, 179, 255, 0.28) 100%);
+  box-shadow: 0 4px 14px rgba(99, 179, 255, 0.3);
 }
 
 .btnDanger {
-  border-color: rgba(255, 107, 107, 0.35);
-  background: rgba(255, 107, 107, 0.14);
+  border-color: rgba(255, 107, 107, 0.5);
+  background: linear-gradient(180deg, rgba(255, 107, 107, 0.24) 0%, rgba(255, 107, 107, 0.12) 100%);
+  color: #ffb3b3;
+}
+
+.btnDanger:hover {
+  background: linear-gradient(180deg, rgba(255, 107, 107, 0.35) 0%, rgba(255, 107, 107, 0.2) 100%);
 }
 
 .input,
@@ -245,9 +273,31 @@ a {
   }
 }
 
+.bvNavIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+
+.bvNavItemActive .bvNavIcon {
+  color: var(--primary);
+}
+
+.bvNavLabel {
+  flex: 1;
+  min-width: 0;
+}
+
 .bvNavChevron {
-  color: rgba(230, 237, 247, 0.75);
-  font-weight: 900;
+  color: rgba(230, 237, 247, 0.4);
+  flex-shrink: 0;
+}
+
+.bvNavItemActive .bvNavChevron {
+  color: rgba(99, 179, 255, 0.7);
 }
 
 .bvDrawerFooter {
@@ -547,15 +597,16 @@ a {
 }
 
 .bvModalClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 34px;
   width: 38px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: #111826;
-  color: var(--text);
+  color: var(--muted);
   cursor: pointer;
-  font-size: 22px;
-  line-height: 1;
 }
 
 .bvModalClose:hover {
@@ -584,6 +635,137 @@ a {
     border-radius: 16px 16px 14px 14px;
   }
 }
+/* Skeleton loading states */
+@keyframes bvShimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.bvSkeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 800px 100%;
+  animation: bvShimmer 1.4s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+.bvSkeletonHeader {
+  height: 40px;
+  width: 180px;
+  margin-bottom: 20px;
+}
+
+.bvSkeletonCard {
+  height: 120px;
+  width: 100%;
+}
+
+.bvSkeletonCalendar {
+  height: 400px;
+  width: 100%;
+}
+
+.bvSkeletonVideoCard {
+  height: 180px;
+  width: 260px;
+  flex-shrink: 0;
+}
+
+/* Empty states */
+.bvEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 14px;
+}
+
+.bvEmptyIcon {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(99, 179, 255, 0.12) 0%, rgba(99, 179, 255, 0.04) 100%);
+  border: 1px solid rgba(99, 179, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.bvEmptyTitle {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.bvEmptyMessage {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* Bottom navigation (mobile) */
+.bvBottomNav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .bvBottomNav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    background: #070c14;
+    border-top: 1px solid var(--border);
+    padding: 6px 4px calc(env(safe-area-inset-bottom, 0px) + 6px);
+    justify-content: space-around;
+    gap: 4px;
+  }
+
+  .bvBottomNavItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    color: var(--muted);
+    text-decoration: none;
+    min-width: 56px;
+    transition: color 0.15s ease;
+  }
+
+  .bvBottomNavItem:active {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .bvBottomNavItemActive {
+    color: var(--primary);
+  }
+
+  .bvBottomNavLabel {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* Add padding to bottom of page to account for nav */
+  .container {
+    padding-bottom: 90px;
+  }
+}
+
 .bvCalHourLine {
   height: var(--bvCalHourPx);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);

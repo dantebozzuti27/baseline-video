@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
 import DrawerNav from "./DrawerNav";
+import BottomNav from "./BottomNav";
 import ToastClient from "./ToastClient";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +36,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </div>
       <div className="container">{children}</div>
+      <BottomNav role={profile.role} />
       <ToastClient />
     </div>
   );

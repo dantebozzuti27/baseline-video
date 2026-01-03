@@ -4,6 +4,19 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SignOutButton from "./SignOutButton";
+import {
+  Menu,
+  ChevronRight,
+  LayoutDashboard,
+  Calendar,
+  FolderKanban,
+  Library,
+  Upload,
+  Columns2,
+  Settings,
+  Rss,
+  BookOpen
+} from "lucide-react";
 
 type Role = "coach" | "player";
 
@@ -16,6 +29,7 @@ type NavItem = {
   label: string;
   href: string;
   match?: "exact" | "prefix";
+  icon: React.ReactNode;
 };
 
 function isActive(pathname: string, item: NavItem) {
@@ -40,26 +54,27 @@ export default function DrawerNav({ role, displayName }: Props) {
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const previouslyFocused = React.useRef<HTMLElement | null>(null);
 
+  const iconSize = 20;
   const items: NavItem[] = React.useMemo(() => {
     if (isCoach) {
       return [
-        { label: "Dashboard", href: "/app/dashboard", match: "prefix" },
-        { label: "Lessons", href: "/app/lessons", match: "prefix" },
-        { label: "Programs", href: "/app/programs", match: "prefix" },
-        { label: "Program library", href: "/app/programs/library", match: "prefix" },
-        { label: "Library", href: "/app/library", match: "prefix" },
-        { label: "Upload", href: "/app/upload", match: "prefix" },
-        { label: "Compare", href: "/app/compare", match: "prefix" },
-        { label: "Settings", href: "/app/settings", match: "prefix" }
+        { label: "Dashboard", href: "/app/dashboard", match: "prefix", icon: <LayoutDashboard size={iconSize} /> },
+        { label: "Lessons", href: "/app/lessons", match: "prefix", icon: <Calendar size={iconSize} /> },
+        { label: "Programs", href: "/app/programs", match: "prefix", icon: <FolderKanban size={iconSize} /> },
+        { label: "Program library", href: "/app/programs/library", match: "prefix", icon: <BookOpen size={iconSize} /> },
+        { label: "Library", href: "/app/library", match: "prefix", icon: <Library size={iconSize} /> },
+        { label: "Upload", href: "/app/upload", match: "prefix", icon: <Upload size={iconSize} /> },
+        { label: "Compare", href: "/app/compare", match: "prefix", icon: <Columns2 size={iconSize} /> },
+        { label: "Settings", href: "/app/settings", match: "prefix", icon: <Settings size={iconSize} /> }
       ];
     }
     return [
-      { label: "Feed", href: "/app", match: "exact" },
-      { label: "Lessons", href: "/app/lessons", match: "prefix" },
-      { label: "Programs", href: "/app/programs/me", match: "prefix" },
-      { label: "Library", href: "/app/library", match: "prefix" },
-      { label: "Upload", href: "/app/upload", match: "prefix" },
-      { label: "Settings", href: "/app/settings", match: "prefix" }
+      { label: "Feed", href: "/app", match: "exact", icon: <Rss size={iconSize} /> },
+      { label: "Lessons", href: "/app/lessons", match: "prefix", icon: <Calendar size={iconSize} /> },
+      { label: "Programs", href: "/app/programs/me", match: "prefix", icon: <FolderKanban size={iconSize} /> },
+      { label: "Library", href: "/app/library", match: "prefix", icon: <Library size={iconSize} /> },
+      { label: "Upload", href: "/app/upload", match: "prefix", icon: <Upload size={iconSize} /> },
+      { label: "Settings", href: "/app/settings", match: "prefix", icon: <Settings size={iconSize} /> }
     ];
   }, [isCoach]);
 
@@ -118,7 +133,7 @@ export default function DrawerNav({ role, displayName }: Props) {
   return (
     <>
       <button className="bvHamburger" onClick={() => setOpen(true)} aria-label="Open menu" type="button">
-        <span aria-hidden="true">≡</span>
+        <Menu size={24} aria-hidden="true" />
       </button>
 
       {open ? (
@@ -155,10 +170,9 @@ export default function DrawerNav({ role, displayName }: Props) {
                     href={item.href}
                     onClick={() => setOpen(false)}
                   >
-                    <span>{item.label}</span>
-                    <span className="bvNavChevron" aria-hidden="true">
-                      →
-                    </span>
+                    <span className="bvNavIcon" aria-hidden="true">{item.icon}</span>
+                    <span className="bvNavLabel">{item.label}</span>
+                    <ChevronRight size={18} className="bvNavChevron" aria-hidden="true" />
                   </Link>
                 );
               })}

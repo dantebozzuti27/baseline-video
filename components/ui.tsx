@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { X } from "lucide-react";
 
 export function Card({ children }: { children: React.ReactNode }) {
   return <div className="card">{children}</div>;
@@ -154,7 +155,7 @@ export function Modal({
         <div className="bvModalHeader">
           <div className="bvModalTitle">{title ?? ""}</div>
           <button className="bvModalClose" type="button" onClick={onClose} aria-label="Close dialog">
-            ×
+            <X size={20} />
           </button>
         </div>
         <div className="bvModalBody">{children}</div>
