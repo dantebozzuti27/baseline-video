@@ -23,7 +23,7 @@ export default async function VideoDetailPage({ params }: { params: { id: string
 
   const { data: video } = await supabase
     .from("videos")
-    .select("id, title, category, created_at, uploader_user_id, pinned, is_library, deleted_at")
+    .select("id, title, category, created_at, uploader_user_id, owner_user_id, pinned, is_library, deleted_at")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -50,6 +50,17 @@ export default async function VideoDetailPage({ params }: { params: { id: string
 
   const isCoach = myProfile?.role === "coach";
   const canDeleteVideo = isCoach || video.uploader_user_id === user.id;
+  const visibilityBadge = (video as any).is_library ? "LIBRARY" : isCoach ? (video as any).owner_user_id === user.id ? "COACH-SHARED" : "PRIVATE" : (video as any).owner_user_id === user.id ? "PRIVATE" : "COACH-SHARED";
+  const visibleToLabel =
+    (video as any).is_library
+      ? "Team"
+      : isCoach
+        ? (video as any).owner_user_id === user.id
+          ? "Team"
+          : "Coach + player"
+        : (video as any).owner_user_id === user.id
+          ? "You + your coach"
+          : "Team";
 
   return (
     <div className="stack">
@@ -60,7 +71,10 @@ export default async function VideoDetailPage({ params }: { params: { id: string
             {video.category.toUpperCase()} • <LocalDateTime value={video.created_at} />
           </div>
           <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-            Visible to: {(video as any).is_library ? "Team" : myProfile?.role === "coach" ? "Coach (team)" : "You + your coach"}
+            <span className="pill" style={{ marginRight: 8 }}>
+              {visibilityBadge}
+            </span>
+            Visible to: {visibleToLabel}
           </div>
         </div>
         <div className="row" style={{ alignItems: "center" }}>

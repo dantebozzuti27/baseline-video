@@ -54,6 +54,7 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
   const [error, setError] = React.useState<string | null>(null);
 
   const [role, setRole] = React.useState<string | null>(null);
+  const [playerMode, setPlayerMode] = React.useState<"in_person" | "hybrid" | "remote" | null>(null);
   const [players, setPlayers] = React.useState<Array<{ user_id: string; display_name: string }>>([]);
   const [ownerUserId, setOwnerUserId] = React.useState<string | null>(null);
 
@@ -99,12 +100,13 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
 
         const { data: me } = await supabase
           .from("profiles")
-          .select("role, team_id")
+          .select("role, team_id, player_mode")
           .eq("user_id", user.id)
           .maybeSingle();
         if (cancelled) return;
 
         setRole(me?.role ?? null);
+        setPlayerMode((me as any)?.player_mode ?? null);
         if (me?.role === "coach") {
           const { data: ps } = await supabase
             .from("profiles")
@@ -390,6 +392,21 @@ export default function UploadForm({ initialOwnerUserId }: { initialOwnerUserId:
           Quick, simple, and practice-friendly.
         </div>
       </div>
+
+      {role !== "coach" ? (
+        <Card>
+          <div style={{ fontWeight: 900 }}>Recommended today</div>
+          <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+            {playerMode === "remote" ? (
+              <>Remote checklist: good light, stable phone, and a clear side/front angle.</>
+            ) : playerMode === "hybrid" ? (
+              <>Hybrid goal: upload 1 drill clip and 1 swing clip.</>
+            ) : (
+              <>In-person: upload today’s rep right after practice while it’s fresh.</>
+            )}
+          </div>
+        </Card>
+      ) : null}
 
       <Card>
         <form ref={formRef} className="stack" onSubmit={onSubmit}>

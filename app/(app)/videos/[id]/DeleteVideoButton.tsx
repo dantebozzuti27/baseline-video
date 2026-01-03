@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { toast } from "../../toast";
 
 export default function DeleteVideoButton({ videoId }: { videoId: string }) {
   const router = useRouter();
@@ -20,10 +21,12 @@ export default function DeleteVideoButton({ videoId }: { videoId: string }) {
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? `Unable to move video to Trash (${resp.status}).`);
 
+      toast("Moved to Trash.");
       router.replace("/app/trash");
       router.refresh();
     } catch (e: any) {
       setError(e?.message ?? "Unable to move video to Trash.");
+      toast("Unable to move video to Trash.");
     } finally {
       setLoading(false);
     }

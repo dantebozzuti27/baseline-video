@@ -7,20 +7,31 @@ import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
 import { LocalDateTime } from "@/components/LocalDateTime";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: { mode?: string } }) {
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
   if (profile.role !== "coach") redirect("/app");
 
   const supabase = createSupabaseServerClient();
 
-  const { data: players } = await supabase
+  const modeParam = (searchParams?.mode ?? "all").toLowerCase();
+  const modeFilter =
+    modeParam === "in_person" || modeParam === "hybrid" || modeParam === "remote" || modeParam === "unassigned"
+      ? modeParam
+      : "all";
+
+  let playersQuery = supabase
     .from("profiles")
-    .select("user_id, first_name, last_name, display_name, role")
+    .select("user_id, first_name, last_name, display_name, role, player_mode")
     .eq("team_id", profile.team_id)
     .eq("role", "player")
     .order("first_name", { ascending: true })
     .order("last_name", { ascending: true });
+
+  if (modeFilter === "unassigned") playersQuery = playersQuery.is("player_mode", null);
+  else if (modeFilter !== "all") playersQuery = playersQuery.eq("player_mode", modeFilter);
+
+  const { data: players } = await playersQuery;
 
   // "Needs feedback" = recent team videos with zero comments (fast heuristic)
   const { data: recentTeamVideos } = await supabase
@@ -144,6 +155,23 @@ export default async function DashboardPage() {
 
       <Card>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Players</div>
+        <div className="row" style={{ gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+          <Link className="pill" href="/app/dashboard?mode=all">
+            All
+          </Link>
+          <Link className="pill" href="/app/dashboard?mode=in_person">
+            In-person
+          </Link>
+          <Link className="pill" href="/app/dashboard?mode=hybrid">
+            Hybrid
+          </Link>
+          <Link className="pill" href="/app/dashboard?mode=remote">
+            Remote
+          </Link>
+          <Link className="pill" href="/app/dashboard?mode=unassigned">
+            Unassigned
+          </Link>
+        </div>
         {players && players.length > 0 ? (
           <div className="stack">
             {players.map((p) => (
@@ -152,6 +180,13 @@ export default async function DashboardPage() {
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800 }}>{displayNameFromProfile(p as any)}</div>
                     <div className="row" style={{ alignItems: "center" }}>
+                      {(p as any).player_mode ? (
+                        <div className="pill">
+                          {String((p as any).player_mode).toUpperCase().replace("_", "-")}
+                        </div>
+                      ) : (
+                        <div className="pill">UNASSIGNED</div>
+                      )}
                       {(unreadCounts.get(p.user_id) ?? 0) > 0 ? (
                         <div className="pill">{unreadCounts.get(p.user_id) ?? 0} unread</div>
                       ) : null}

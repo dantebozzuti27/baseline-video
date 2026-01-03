@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { toast } from "../toast";
 
 export default function RestoreVideoButton({ videoId }: { videoId: string }) {
   const router = useRouter();
@@ -16,9 +17,11 @@ export default function RestoreVideoButton({ videoId }: { videoId: string }) {
       const resp = await fetch(`/api/videos/${videoId}/restore`, { method: "POST" });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? `Unable to restore (${resp.status}).`);
+      toast("Restored.");
       router.refresh();
     } catch (e: any) {
       setError(e?.message ?? "Unable to restore.");
+      toast("Unable to restore.");
     } finally {
       setLoading(false);
     }

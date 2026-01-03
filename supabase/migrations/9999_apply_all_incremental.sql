@@ -15,6 +15,10 @@
 --   - 0011_comment_visibility_notes.sql
 --   - 0012_video_links.sql
 --   - 0013_stable_team_invite.sql
+--   - 0014_team_visible_coach_uploads.sql
+--   - 0015_relax_auth_user_fks_for_deletes.sql
+--   - 0016_player_modes.sql
+--   - 0017_set_player_mode.sql
 
 -- ============================================================
 -- 0006_hotfix_names_and_deletes.sql
@@ -186,6 +190,59 @@ revoke all on function public.update_my_profile_name(text, text) from public;
 grant execute on function public.update_my_profile_name(text, text) to authenticated;
 
 commit;
+
+
+-- ============================================================
+-- 0017_set_player_mode.sql
+-- ============================================================
+-- Player modes: coach-only update via RPC (avoid direct profile updates)
+
+begin;
+
+create or replace function public.is_in_my_team(p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.user_id = p_user_id
+      and p.team_id = public.current_team_id()
+  );
+$$;
+
+revoke all on function public.is_in_my_team(uuid) from public;
+grant execute on function public.is_in_my_team(uuid) to authenticated;
+
+create or replace function public.set_player_mode(p_user_id uuid, p_mode public.player_mode)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_coach() then
+    raise exception 'forbidden';
+  end if;
+
+  if not public.is_in_my_team(p_user_id) then
+    raise exception 'not_in_team';
+  end if;
+
+  update public.profiles
+    set player_mode = p_mode
+  where user_id = p_user_id;
+end;
+$$;
+
+revoke all on function public.set_player_mode(uuid, public.player_mode) from public;
+grant execute on function public.set_player_mode(uuid, public.player_mode) to authenticated;
+
+commit;
+
 
 -- ============================================================
 -- 0007_fast_wins_coach_features.sql
@@ -870,49 +927,6 @@ commit;
 
 
 -- ============================================================
--- 0015_relax_auth_user_fks_for_deletes.sql
--- ============================================================
--- Allow deleting auth.users without being blocked by "restrict" FKs.
-
-begin;
-
-alter table public.videos
-  drop constraint if exists videos_uploader_user_id_fkey;
-alter table public.videos
-  add constraint videos_uploader_user_id_fkey
-  foreign key (uploader_user_id) references auth.users(id) on delete cascade;
-
-alter table public.videos
-  drop constraint if exists videos_owner_user_id_fkey;
-alter table public.videos
-  add constraint videos_owner_user_id_fkey
-  foreign key (owner_user_id) references auth.users(id) on delete cascade;
-
-alter table public.comments
-  drop constraint if exists comments_author_user_id_fkey;
-alter table public.comments
-  add constraint comments_author_user_id_fkey
-  foreign key (author_user_id) references auth.users(id) on delete cascade;
-
-alter table public.invites
-  alter column created_by_user_id drop not null;
-alter table public.invites
-  drop constraint if exists invites_created_by_user_id_fkey;
-alter table public.invites
-  add constraint invites_created_by_user_id_fkey
-  foreign key (created_by_user_id) references auth.users(id) on delete set null;
-
-alter table public.events
-  alter column actor_user_id drop not null;
-alter table public.events
-  drop constraint if exists events_actor_user_id_fkey;
-alter table public.events
-  add constraint events_actor_user_id_fkey
-  foreign key (actor_user_id) references auth.users(id) on delete set null;
-
-commit;
-
--- ============================================================
 -- 0014_team_visible_coach_uploads.sql
 -- ============================================================
 -- Players can read coach uploads + library videos on their team.
@@ -977,6 +991,72 @@ using (
     )
   )
 );
+
+commit;
+
+
+-- ============================================================
+-- 0015_relax_auth_user_fks_for_deletes.sql
+-- ============================================================
+-- Allow deleting auth.users without being blocked by "restrict" FKs.
+
+begin;
+
+alter table public.videos
+  drop constraint if exists videos_uploader_user_id_fkey;
+alter table public.videos
+  add constraint videos_uploader_user_id_fkey
+  foreign key (uploader_user_id) references auth.users(id) on delete cascade;
+
+alter table public.videos
+  drop constraint if exists videos_owner_user_id_fkey;
+alter table public.videos
+  add constraint videos_owner_user_id_fkey
+  foreign key (owner_user_id) references auth.users(id) on delete cascade;
+
+alter table public.comments
+  drop constraint if exists comments_author_user_id_fkey;
+alter table public.comments
+  add constraint comments_author_user_id_fkey
+  foreign key (author_user_id) references auth.users(id) on delete cascade;
+
+alter table public.invites
+  alter column created_by_user_id drop not null;
+alter table public.invites
+  drop constraint if exists invites_created_by_user_id_fkey;
+alter table public.invites
+  add constraint invites_created_by_user_id_fkey
+  foreign key (created_by_user_id) references auth.users(id) on delete set null;
+
+alter table public.events
+  alter column actor_user_id drop not null;
+alter table public.events
+  drop constraint if exists events_actor_user_id_fkey;
+alter table public.events
+  add constraint events_actor_user_id_fkey
+  foreign key (actor_user_id) references auth.users(id) on delete set null;
+
+commit;
+
+
+-- ============================================================
+-- 0016_player_modes.sql
+-- ============================================================
+-- Player modes (in-person / hybrid / remote)
+
+begin;
+
+do $$ begin
+  create type public.player_mode as enum ('in_person', 'hybrid', 'remote');
+exception
+  when duplicate_object then null;
+end $$;
+
+alter table public.profiles
+  add column if not exists player_mode public.player_mode null;
+
+create index if not exists profiles_team_role_mode_idx
+  on public.profiles (team_id, role, player_mode);
 
 commit;
 

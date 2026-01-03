@@ -7,6 +7,7 @@ import { getMyProfile } from "@/lib/auth/profile";
 import type { VideoCategory } from "@/lib/db/types";
 import { Card } from "@/components/ui";
 import { displayNameFromProfile } from "@/lib/utils/name";
+import PlayerModeCard from "./PlayerModeCard";
 
 export default async function PlayerPage({
   params,
@@ -22,7 +23,7 @@ export default async function PlayerPage({
   const supabase = createSupabaseServerClient();
   const { data: player } = await supabase
     .from("profiles")
-    .select("user_id, first_name, last_name, display_name, role")
+    .select("user_id, first_name, last_name, display_name, role, player_mode")
     .eq("user_id", params.userId)
     .maybeSingle();
 
@@ -92,6 +93,8 @@ export default async function PlayerPage({
         </div>
       </Card>
 
+      <PlayerModeCard userId={params.userId} initialMode={(player as any)?.player_mode} />
+
       {pinned.length > 0 ? (
         <div className="stack">
           <div style={{ fontWeight: 900 }}>Pinned</div>
@@ -106,7 +109,7 @@ export default async function PlayerPage({
                       const seen = seenMap.get(v.id) ?? 0;
                       return activity > seen ? <div className="pill">UNREAD</div> : null;
                     })()}
-                    {v.is_library ? <div className="pill">LIBRARY</div> : null}
+                    <div className="pill">{v.is_library ? "LIBRARY" : "PRIVATE"}</div>
                     <div className="pill">PINNED</div>
                     <div className="pill">{String(v.category).toUpperCase()}</div>
                   </div>
@@ -136,7 +139,7 @@ export default async function PlayerPage({
                       const seen = seenMap.get(v.id) ?? 0;
                       return activity > seen ? <div className="pill">UNREAD</div> : null;
                     })()}
-                    {v.is_library ? <div className="pill">LIBRARY</div> : null}
+                    <div className="pill">{v.is_library ? "LIBRARY" : "PRIVATE"}</div>
                     <div className="pill">{String(v.category).toUpperCase()}</div>
                   </div>
                 </div>

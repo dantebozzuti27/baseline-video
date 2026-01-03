@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { toast } from "../../toast";
 
 function getCurrentVideoTimeSeconds(): number | null {
   const el = document.querySelector("video");
@@ -75,10 +76,12 @@ export default function CommentForm({ videoId }: { videoId: string }) {
       setTimestampSeconds("");
       setVisibility("team");
       setSuccess("Posted.");
+      toast("Comment posted.");
       setTimeout(() => setSuccess(null), 2000);
       router.refresh();
     } catch (err: any) {
       setError(err?.message ?? "Unable to post comment.");
+      toast("Unable to post comment.");
     } finally {
       setLoading(false);
     }

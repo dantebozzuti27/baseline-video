@@ -19,6 +19,8 @@ export default async function AppHomePage({
     redirect("/app/dashboard");
   }
 
+  const playerMode = ((profile as any)?.player_mode ?? "in_person") as "in_person" | "hybrid" | "remote";
+
   const category = (searchParams.cat ?? "all") as "all" | VideoCategory;
   const sort = searchParams.sort === "oldest" ? "oldest" : searchParams.sort === "activity" ? "activity" : "recent";
 
@@ -36,7 +38,7 @@ export default async function AppHomePage({
   // We don't have true last-activity persisted yet; "activity" currently approximates by created_at.
   let query = supabase
     .from("videos")
-    .select("id, title, category, created_at, pinned, is_library, last_activity_at")
+    .select("id, title, category, created_at, pinned, is_library, last_activity_at, owner_user_id")
     .is("deleted_at", null)
     .order(sort === "activity" ? "last_activity_at" : "created_at", {
       ascending: sort === "oldest"
@@ -59,6 +61,19 @@ export default async function AppHomePage({
   return (
     <div className="stack">
       <FeedClient />
+
+      <Card>
+        <div style={{ fontWeight: 900 }}>Your next rep</div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+          {playerMode === "remote" ? (
+            <>Remote: aim for consistency — same angle, same reps, every week.</>
+          ) : playerMode === "hybrid" ? (
+            <>Hybrid: upload one drill clip and one swing clip to stay on track.</>
+          ) : (
+            <>In-person: upload your best rep today, then add one quick note.</>
+          )}
+        </div>
+      </Card>
 
       <div className="row" style={{ alignItems: "center", justifyContent: "space-between" }}>
         <div>
@@ -109,12 +124,14 @@ export default async function AppHomePage({
                   const activity = new Date(v.last_activity_at ?? v.created_at).getTime();
                   const seen = seenMap.get(v.id) ?? 0;
                   const unread = activity > seen;
+                  const badge = v.is_library ? "LIBRARY" : v.owner_user_id === profile.user_id ? "PRIVATE" : "COACH-SHARED";
+                  const audience = v.is_library ? "Team" : v.owner_user_id === profile.user_id ? "You + your coach" : "Team";
                   return (
                     <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                       <div style={{ fontWeight: 800 }}>{v.title}</div>
                       <div className="row" style={{ alignItems: "center" }}>
                         {unread ? <div className="pill">UNREAD</div> : null}
-                        {v.is_library ? <div className="pill">LIBRARY</div> : null}
+                        <div className="pill">{badge}</div>
                         <div className="pill">PINNED</div>
                         <div className="pill">{String(v.category).toUpperCase()}</div>
                       </div>
@@ -122,7 +139,7 @@ export default async function AppHomePage({
                   );
                 })()}
                 <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                  Visible to: {v.is_library ? "Team" : "You + your coach"}
+                  Visible to: {v.is_library ? "Team" : v.owner_user_id === profile.user_id ? "You + your coach" : "Team"}
                 </div>
                 <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
                   <LocalDateTime value={v.created_at} />
@@ -141,6 +158,7 @@ export default async function AppHomePage({
             const activity = new Date(v.last_activity_at ?? v.created_at).getTime();
             const seen = seenMap.get(v.id) ?? 0;
             const unread = activity > seen;
+            const badge = v.is_library ? "LIBRARY" : v.owner_user_id === profile.user_id ? "PRIVATE" : "COACH-SHARED";
             return (
               <Link key={v.id} href={`/app/videos/${v.id}`}>
                 <div className="card">
@@ -149,12 +167,12 @@ export default async function AppHomePage({
                     <div className="row" style={{ alignItems: "center" }}>
                       {unread ? <div className="pill">UNREAD</div> : null}
                       {isNew ? <div className="pill">NEW</div> : null}
-                      {v.is_library ? <div className="pill">LIBRARY</div> : null}
+                      <div className="pill">{badge}</div>
                       <div className="pill">{String(v.category).toUpperCase()}</div>
                     </div>
                   </div>
                   <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                    Visible to: {v.is_library ? "Team" : "You + your coach"}
+                    Visible to: {v.is_library ? "Team" : v.owner_user_id === profile.user_id ? "You + your coach" : "Team"}
                   </div>
                   <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
                     <LocalDateTime value={v.created_at} />
@@ -168,7 +186,11 @@ export default async function AppHomePage({
         <Card>
           <div style={{ fontWeight: 800 }}>No videos yet</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            Upload your first Game or Training clip.
+            {playerMode === "remote"
+              ? "Start with a short training clip from a consistent angle."
+              : playerMode === "hybrid"
+                ? "Start with one drill clip and one swing clip."
+                : "Upload your first Game or Training clip."}
           </div>
           <div style={{ marginTop: 12 }}>
             <LinkButton href="/app/upload" variant="primary">

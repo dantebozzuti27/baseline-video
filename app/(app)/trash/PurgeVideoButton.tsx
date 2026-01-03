@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
+import { toast } from "../toast";
 
 export default function PurgeVideoButton({ videoId }: { videoId: string }) {
   const router = useRouter();
@@ -18,9 +19,11 @@ export default function PurgeVideoButton({ videoId }: { videoId: string }) {
       const resp = await fetch(`/api/videos/${videoId}/purge`, { method: "POST" });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? `Unable to delete permanently (${resp.status}).`);
+      toast("Deleted permanently.");
       router.refresh();
     } catch (e: any) {
       setError(e?.message ?? "Unable to delete permanently.");
+      toast("Unable to delete permanently.");
     } finally {
       setLoading(false);
     }

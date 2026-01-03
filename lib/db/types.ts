@@ -8,6 +8,7 @@ export type Profile = {
   display_name: string;
   first_name: string;
   last_name: string;
+  player_mode?: "in_person" | "hybrid" | "remote" | null;
   is_active?: boolean | null;
   last_seen_feed_at?: string | null;
   created_at: string;
