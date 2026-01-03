@@ -59,7 +59,7 @@ export default async function MyProgramPage() {
 
   const { data: tmpl } = await db
     .from("program_templates")
-    .select("id, title, weeks_count")
+    .select("id, title, weeks_count, cycle_days")
     .eq("id", enrollment.template_id)
     .eq("team_id", profile.team_id)
     .maybeSingle();
@@ -68,7 +68,9 @@ export default async function MyProgramPage() {
 
   const start = new Date(enrollment.start_at);
   const now = new Date();
-  const weekRaw = Math.floor((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+  const cycleDays = Number((tmpl as any)?.cycle_days ?? 7);
+  const safeCycleDays = Number.isFinite(cycleDays) && cycleDays > 0 ? cycleDays : 7;
+  const weekRaw = Math.floor((now.getTime() - start.getTime()) / (safeCycleDays * 24 * 60 * 60 * 1000)) + 1;
   const weekIndex = clamp(weekRaw, 1, tmpl.weeks_count);
 
   const [{ data: baseWeek }, { data: overrideWeek }] = await Promise.all([

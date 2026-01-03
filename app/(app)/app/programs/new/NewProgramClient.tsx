@@ -9,6 +9,7 @@ export default function NewProgramClient() {
   const router = useRouter();
   const [title, setTitle] = React.useState("Remote Program");
   const [weeksCount, setWeeksCount] = React.useState(8);
+  const [cycleDays, setCycleDays] = React.useState(7);
   const [loading, setLoading] = React.useState(false);
 
   async function create() {
@@ -17,7 +18,7 @@ export default function NewProgramClient() {
       const resp = await fetch("/api/programs/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, weeksCount })
+        body: JSON.stringify({ title, weeksCount, cycleDays })
       });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to create program.");
@@ -53,6 +54,50 @@ export default function NewProgramClient() {
                   {n} weeks
                 </Button>
               ))}
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <Input
+                  label="Custom weeks"
+                  name="weeksCount"
+                  type="number"
+                  value={String(weeksCount)}
+                  onChange={(v) => {
+                    const n = Number(v);
+                    if (!Number.isFinite(n)) return;
+                    setWeeksCount(Math.max(1, Math.min(52, Math.round(n))));
+                  }}
+                  placeholder="8"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="label">Cadence</div>
+            <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
+              How many days count as one “week” in this program.
+            </div>
+            <div className="row" style={{ marginTop: 8, alignItems: "flex-end", flexWrap: "wrap" }}>
+              <div style={{ minWidth: 220, flex: 1 }}>
+                <Input
+                  label="Days per week"
+                  name="cycleDays"
+                  type="number"
+                  value={String(cycleDays)}
+                  onChange={(v) => {
+                    const n = Number(v);
+                    if (!Number.isFinite(n)) return;
+                    setCycleDays(Math.max(1, Math.min(21, Math.round(n))));
+                  }}
+                  placeholder="7"
+                />
+              </div>
+              <div className="row" style={{ gap: 8 }}>
+                {[7, 10, 14].map((n) => (
+                  <Button key={n} variant={cycleDays === n ? "primary" : "default"} onClick={() => setCycleDays(n)} disabled={loading}>
+                    {n} days
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
 

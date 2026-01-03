@@ -4,7 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const createSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
-  weeksCount: z.number().int().min(1).max(52)
+  weeksCount: z.number().int().min(1).max(52),
+  cycleDays: z.number().int().min(1).max(21).optional()
 });
 
 export async function POST(req: Request) {
@@ -20,7 +21,8 @@ export async function POST(req: Request) {
 
   const { data, error } = await supabase.rpc("create_program_template", {
     p_title: parsed.data.title ?? null,
-    p_weeks_count: parsed.data.weeksCount
+    p_weeks_count: parsed.data.weeksCount,
+    p_cycle_days: parsed.data.cycleDays ?? null
   });
 
   if (error) {

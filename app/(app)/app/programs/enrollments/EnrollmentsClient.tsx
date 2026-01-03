@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Card, Select } from "@/components/ui";
+import { Button, Card, Input, Select } from "@/components/ui";
 import { toast } from "../../../toast";
 
 type Template = { id: string; title: string; weeks_count: number };
@@ -29,6 +29,7 @@ export default function EnrollmentsClient({
   const router = useRouter();
   const [templateId, setTemplateId] = React.useState<string>(templates?.[0]?.id ?? "");
   const [playerId, setPlayerId] = React.useState<string>(players?.[0]?.user_id ?? "");
+  const [startAtLocal, setStartAtLocal] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
 
   const templateById = React.useMemo(() => {
@@ -47,10 +48,11 @@ export default function EnrollmentsClient({
     if (!templateId || !playerId) return;
     setLoading(true);
     try {
+      const startAt = startAtLocal ? new Date(startAtLocal).toISOString() : undefined;
       const resp = await fetch("/api/programs/enrollments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ templateId, playerUserId: playerId })
+        body: JSON.stringify({ templateId, playerUserId: playerId, startAt })
       });
       if (resp.ok) toast("Player enrolled.");
       router.refresh();
@@ -119,6 +121,9 @@ export default function EnrollmentsClient({
                   onChange={setPlayerId}
                   options={players.map((p) => ({ value: p.user_id, label: p.display_name }))}
                 />
+              </div>
+              <div style={{ minWidth: 240 }}>
+                <Input label="Start date" name="startAt" type="datetime-local" value={startAtLocal} onChange={setStartAtLocal} />
               </div>
               <Button variant="primary" onClick={enroll} disabled={loading || !templateId || !playerId}>
                 {loading ? "Working…" : "Enroll"}
