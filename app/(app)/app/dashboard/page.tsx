@@ -101,6 +101,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     counts.set(v.owner_user_id, (counts.get(v.owner_user_id) ?? 0) + 1);
   }
 
+  // Team stats
+  const totalPlayers = (players ?? []).length;
+  const totalUploadsThisWeek = (recentVideos ?? []).length;
+  const avgPerPlayer = totalPlayers > 0 ? (totalUploadsThisWeek / totalPlayers).toFixed(1) : "0";
+
   return (
     <div className="stack">
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
@@ -109,6 +114,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
           <div className="muted" style={{ marginTop: 6 }}>
             Triage first, then drill into players.
           </div>
+        </div>
+      </div>
+
+      {/* Team Stats */}
+      <div className="bvStatsRow">
+        <div className="bvStatCard">
+          <div className="bvStatValue">{pendingAll.length}</div>
+          <div className="bvStatLabel">Awaiting feedback</div>
+        </div>
+        <div className="bvStatCard">
+          <div className="bvStatValue">{totalUploadsThisWeek}</div>
+          <div className="bvStatLabel">Uploads (7d)</div>
+        </div>
+        <div className="bvStatCard">
+          <div className="bvStatValue">{avgPerPlayer}</div>
+          <div className="bvStatLabel">Avg per player</div>
         </div>
       </div>
 

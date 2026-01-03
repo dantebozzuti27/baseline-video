@@ -2,7 +2,7 @@
 
 > Started: January 2026  
 > Status: In Progress  
-> Issues Fixed: ~20 of 95 (UI batch complete)
+> Issues Fixed: ~28 of 95
 
 ---
 
@@ -67,6 +67,30 @@
 **15:23** — Applied cardInteractive hover effects  
 **15:30** — Enhanced coach dashboard with avatars, status pills, stagger animations  
 **15:35** — Enhanced player detail page with large avatar, video count, status indicators  
+
+---
+
+## Session 2: Features & UX
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| 6 | Upload button not prominent | Added UploadFAB.tsx (floating action button for mobile) | Jan 3 |
+| 12 | No breadcrumb navigation | Created Breadcrumbs.tsx component | Jan 3 |
+| 16 | No search functionality | Added /api/search + SearchCommand.tsx (Cmd+K) | Jan 3 |
+| 8 | Player can't see progress | Added stats cards (this week, last week, total) | Jan 3 |
+| 9 | Coach dashboard text-heavy | Added team stats (awaiting, uploads 7d, avg/player) | Jan 3 |
+| 14 | No keyboard shortcuts | Added Cmd+K command palette for search | Jan 3 |
+
+### Detailed Log
+
+**15:45** — Created UploadFAB.tsx with gradient primary button  
+**15:48** — Created Breadcrumbs.tsx with Home icon and chevron separators  
+**15:52** — Created /api/search route (videos, players, programs)  
+**15:58** — Created SearchCommand.tsx with Cmd+K trigger and modal results  
+**16:02** — Added player stats cards to player feed page  
+**16:05** — Added team stats cards to coach dashboard  
 
 ---
 

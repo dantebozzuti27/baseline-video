@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LocalDateTime } from "@/components/LocalDateTime";
+import { EmptyState } from "@/components/EmptyState";
 import FeedClient from "./FeedClient";
 import { getMyProfile } from "@/lib/auth/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -58,9 +59,37 @@ export default async function AppHomePage({
   const pinned = (videos ?? []).filter((v: any) => v.pinned);
   const rest = (videos ?? []).filter((v: any) => !v.pinned);
 
+  // Calculate player stats
+  const myVideos = (videos ?? []).filter((v: any) => v.owner_user_id === profile.user_id);
+  const thisWeekStart = new Date();
+  thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
+  thisWeekStart.setHours(0, 0, 0, 0);
+  const thisWeekVideos = myVideos.filter((v: any) => new Date(v.created_at) >= thisWeekStart);
+  const lastWeekStart = new Date(thisWeekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+  const lastWeekVideos = myVideos.filter(
+    (v: any) => new Date(v.created_at) >= lastWeekStart && new Date(v.created_at) < thisWeekStart
+  );
+
   return (
     <div className="stack">
       <FeedClient />
+
+      {/* Player Stats Cards */}
+      <div className="bvStatsRow">
+        <div className="bvStatCard">
+          <div className="bvStatValue">{thisWeekVideos.length}</div>
+          <div className="bvStatLabel">This week</div>
+        </div>
+        <div className="bvStatCard">
+          <div className="bvStatValue">{lastWeekVideos.length}</div>
+          <div className="bvStatLabel">Last week</div>
+        </div>
+        <div className="bvStatCard">
+          <div className="bvStatValue">{myVideos.length}</div>
+          <div className="bvStatLabel">Total uploads</div>
+        </div>
+      </div>
 
       <Card>
         <div style={{ fontWeight: 900 }}>Your next rep</div>
@@ -73,6 +102,11 @@ export default async function AppHomePage({
             <>In-person: upload your best rep today, then add one quick note.</>
           )}
         </div>
+        {thisWeekVideos.length >= 3 && (
+          <div className="pill pillSuccess" style={{ marginTop: 10 }}>
+            ✓ Great pace this week!
+          </div>
+        )}
       </Card>
 
       <div className="row" style={{ alignItems: "center", justifyContent: "space-between" }}>
@@ -117,41 +151,37 @@ export default async function AppHomePage({
       {pinned.length > 0 ? (
         <div className="stack">
           <div style={{ fontWeight: 900 }}>Pinned</div>
-          {pinned.map((v: any) => (
-            <Link key={v.id} href={`/app/videos/${v.id}`}>
-              <div className="card">
-                {(() => {
-                  const activity = new Date(v.last_activity_at ?? v.created_at).getTime();
-                  const seen = seenMap.get(v.id) ?? 0;
-                  const unread = activity > seen;
-                  const badge = v.is_library ? "LIBRARY" : v.owner_user_id === profile.user_id ? "PRIVATE" : "COACH-SHARED";
-                  const audience = v.is_library ? "Team" : v.owner_user_id === profile.user_id ? "You + your coach" : "Team";
-                  return (
+          <div className="stack bvStagger">
+            {pinned.map((v: any) => {
+              const activity = new Date(v.last_activity_at ?? v.created_at).getTime();
+              const seen = seenMap.get(v.id) ?? 0;
+              const unread = activity > seen;
+              const badge = v.is_library ? "LIBRARY" : v.owner_user_id === profile.user_id ? "PRIVATE" : "COACH-SHARED";
+              return (
+                <Link key={v.id} href={`/app/videos/${v.id}`}>
+                  <div className="card cardInteractive">
                     <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                       <div style={{ fontWeight: 800 }}>{v.title}</div>
-                      <div className="row" style={{ alignItems: "center" }}>
-                        {unread ? <div className="pill">UNREAD</div> : null}
-                        <div className="pill">{badge}</div>
-                        <div className="pill">PINNED</div>
+                      <div className="row" style={{ alignItems: "center", gap: 6 }}>
+                        {unread && <div className="pill pillDanger">UNREAD</div>}
+                        <div className={badge === "LIBRARY" ? "pill pillInfo" : "pill"}>{badge}</div>
+                        <div className="pill pillWarning">PINNED</div>
                         <div className="pill">{String(v.category).toUpperCase()}</div>
                       </div>
                     </div>
-                  );
-                })()}
-                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                  Visible to: {v.is_library ? "Team" : v.owner_user_id === profile.user_id ? "You + your coach" : "Team"}
-                </div>
-                <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                  <LocalDateTime value={v.created_at} />
-                </div>
-              </div>
-            </Link>
-          ))}
+                    <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                      <LocalDateTime value={v.created_at} />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       ) : null}
 
       {rest && rest.length > 0 ? (
-        <div className="stack">
+        <div className="stack bvStagger">
           {rest.map((v: any) => {
             const ts = sort === "activity" ? v.last_activity_at ?? v.created_at : v.created_at;
             const isNew = lastSeen > 0 && new Date(ts).getTime() > lastSeen;
@@ -161,18 +191,15 @@ export default async function AppHomePage({
             const badge = v.is_library ? "LIBRARY" : v.owner_user_id === profile.user_id ? "PRIVATE" : "COACH-SHARED";
             return (
               <Link key={v.id} href={`/app/videos/${v.id}`}>
-                <div className="card">
+                <div className="card cardInteractive">
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800 }}>{v.title}</div>
-                    <div className="row" style={{ alignItems: "center" }}>
-                      {unread ? <div className="pill">UNREAD</div> : null}
-                      {isNew ? <div className="pill">NEW</div> : null}
-                      <div className="pill">{badge}</div>
+                    <div className="row" style={{ alignItems: "center", gap: 6 }}>
+                      {unread && <div className="pill pillDanger">UNREAD</div>}
+                      {isNew && <div className="pill pillSuccess">NEW</div>}
+                      <div className={badge === "LIBRARY" ? "pill pillInfo" : badge === "COACH-SHARED" ? "pill pillWarning" : "pill"}>{badge}</div>
                       <div className="pill">{String(v.category).toUpperCase()}</div>
                     </div>
-                  </div>
-                  <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-                    Visible to: {v.is_library ? "Team" : v.owner_user_id === profile.user_id ? "You + your coach" : "Team"}
                   </div>
                   <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
                     <LocalDateTime value={v.created_at} />
@@ -183,21 +210,18 @@ export default async function AppHomePage({
           })}
         </div>
       ) : (
-        <Card>
-          <div style={{ fontWeight: 800 }}>No videos yet</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            {playerMode === "remote"
-              ? "Start with a short training clip from a consistent angle."
-              : playerMode === "hybrid"
-                ? "Start with one drill clip and one swing clip."
-                : "Upload your first Game or Training clip."}
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <LinkButton href="/app/upload" variant="primary">
-              Upload
-            </LinkButton>
-          </div>
-        </Card>
+        <EmptyState
+          variant="videos"
+          title="No videos yet"
+          message={playerMode === "remote"
+            ? "Start with a short training clip from a consistent angle."
+            : playerMode === "hybrid"
+              ? "Start with one drill clip and one swing clip."
+              : "Upload your first Game or Training clip."
+          }
+          actionLabel="Upload video"
+          actionHref="/app/upload"
+        />
       )}
     </div>
   );

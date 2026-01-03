@@ -5,6 +5,8 @@ import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
 import DrawerNav from "./DrawerNav";
 import BottomNav from "./BottomNav";
+import UploadFAB from "./UploadFAB";
+import SearchCommand from "./SearchCommand";
 import ToastClient from "./ToastClient";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -29,13 +31,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
           </div>
           <div className="bvTopBarRight">
-            <Link className="btn btnPrimary" href="/app/upload">
+            <SearchCommand isCoach={profile.role === "coach"} />
+            <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
               Upload
             </Link>
           </div>
         </div>
       </div>
       <div className="container">{children}</div>
+      <UploadFAB />
       <BottomNav role={profile.role} />
       <ToastClient />
     </div>

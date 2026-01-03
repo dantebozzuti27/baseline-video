@@ -953,6 +953,267 @@ a {
   line-height: 1.5;
 }
 
+/* Breadcrumbs */
+.bvBreadcrumbs {
+  margin-bottom: 16px;
+}
+
+.bvBreadcrumbs ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bvBreadcrumbs li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bvBreadcrumbLink {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.bvBreadcrumbLink:hover {
+  color: var(--text);
+}
+
+.bvBreadcrumbSep {
+  color: rgba(169, 180, 195, 0.4);
+}
+
+.bvBreadcrumbCurrent {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Command palette / search */
+.bvSearchTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.bvSearchTrigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.bvSearchPlaceholder {
+  display: none;
+}
+
+.bvSearchKbd {
+  display: none;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+@media (min-width: 640px) {
+  .bvSearchPlaceholder {
+    display: inline;
+  }
+  .bvSearchKbd {
+    display: inline;
+  }
+}
+
+.bvSearchBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(5, 10, 18, 0.85);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 16px;
+  animation: bvFadeIn 0.15s ease-out;
+}
+
+.bvSearchModal {
+  width: min(560px, 100%);
+  background: #0b1220;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+  animation: bvSlideUp 0.2s ease-out;
+}
+
+.bvSearchHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bvSearchIcon {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.bvSearchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+}
+
+.bvSearchInput::placeholder {
+  color: var(--muted);
+}
+
+.bvSearchClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.bvSearchClose:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.bvSearchResults {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.bvSearchEmpty {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.bvSearchGroup {
+  margin-bottom: 8px;
+}
+
+.bvSearchGroupLabel {
+  padding: 8px 10px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.bvSearchItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.bvSearchItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bvSearchItem svg {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* Utility: desktop only */
+.bvDesktopOnly {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .bvDesktopOnly {
+    display: inline-flex;
+  }
+}
+
+/* Stats cards */
+.bvStatsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.bvStatCard {
+  background: linear-gradient(180deg, rgba(99, 179, 255, 0.1) 0%, rgba(99, 179, 255, 0.04) 100%);
+  border: 1px solid rgba(99, 179, 255, 0.2);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+}
+
+.bvStatValue {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.bvStatLabel {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 500px) {
+  .bvStatsRow {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .bvStatCard {
+    padding: 12px 8px;
+  }
+  .bvStatValue {
+    font-size: 22px;
+  }
+  .bvStatLabel {
+    font-size: 10px;
+  }
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;
@@ -1004,6 +1265,35 @@ a {
   /* Add padding to bottom of page to account for nav */
   .container {
     padding-bottom: 90px;
+  }
+}
+
+/* Floating Action Button */
+.bvFAB {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .bvFAB {
+    display: flex;
+    position: fixed;
+    right: 20px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+    z-index: 25;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(99, 179, 255, 0.9) 0%, rgba(63, 150, 230, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(99, 179, 255, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .bvFAB:active {
+    transform: scale(0.92);
   }
 }
 
