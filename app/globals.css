@@ -1804,6 +1804,159 @@ select:focus-visible {
   gap: 12px;
 }
 
+/* Tooltip */
+.bvTooltipWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.bvTooltip {
+  position: absolute;
+  z-index: 1000;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a2e;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: bvFadeIn 0.15s ease;
+}
+
+.bvTooltip-top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+}
+
+.bvTooltip-bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+}
+
+.bvTooltip-left {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 6px;
+}
+
+.bvTooltip-right {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 6px;
+}
+
+/* Badge */
+.bvBadgeWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.bvBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: var(--primary);
+  color: #fff;
+}
+
+.bvBadgeWrap > .bvBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+}
+
+.bvBadge-danger {
+  background: var(--danger);
+}
+
+.bvBadge-success {
+  background: var(--success);
+}
+
+/* Dot indicator */
+.bvDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.bvDot-danger {
+  background: var(--danger);
+}
+
+.bvDot-success {
+  background: var(--success);
+}
+
+.bvDot-warning {
+  background: var(--warning);
+}
+
+/* Progress bar */
+.bvProgress {
+  position: relative;
+  width: 100%;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bvProgress-sm {
+  height: 4px;
+}
+
+.bvProgress-md {
+  height: 8px;
+}
+
+.bvProgress-lg {
+  height: 12px;
+}
+
+.bvProgressBar {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.bvProgressBar-success {
+  background: var(--success);
+}
+
+.bvProgressBar-warning {
+  background: var(--warning);
+}
+
+.bvProgressBar-danger {
+  background: var(--danger);
+}
+
+.bvProgressLabel {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;
