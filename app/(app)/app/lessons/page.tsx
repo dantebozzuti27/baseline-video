@@ -1,9 +1,15 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import LessonsClient from "./LessonsClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function LessonsPage() {
+  // Ensure lessons never come from a cached RSC payload.
+  noStore();
   const profile = await getMyProfile();
   if (!profile) redirect("/sign-in");
 
