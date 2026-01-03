@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import TeamInviteCard from "../../dashboard/TeamInviteCard";
 import { LinkButton, Card } from "@/components/ui";
+import { Avatar } from "@/components/Avatar";
+import { EmptyState } from "@/components/EmptyState";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
@@ -124,17 +126,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
         </div>
 
         {pendingOldest.length > 0 ? (
-          <div className="stack" style={{ marginTop: 12 }}>
+          <div className="stack bvStagger" style={{ marginTop: 12 }}>
             {pendingOldest.map((v: any) => {
               const owner = ownerMap.get(v.owner_user_id);
+              const ownerName = owner ? displayNameFromProfile(owner) : "Unknown";
               return (
                 <Link key={v.id} href={`/app/videos/${v.id}`}>
-                  <div className="card">
+                  <div className="card cardInteractive">
                     <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontWeight: 900 }}>{v.title}</div>
-                        <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                          {owner ? `Player: ${displayNameFromProfile(owner)}` : null}
+                      <div className="row" style={{ alignItems: "center", gap: 12 }}>
+                        <Avatar name={ownerName} size="sm" />
+                        <div>
+                          <div style={{ fontWeight: 900 }}>{v.title}</div>
+                          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                            {ownerName}
+                          </div>
                         </div>
                       </div>
                       <div className="muted" style={{ fontSize: 12 }}>
@@ -147,8 +153,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
             })}
           </div>
         ) : (
-          <div className="muted" style={{ marginTop: 12 }}>
-            You’re caught up.
+          <div className="pill pillSuccess" style={{ marginTop: 12 }}>
+            ✓ All caught up
           </div>
         )}
       </Card>
@@ -173,40 +179,55 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
           </Link>
         </div>
         {players && players.length > 0 ? (
-          <div className="stack">
-            {players.map((p) => (
-              <Link key={p.user_id} href={`/app/player/${p.user_id}`}>
-                <div className="card">
-                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontWeight: 800 }}>{displayNameFromProfile(p as any)}</div>
-                    <div className="row" style={{ alignItems: "center" }}>
-                      {(p as any).player_mode ? (
-                        <div className="pill">
-                          {String((p as any).player_mode).toUpperCase().replace("_", "-")}
+          <div className="stack bvStagger">
+            {players.map((p) => {
+              const name = displayNameFromProfile(p as any);
+              const mode = (p as any).player_mode;
+              const unread = unreadCounts.get(p.user_id) ?? 0;
+              const awaiting = awaitingCounts.get(p.user_id)?.count ?? 0;
+              const recent = counts.get(p.user_id) ?? 0;
+
+              return (
+                <Link key={p.user_id} href={`/app/player/${p.user_id}`}>
+                  <div className="card cardInteractive">
+                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                      <div className="row" style={{ alignItems: "center", gap: 12 }}>
+                        <Avatar name={name} size="md" />
+                        <div>
+                          <div style={{ fontWeight: 800 }}>{name}</div>
+                          <div className="row" style={{ marginTop: 6, gap: 6 }}>
+                            {mode ? (
+                              <div className={mode === "remote" ? "pill pillInfo" : mode === "hybrid" ? "pill pillWarning" : "pill pillSuccess"}>
+                                {String(mode).toUpperCase().replace("_", "-")}
+                              </div>
+                            ) : (
+                              <div className="pill pillMuted">UNASSIGNED</div>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="pill">UNASSIGNED</div>
-                      )}
-                      {(unreadCounts.get(p.user_id) ?? 0) > 0 ? (
-                        <div className="pill">{unreadCounts.get(p.user_id) ?? 0} unread</div>
-                      ) : null}
-                      {(awaitingCounts.get(p.user_id)?.count ?? 0) > 0 ? (
-                        <div className="pill">{awaitingCounts.get(p.user_id)?.count ?? 0} awaiting</div>
-                      ) : null}
-                      <div className="pill">{counts.get(p.user_id) ?? 0} recent</div>
+                      </div>
+                      <div className="row" style={{ alignItems: "center", gap: 6 }}>
+                        {unread > 0 && <div className="pill pillDanger">{unread} unread</div>}
+                        {awaiting > 0 && <div className="pill pillWarning">{awaiting} awaiting</div>}
+                        <div className="pill">{recent} recent</div>
+                      </div>
                     </div>
+                    {awaiting > 0 && awaitingCounts.get(p.user_id)?.oldestAt ? (
+                      <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+                        Oldest awaiting: <LocalDateTime value={awaitingCounts.get(p.user_id)?.oldestAt as string} />
+                      </div>
+                    ) : null}
                   </div>
-                  {(awaitingCounts.get(p.user_id)?.count ?? 0) > 0 && awaitingCounts.get(p.user_id)?.oldestAt ? (
-                    <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
-                      Oldest awaiting: <LocalDateTime value={awaitingCounts.get(p.user_id)?.oldestAt as string} />
-                    </div>
-                  ) : null}
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         ) : (
-          <div className="muted">No players yet. Share your invite link so they can join.</div>
+          <EmptyState
+            variant="roster"
+            title="No players yet"
+            message="Share your invite link so players can join your team."
+          />
         )}
       </Card>
 

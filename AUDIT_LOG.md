@@ -1,7 +1,8 @@
 # Baseline Video — Audit Progress Log
 
 > Started: January 2026  
-> Status: In Progress
+> Status: In Progress  
+> Issues Fixed: 18 of 95
 
 ---
 
@@ -13,11 +14,18 @@
 |---|-------|--------------|------|
 | 36 | Can't create focus inline | Added "+ New focus" button in template editor with modal | Jan 3 |
 | 37 | Can't create drill inline | Added "+ New drill" button in assignment modal | Jan 3 |
-| 80 | Icons are text (→, ≡, ×) | Installed lucide-react, replaced ASCII with Lucide icons in DrawerNav and Modal | Jan 3 |
+| 80 | Icons are text (→, ≡, ×) | Installed lucide-react, replaced ASCII with Lucide icons | Jan 3 |
 | 75 | No loading states | Added loading.tsx with skeleton animations for all main pages | Jan 3 |
 | 5 | Mobile nav is drawer-only | Added BottomNav.tsx with 5 quick-access tabs for mobile | Jan 3 |
-| 73 | Buttons too similar | Enhanced .btnPrimary with gradient, glow, and stronger contrast | Jan 3 |
-| 76 | Empty states boring | Created EmptyState component with icons and helpful CTAs | Jan 3 |
+| 73 | Buttons too similar | Enhanced .btnPrimary with gradient, glow, stronger contrast | Jan 3 |
+| 76 | Empty states boring | Created EmptyState component with icons and CTAs | Jan 3 |
+| 74 | Cards lack hierarchy | Added cardInteractive, cardHeader, cardTitle, cardSubtitle | Jan 3 |
+| 83 | No avatars | Created Avatar component with initials and color gen | Jan 3 |
+| 79 | Colors don't convey status | Added pillSuccess, pillWarning, pillDanger, pillInfo | Jan 3 |
+| 13 | Validation not inline | Enhanced Input with error, hint, required states | Jan 3 |
+| 82 | Date/time inconsistent | Created datetime.ts utility with formatDate, formatRelative | Jan 3 |
+| 87 | No micro-interactions | Added bvFadeIn, bvSlideUp, bvScaleIn, bvStagger animations | Jan 3 |
+| 11 | Toasts disappear fast | Enhanced toast with gradient, animation, variants | Jan 3 |
 
 ### 🔄 In Progress
 
@@ -57,6 +65,8 @@
 **15:19** — Added pillInfo and pillWarning to library badges  
 **15:21** — Added Avatar component to RosterCard with status pills  
 **15:23** — Applied cardInteractive hover effects  
+**15:30** — Enhanced coach dashboard with avatars, status pills, stagger animations  
+**15:35** — Enhanced player detail page with large avatar, video count, status indicators  
 
 ---
 
