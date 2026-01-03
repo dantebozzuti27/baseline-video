@@ -20,16 +20,14 @@ export default function ProfileClient({
   const [lastName, setLastName] = React.useState(initialLastName);
   const [saving, setSaving] = React.useState(false);
   const [saveMsg, setSaveMsg] = React.useState<string | null>(null);
-  const [saveErr, setSaveErr] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
 
   const [confirm, setConfirm] = React.useState("");
   const [deleting, setDeleting] = React.useState(false);
-  const [deleteErr, setDeleteErr] = React.useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
 
   async function save() {
     setSaving(true);
-    setSaveErr(null);
     setSaveMsg(null);
 
     try {
@@ -44,15 +42,13 @@ export default function ProfileClient({
       setTimeout(() => setSaveMsg(null), 2000);
       router.refresh();
     } catch (e: any) {
-      setSaveErr(e?.message ?? "Unable to save");
+      console.error("save profile failed", e);
     } finally {
       setSaving(false);
     }
   }
 
   async function deleteAccount() {
-    setDeleteErr(null);
-
     setDeleting(true);
     try {
       const resp = await fetch("/api/account/delete", {
@@ -68,7 +64,7 @@ export default function ProfileClient({
       router.replace("/sign-in");
       router.refresh();
     } catch (e: any) {
-      setDeleteErr(e?.message ?? "Unable to delete account");
+      console.error("delete account failed", e);
     } finally {
       setDeleting(false);
     }
@@ -98,7 +94,6 @@ export default function ProfileClient({
             </div>
           </div>
 
-          {saveErr ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{saveErr}</div> : null}
           {saveMsg ? <div style={{ color: "var(--primary)", fontSize: 13 }}>{saveMsg}</div> : null}
 
           <div className="row" style={{ alignItems: "center" }}>
@@ -118,8 +113,6 @@ export default function ProfileClient({
           </div>
 
           <Input label="Confirmation" name="confirm" value={confirm} onChange={setConfirm} placeholder="DELETE" />
-
-          {deleteErr ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{deleteErr}</div> : null}
 
           <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} disabled={deleting}>
             {deleting ? "Deleting…" : "Delete my account"}

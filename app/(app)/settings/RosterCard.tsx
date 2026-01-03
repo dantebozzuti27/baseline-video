@@ -1,13 +1,16 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Button, Card, Modal } from "@/components/ui";
+import { toast } from "../toast";
 
 export default function RosterCard({
   players
 }: {
   players: Array<{ user_id: string; display_name: string; is_active?: boolean }>;
 }) {
+  const router = useRouter();
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
   const [confirm, setConfirm] = React.useState<{ userId: string; nextActive: boolean } | null>(null);
 
@@ -28,7 +31,8 @@ export default function RosterCard({
       });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to update player");
-      window.location.reload();
+      toast(active ? "Player reactivated." : "Player deactivated.");
+      router.refresh();
     } catch (e: any) {
       console.error("update player active failed", e);
     } finally {

@@ -22,15 +22,13 @@ export default function JoinByInvitePage({ params }: { params: { token: string }
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     const parsed = schema.safeParse({ firstName, lastName, email, password });
     if (!parsed.success) {
-      setError("Please fill out all fields.");
       return;
     }
 
@@ -45,9 +43,7 @@ export default function JoinByInvitePage({ params }: { params: { token: string }
 
       const accessToken = data.session?.access_token;
       if (!accessToken) {
-        throw new Error(
-          "No session returned from sign up. In Supabase Auth, enable Email signups and disable email confirmations (for MVP)."
-        );
+        throw new Error("missing_session");
       }
 
       // Use server API to join via invite (service role RPC)
@@ -62,7 +58,7 @@ export default function JoinByInvitePage({ params }: { params: { token: string }
       router.replace("/app");
       router.refresh();
     } catch (e: any) {
-      setError(e?.message ?? "Unable to join.");
+      console.error("join by invite failed", e);
     } finally {
       setLoading(false);
     }
@@ -90,8 +86,6 @@ export default function JoinByInvitePage({ params }: { params: { token: string }
             </div>
             <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
             <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
-
-            {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
 
             <Button variant="primary" type="submit" disabled={loading}>
               {loading ? "Joining…" : "Create account & join"}

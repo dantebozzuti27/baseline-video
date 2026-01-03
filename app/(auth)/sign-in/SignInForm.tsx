@@ -17,16 +17,13 @@ export default function SignInForm({ nextUrl }: { nextUrl: string }) {
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) {
-      setError("Enter a valid email and a password (8+ characters).");
       return;
     }
 
@@ -41,7 +38,7 @@ export default function SignInForm({ nextUrl }: { nextUrl: string }) {
       router.replace(nextUrl);
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Unable to sign in.");
+      console.error("sign in failed", err);
     } finally {
       setLoading(false);
     }
@@ -60,7 +57,6 @@ export default function SignInForm({ nextUrl }: { nextUrl: string }) {
         <form className="stack" onSubmit={onSubmit}>
           <Input label="Email" name="email" type="email" value={email} onChange={setEmail} placeholder="coach@team.com" />
           <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
-          {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
           <Button variant="primary" type="submit" disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>

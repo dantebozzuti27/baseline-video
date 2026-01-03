@@ -18,7 +18,8 @@ export default function VideoClient({ videoId }: { videoId: string }) {
   const [kind, setKind] = React.useState<"storage" | "external">("storage");
   const [url, setUrl] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
+  const [failed, setFailed] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
 
   function getYoutubeEmbed(u: string) {
@@ -44,7 +45,7 @@ export default function VideoClient({ videoId }: { videoId: string }) {
     let cancelled = false;
     async function run() {
       setLoading(true);
-      setError(null);
+      setFailed(false);
       try {
         const resp = await fetch(`/api/videos/${videoId}/signed-url`, { cache: "no-store" });
         const json = await resp.json();
@@ -58,7 +59,8 @@ export default function VideoClient({ videoId }: { videoId: string }) {
         // Best-effort: mark video as seen for true unread.
         fetch(`/api/videos/${videoId}/touch`, { method: "POST" }).catch(() => {});
       } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Unable to load video.");
+        console.error("load video failed", e);
+        if (!cancelled) setFailed(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -100,10 +102,10 @@ export default function VideoClient({ videoId }: { videoId: string }) {
     );
   }
 
-  if (error) {
+  if (failed) {
     return (
       <Card>
-        <div style={{ color: "var(--danger)" }}>{error}</div>
+        <div className="muted">Video unavailable.</div>
         <div style={{ marginTop: 12 }}>
           <Button
             onClick={() => {

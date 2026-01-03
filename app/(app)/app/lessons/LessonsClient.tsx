@@ -335,7 +335,8 @@ export default function LessonsClient({
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to request lesson.");
       toast("Lesson requested.");
-      window.location.reload();
+      // Refresh server data without blowing away client state / scroll position.
+      router.refresh();
     } catch (e: any) {
       console.error("requestLesson failed", e);
     } finally {
@@ -448,7 +449,7 @@ export default function LessonsClient({
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to respond.");
       toast(accept ? "Invite accepted." : "Invite declined.");
-      window.location.reload();
+      router.refresh();
     } catch (e: any) {
       console.error("respondInvite failed", e);
     } finally {
@@ -467,7 +468,7 @@ export default function LessonsClient({
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to update participants.");
       toast(present ? "Player invited." : "Player removed.");
-      window.location.reload();
+      router.refresh();
     } catch (e: any) {
       console.error("coachSetSecond failed", e);
     } finally {
@@ -510,7 +511,7 @@ export default function LessonsClient({
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to block time.");
       toast("Time blocked off.");
-      window.location.reload();
+      router.refresh();
     } catch (e: any) {
       console.error("createBlock failed", e);
     } finally {

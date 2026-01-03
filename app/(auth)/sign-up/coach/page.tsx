@@ -27,16 +27,15 @@ export default function CoachSignUpPage() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
   const [inviteToken, setInviteToken] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     const parsed = schema.safeParse({ teamName, firstName, lastName, email, password });
     if (!parsed.success) {
-      setError("Please fill out all fields (password must be 8+ characters).");
       return;
     }
 
@@ -51,9 +50,7 @@ export default function CoachSignUpPage() {
 
       const token = data.session?.access_token;
       if (!token) {
-        throw new Error(
-          "No session returned from sign up. In Supabase Auth, enable Email signups and disable email confirmations (for MVP)."
-        );
+        throw new Error("missing_session");
       }
 
       const resp = await fetch("/api/onboarding/coach", {
@@ -74,7 +71,7 @@ export default function CoachSignUpPage() {
       if (!inv.ok) throw new Error((invJson as any)?.error ?? "Unable to load invite link.");
       setInviteToken((invJson as any).token ?? null);
     } catch (err: any) {
-      setError(err?.message ?? "Unable to sign up.");
+      console.error("coach sign up failed", err);
     } finally {
       setLoading(false);
     }
@@ -105,6 +102,8 @@ export default function CoachSignUpPage() {
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(inviteUrl);
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1800);
                 } catch {
                   // ignore
                 }
@@ -112,6 +111,7 @@ export default function CoachSignUpPage() {
             >
               Copy invite link
             </Button>
+            {copied ? <div className="muted" style={{ fontSize: 13 }}>Copied.</div> : null}
             <Button
               variant="primary"
               onClick={() => {
@@ -135,7 +135,6 @@ export default function CoachSignUpPage() {
             </div>
             <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
             <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
-            {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
             <Button variant="primary" type="submit" disabled={loading}>
               {loading ? "Creating…" : "Create team"}
             </Button>

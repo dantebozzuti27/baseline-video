@@ -31,15 +31,13 @@ export default function PlayerSignUpPage() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     const parsed = schema.safeParse({ invite: tokenFromInviteInput(invite), firstName, lastName, email, password });
     if (!parsed.success) {
-      setError("Please fill out all fields (password must be 8+ characters).");
       return;
     }
 
@@ -54,9 +52,7 @@ export default function PlayerSignUpPage() {
 
       const token = data.session?.access_token;
       if (!token) {
-        throw new Error(
-          "No session returned from sign up. In Supabase Auth, enable Email signups and disable email confirmations (for MVP)."
-        );
+        throw new Error("missing_session");
       }
 
       const resp = await fetch("/api/onboarding/invite", {
@@ -74,7 +70,7 @@ export default function PlayerSignUpPage() {
       router.replace("/app");
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Unable to sign up.");
+      console.error("player sign up failed", err);
     } finally {
       setLoading(false);
     }
@@ -109,7 +105,6 @@ export default function PlayerSignUpPage() {
           </div>
           <Input label="Email" name="email" type="email" value={email} onChange={setEmail} />
           <Input label="Password" name="password" type="password" value={password} onChange={setPassword} />
-          {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
           <Button variant="primary" type="submit" disabled={loading}>
             {loading ? "Joining…" : "Join team"}
           </Button>

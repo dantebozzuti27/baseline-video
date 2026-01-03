@@ -36,7 +36,7 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
   const [lastName, setLastName] = React.useState("");
 
   const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  // Per request: do not show error/failure messages in the UI.
 
   const [createdInviteToken, setCreatedInviteToken] = React.useState<string | null>(null);
 
@@ -48,18 +48,16 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
 
     if (mode === "coach") {
       const parsed = coachSchema.safeParse({ teamName, firstName, lastName });
       if (!parsed.success) {
-        setError("Please fill out all fields.");
         return;
       }
       setLoading(true);
       try {
         const token = await getAccessToken();
-        if (!token) throw new Error("You’re signed in, but we couldn’t find a session. Please sign out and back in.");
+        if (!token) throw new Error("missing_session");
 
         const resp = await fetch("/api/onboarding/coach", {
           method: "POST",
@@ -74,7 +72,7 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
         if (!inv.ok) throw new Error((invJson as any)?.error ?? "Unable to load invite link.");
         setCreatedInviteToken((invJson as any)?.token ?? null);
       } catch (err: any) {
-        setError(err?.message ?? "Unable to finish setup.");
+        console.error("onboarding coach failed", err);
       } finally {
         setLoading(false);
       }
@@ -87,14 +85,13 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
       lastName
     });
     if (!parsed.success) {
-      setError("Please fill out all fields.");
       return;
     }
 
     setLoading(true);
     try {
       const token = await getAccessToken();
-      if (!token) throw new Error("You’re signed in, but we couldn’t find a session. Please sign out and back in.");
+      if (!token) throw new Error("missing_session");
 
       const resp = await fetch("/api/onboarding/invite", {
         method: "POST",
@@ -111,7 +108,7 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
       router.replace(nextPath || "/app");
       router.refresh();
     } catch (err: any) {
-      setError(err?.message ?? "Unable to finish setup.");
+      console.error("onboarding player failed", err);
     } finally {
       setLoading(false);
     }
@@ -200,8 +197,6 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
                 <Input label="Last name" name="lastName" value={lastName} onChange={setLastName} />
               </div>
             </div>
-
-            {error ? <div style={{ color: "var(--danger)", fontSize: 13 }}>{error}</div> : null}
 
             <Button variant="primary" type="submit" disabled={loading}>
               {loading ? "Saving…" : "Continue"}
