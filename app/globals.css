@@ -1316,6 +1316,97 @@ a {
   line-height: 1.5;
 }
 
+/* Video playback controls */
+.bvVideoControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.bvControlBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.bvControlBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.bvControlBtn:active {
+  transform: scale(0.95);
+}
+
+.bvControlBtnLarge {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, var(--primary) 0%, #4a9fd4 100%);
+  color: #fff;
+}
+
+.bvControlBtnLarge:hover {
+  background: linear-gradient(135deg, #7ac4ff 0%, var(--primary) 100%);
+}
+
+.bvSpeedPicker {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.bvSpeedBtn {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.bvSpeedBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.bvSpeedBtnActive {
+  background: rgba(99, 179, 255, 0.2);
+  color: var(--primary);
+}
+
+.bvSpeedBtnActive:hover {
+  background: rgba(99, 179, 255, 0.25);
+}
+
+@media (max-width: 600px) {
+  .bvVideoControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bvSpeedPicker {
+    justify-content: center;
+  }
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;

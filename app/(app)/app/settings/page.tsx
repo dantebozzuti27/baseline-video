@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
-import { LinkButton } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import InviteCard from "../../settings/InviteCard";
 import RosterCard from "../../settings/RosterCard";
 import ProfileClient from "../../profile/ProfileClient";
@@ -30,29 +31,63 @@ export default async function SettingsPage() {
 
   return (
     <div className="stack">
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 900 }}>Account & team</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            Manage your account. Coaches also manage invites and roster.
-          </div>
-        </div>
-        <LinkButton href={profile.role === "coach" ? "/app/dashboard" : "/app"}>Back</LinkButton>
-      </div>
-
-      <ProfileClient
-        initialFirstName={profile.first_name ?? ""}
-        initialLastName={profile.last_name ?? ""}
-        email={user.email ?? ""}
-        role={profile.role}
+      <Breadcrumbs
+        items={[
+          { label: profile.role === "coach" ? "Dashboard" : "Feed", href: profile.role === "coach" ? "/app/dashboard" : "/app" },
+          { label: "Settings" }
+        ]}
       />
 
-      {profile.role === "coach" ? (
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Settings</div>
+        <div className="muted" style={{ marginTop: 6 }}>
+          {profile.role === "coach"
+            ? "Manage your profile, invites, and team roster."
+            : "Manage your profile and account."}
+        </div>
+      </div>
+
+      {/* Profile Section */}
+      <Card className="cardInteractive">
+        <div className="cardHeader">
+          <div className="cardTitle">Profile</div>
+          <div className="cardSubtitle">Your personal information</div>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <ProfileClient
+            initialFirstName={profile.first_name ?? ""}
+            initialLastName={profile.last_name ?? ""}
+            email={user.email ?? ""}
+            role={profile.role}
+          />
+        </div>
+      </Card>
+
+      {profile.role === "coach" && (
         <>
-          <InviteCard />
-          <RosterCard players={(players ?? []) as any} />
+          {/* Invite Section */}
+          <Card className="cardInteractive">
+            <div className="cardHeader">
+              <div className="cardTitle">Team Invite</div>
+              <div className="cardSubtitle">Share this link to invite players</div>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <InviteCard />
+            </div>
+          </Card>
+
+          {/* Roster Section */}
+          <Card className="cardInteractive">
+            <div className="cardHeader">
+              <div className="cardTitle">Team Roster</div>
+              <div className="cardSubtitle">Manage your players</div>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <RosterCard players={(players ?? []) as any} />
+            </div>
+          </Card>
         </>
-      ) : null}
+      )}
     </div>
   );
 }

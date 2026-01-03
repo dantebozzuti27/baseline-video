@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Download } from "lucide-react";
+import { Download, SkipBack, SkipForward, Play, Pause } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 
 function parseSeekSecondsFromHash() {
@@ -14,13 +14,16 @@ function parseSeekSecondsFromHash() {
   return n;
 }
 
+const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
 export default function VideoClient({ videoId }: { videoId: string }) {
   const router = useRouter();
   const [kind, setKind] = React.useState<"storage" | "external">("storage");
   const [url, setUrl] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
-  // Per request: do not show error/failure messages in the UI.
   const [failed, setFailed] = React.useState(false);
+  const [speed, setSpeed] = React.useState<number>(1);
+  const [isPlaying, setIsPlaying] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
 
   function getYoutubeEmbed(u: string) {
@@ -161,10 +164,94 @@ export default function VideoClient({ videoId }: { videoId: string }) {
     document.body.removeChild(a);
   }
 
+  function setPlaybackSpeed(s: number) {
+    setSpeed(s);
+    if (videoRef.current) videoRef.current.playbackRate = s;
+  }
+
+  function stepFrame(dir: "back" | "forward") {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    setIsPlaying(false);
+    // Approximate 30fps = ~0.033s per frame
+    const delta = dir === "forward" ? 1 / 30 : -1 / 30;
+    v.currentTime = Math.max(0, v.currentTime + delta);
+  }
+
+  function togglePlay() {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      v.play().catch(() => {});
+      setIsPlaying(true);
+    } else {
+      v.pause();
+      setIsPlaying(false);
+    }
+  }
+
+  function handleVideoPlay() {
+    setIsPlaying(true);
+  }
+
+  function handleVideoPause() {
+    setIsPlaying(false);
+  }
+
   return (
     <Card>
-      <video ref={videoRef} src={url ?? undefined} controls playsInline style={{ width: "100%", borderRadius: 12 }} />
-      <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+      <video
+        ref={videoRef}
+        src={url ?? undefined}
+        controls
+        playsInline
+        style={{ width: "100%", borderRadius: 12 }}
+        onPlay={handleVideoPlay}
+        onPause={handleVideoPause}
+      />
+
+      {/* Playback Controls */}
+      <div className="bvVideoControls">
+        <div className="row" style={{ gap: 6, alignItems: "center" }}>
+          <button
+            className="bvControlBtn"
+            onClick={() => stepFrame("back")}
+            title="Previous frame"
+            aria-label="Previous frame"
+          >
+            <SkipBack size={16} />
+          </button>
+          <button
+            className="bvControlBtn bvControlBtnLarge"
+            onClick={togglePlay}
+            title={isPlaying ? "Pause" : "Play"}
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+          </button>
+          <button
+            className="bvControlBtn"
+            onClick={() => stepFrame("forward")}
+            title="Next frame"
+            aria-label="Next frame"
+          >
+            <SkipForward size={16} />
+          </button>
+        </div>
+
+        <div className="bvSpeedPicker">
+          {SPEEDS.map((s) => (
+            <button
+              key={s}
+              className={speed === s ? "bvSpeedBtn bvSpeedBtnActive" : "bvSpeedBtn"}
+              onClick={() => setPlaybackSpeed(s)}
+            >
+              {s}x
+            </button>
+          ))}
+        </div>
+
         <Button onClick={downloadVideo}>
           <Download size={16} />
           Download

@@ -2,7 +2,7 @@
 
 > Started: January 2026  
 > Status: In Progress  
-> Issues Fixed: ~42 of 95
+> Issues Fixed: ~45 of 95
 
 ---
 
@@ -136,6 +136,25 @@
 **16:48** — Created program duplicate API route  
 **16:50** — Added duplicate button to ProgramsListClient  
 **16:52** — Added download button to VideoClient  
+
+---
+
+## Session 5: Video Controls & Settings Polish
+
+### ✅ Completed
+
+| # | Issue | Action Taken | Date |
+|---|-------|--------------|------|
+| 23 | No playback controls | Added speed picker (0.25x-2x), frame step, play/pause | Jan 3 |
+| - | Settings page polish | Added breadcrumbs, section headers, card layout | Jan 3 |
+
+### Detailed Log
+
+**17:00** — Added playback speed controls (0.25x, 0.5x, 0.75x, 1x, 1.25x, 1.5x, 2x)  
+**17:03** — Added frame-by-frame stepping (back/forward at ~30fps)  
+**17:05** — Added custom play/pause button with gradient styling  
+**17:08** — Added CSS for video controls toolbar  
+**17:12** — Enhanced settings page with breadcrumbs and section cards  
 
 ---
 
