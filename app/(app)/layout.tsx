@@ -23,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div>
+      <a href="#main-content" className="bvSkipLink">Skip to content</a>
       <div className="nav">
         <div className="navInner">
           <div className="bvTopBarLeft">
@@ -39,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </div>
-      <div className="container">{children}</div>
+      <main id="main-content" className="container">{children}</main>
       <UploadFAB />
       <BottomNav role={profile.role} />
       <ToastClient />

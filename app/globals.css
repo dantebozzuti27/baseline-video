@@ -1552,6 +1552,71 @@ a {
   color: var(--muted);
 }
 
+/* Accessibility: Focus rings */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.btn:focus-visible,
+.bvControlBtn:focus-visible,
+.bvSpeedBtn:focus-visible,
+.bvTab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(99, 179, 255, 0.2);
+}
+
+.input:focus-visible,
+.textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 179, 255, 0.15);
+}
+
+/* Skip to content link for keyboard users */
+.bvSkipLink {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 100;
+  padding: 12px 20px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.bvSkipLink:focus {
+  top: 16px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --border: #666;
+  }
+  .btn,
+  .pill,
+  .card {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;

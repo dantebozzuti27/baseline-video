@@ -199,6 +199,67 @@ export default function VideoClient({ videoId }: { videoId: string }) {
     setIsPlaying(false);
   }
 
+  // Keyboard shortcuts for video playback
+  React.useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      // Ignore if typing in input
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      const v = videoRef.current;
+      if (!v) return;
+
+      switch (e.key) {
+        case " ": // Space - toggle play/pause
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowLeft": // Left arrow - frame back or 5s back
+          e.preventDefault();
+          if (e.shiftKey) {
+            v.currentTime = Math.max(0, v.currentTime - 5);
+          } else {
+            stepFrame("back");
+          }
+          break;
+        case "ArrowRight": // Right arrow - frame forward or 5s forward
+          e.preventDefault();
+          if (e.shiftKey) {
+            v.currentTime = Math.min(v.duration || 0, v.currentTime + 5);
+          } else {
+            stepFrame("forward");
+          }
+          break;
+        case "ArrowUp": // Up arrow - speed up
+          e.preventDefault();
+          {
+            const idx = SPEEDS.indexOf(speed as any);
+            if (idx < SPEEDS.length - 1) setPlaybackSpeed(SPEEDS[idx + 1]);
+          }
+          break;
+        case "ArrowDown": // Down arrow - slow down
+          e.preventDefault();
+          {
+            const idx = SPEEDS.indexOf(speed as any);
+            if (idx > 0) setPlaybackSpeed(SPEEDS[idx - 1]);
+          }
+          break;
+        case "m": // M - mute toggle
+          v.muted = !v.muted;
+          break;
+        case "f": // F - fullscreen toggle
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          } else {
+            v.requestFullscreen().catch(() => {});
+          }
+          break;
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [speed]);
+
   return (
     <Card>
       <video
