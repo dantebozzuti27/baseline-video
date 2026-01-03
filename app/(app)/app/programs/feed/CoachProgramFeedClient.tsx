@@ -11,6 +11,9 @@ type Submission = {
   id: string;
   enrollment_id: string;
   week_index: number;
+  day_index?: number | null;
+  assignment_id?: string | null;
+  assignment?: any | null;
   note: string | null;
   created_at: string;
   video_id: string;
@@ -115,12 +118,18 @@ export default function CoachProgramFeedClient({
             const reviewed = Boolean(reviewBySubmissionId[s.id]);
             const playerName = e ? playerById[e.player_user_id] : "Player";
             const videoTitle = s.videos?.title ?? "Video";
+            const drillTitle = s.assignment?.drill?.title ?? null;
+            const dayLabel =
+              typeof s.day_index === "number" && Number.isFinite(s.day_index) ? `Day ${s.day_index}` : null;
             return (
               <Card key={s.id}>
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
                     <div style={{ fontWeight: 900 }}>
-                      {playerName} • Week {s.week_index} {reviewed ? <span className="pill">Reviewed</span> : <span className="pill">Needs review</span>}
+                      {playerName} • Week {s.week_index}
+                      {dayLabel ? ` • ${dayLabel}` : ""}
+                      {drillTitle ? ` • ${drillTitle}` : ""}
+                      {reviewed ? <span className="pill">Reviewed</span> : <span className="pill">Needs review</span>}
                     </div>
                     <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
                       {videoTitle} • {String(s.videos?.category ?? "").toUpperCase()}

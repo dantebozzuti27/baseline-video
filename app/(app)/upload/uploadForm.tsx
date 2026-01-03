@@ -44,11 +44,13 @@ export default function UploadForm({
   initialOwnerUserId,
   programEnrollmentId,
   programWeekIndex,
+  programAssignmentId,
   returnTo
 }: {
   initialOwnerUserId: string | null;
   programEnrollmentId?: string | null;
   programWeekIndex?: number | null;
+  programAssignmentId?: string | null;
   returnTo?: string | null;
 }) {
   const router = useRouter();
@@ -312,12 +314,17 @@ export default function UploadForm({
       const id = await uploadOne(it, idx);
       // If it's a single file and this retry made it done, navigate.
       if (items.length === 1) {
-        if (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex)) {
+        if (
+          (programAssignmentId && programAssignmentId.length > 0) ||
+          (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex))
+        ) {
           try {
             const resp = await fetch("/api/programs/submissions", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
+              body: programAssignmentId
+                ? JSON.stringify({ assignmentId: programAssignmentId, videoId: id })
+                : JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
             });
             if (resp.ok) toast("Submitted to program.");
           } catch (e) {
@@ -352,12 +359,17 @@ export default function UploadForm({
       if (uploadKind === "link") {
         const id = await createLinkVideo();
         toast("Link added.");
-        if (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex)) {
+        if (
+          (programAssignmentId && programAssignmentId.length > 0) ||
+          (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex))
+        ) {
           try {
             const resp = await fetch("/api/programs/submissions", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
+              body: programAssignmentId
+                ? JSON.stringify({ assignmentId: programAssignmentId, videoId: id })
+                : JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
             });
             if (resp.ok) toast("Submitted to program.");
           } catch (e) {
@@ -394,13 +406,18 @@ export default function UploadForm({
       await Promise.all(new Array(concurrency).fill(0).map(() => worker()));
 
       const first = doneIds[0] ?? items.find((it) => it.status === "done")?.videoId;
-      if (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex)) {
+      if (
+        (programAssignmentId && programAssignmentId.length > 0) ||
+        (programEnrollmentId && programWeekIndex && Number.isFinite(programWeekIndex))
+      ) {
         for (const id of doneIds) {
           try {
             await fetch("/api/programs/submissions", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
+              body: programAssignmentId
+                ? JSON.stringify({ assignmentId: programAssignmentId, videoId: id })
+                : JSON.stringify({ enrollmentId: programEnrollmentId, weekIndex: programWeekIndex, videoId: id })
             });
           } catch (e) {
             console.error("attach to program failed", e);

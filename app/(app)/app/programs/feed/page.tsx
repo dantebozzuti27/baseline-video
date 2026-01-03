@@ -35,11 +35,31 @@ export default async function ProgramFeedPage() {
   const { data: submissions } = enrollmentIds.length
     ? await db
         .from("program_submissions")
-        .select("id, enrollment_id, week_index, note, created_at, video_id, videos:video_id(id, title, category, owner_user_id, created_at)")
+        .select(
+          "id, enrollment_id, week_index, day_index, assignment_id, note, created_at, video_id, videos:video_id(id, title, category, owner_user_id, created_at)"
+        )
         .in("enrollment_id", enrollmentIds)
         .order("created_at", { ascending: false })
         .limit(400)
     : ({ data: [] as any[] } as any);
+
+  const assignmentIds = Array.from(new Set((submissions ?? []).map((s: any) => s.assignment_id).filter(Boolean)));
+  const { data: assignmentRows } = assignmentIds.length
+    ? await db
+        .from("program_template_day_assignments")
+        .select("id, drill_id, week_index, day_index, requires_upload, upload_prompt, notes_to_player")
+        .in("id", assignmentIds)
+        .limit(800)
+    : ({ data: [] as any[] } as any);
+  const drillIds = Array.from(new Set((assignmentRows ?? []).map((a: any) => a.drill_id).filter(Boolean)));
+  const { data: drillRows } = drillIds.length
+    ? await db.from("program_drills").select("id, title, category").in("id", drillIds).limit(800)
+    : ({ data: [] as any[] } as any);
+
+  const drillById: Record<string, any> = {};
+  for (const d of drillRows ?? []) drillById[d.id] = d;
+  const assignmentById: Record<string, any> = {};
+  for (const a of assignmentRows ?? []) assignmentById[a.id] = { ...a, drill: drillById[a.drill_id] };
 
   const submissionIds = Array.from(new Set((submissions ?? []).map((s: any) => s.id).filter(Boolean)));
 
@@ -56,7 +76,7 @@ export default async function ProgramFeedPage() {
   return (
     <CoachProgramFeedClient
       enrollments={(enrollments ?? []) as any}
-      submissions={(submissions ?? []) as any}
+      submissions={(submissions ?? []).map((s: any) => ({ ...s, assignment: s.assignment_id ? assignmentById[s.assignment_id] : null })) as any}
       reviews={(reviews ?? []) as any}
       playerById={playerById}
     />

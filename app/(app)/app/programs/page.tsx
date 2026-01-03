@@ -48,6 +48,9 @@ export default async function ProgramsHomePage() {
           <Link className="btn" href="/app/programs/feed">
             Feed
           </Link>
+          <Link className="btn" href="/app/programs/library">
+            Library
+          </Link>
           <Link className="btn" href="/app/programs/enrollments">
             Enrollments
           </Link>
