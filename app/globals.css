@@ -1660,6 +1660,31 @@ select:focus-visible {
   }
 }
 
+/* Compare page grid */
+.bvCompareGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.bvComparePane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bvComparePaneHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 800px) {
+  .bvCompareGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Bottom navigation (mobile) */
 .bvBottomNav {
   display: none;

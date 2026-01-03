@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
-import { Card, LinkButton } from "@/components/ui";
+import { Card } from "@/components/ui";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { EmptyState } from "@/components/EmptyState";
 import VideoClient from "../../videos/[id]/videoClient";
 
 export default async function ComparePage({
@@ -43,21 +45,26 @@ export default async function ComparePage({
 
   return (
     <div className="stack">
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 900 }}>Compare</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            Side-by-side review.
-          </div>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/app/dashboard" },
+          { label: "Compare" }
+        ]}
+      />
+
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Side-by-Side Compare</div>
+        <div className="muted" style={{ marginTop: 6 }}>
+          Select two videos to compare swings, mechanics, or progress over time
         </div>
-        <LinkButton href="/app/dashboard">Back</LinkButton>
       </div>
 
-      <Card>
-        <div className="muted" style={{ fontSize: 13 }}>
-          Pick two videos (library or any player) to review side-by-side.
+      <Card className="cardInteractive">
+        <div className="cardHeader">
+          <div className="cardTitle">Select Videos</div>
+          <div className="cardSubtitle">Choose from library or player uploads</div>
         </div>
-        <form className="stack" style={{ marginTop: 12 }} action="/app/compare" method="get">
+        <form className="stack" style={{ marginTop: 16 }} action="/app/compare" method="get">
           <div className="row" style={{ alignItems: "end" }}>
             <div style={{ flex: 1, minWidth: 260 }}>
               <div className="label">Left</div>
@@ -105,15 +112,27 @@ export default async function ComparePage({
       </Card>
 
       {left && right ? (
-        <div className="row" style={{ alignItems: "stretch" }}>
-          <div style={{ flex: 1, minWidth: 280 }}>
+        <div className="bvCompareGrid">
+          <div className="bvComparePane">
+            <div className="bvComparePaneHeader">
+              <span className="pill pillInfo">LEFT</span>
+            </div>
             <VideoClient videoId={left} />
           </div>
-          <div style={{ flex: 1, minWidth: 280 }}>
+          <div className="bvComparePane">
+            <div className="bvComparePaneHeader">
+              <span className="pill pillWarning">RIGHT</span>
+            </div>
             <VideoClient videoId={right} />
           </div>
         </div>
-      ) : null}
+      ) : (
+        <EmptyState
+          variant="videos"
+          title="Select two videos"
+          message="Pick a video for left and right to start comparing."
+        />
+      )}
     </div>
   );
 }
