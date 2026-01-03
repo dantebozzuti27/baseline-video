@@ -132,6 +132,30 @@ export function Select({
   );
 }
 
+type PillVariant = "default" | "success" | "warning" | "danger" | "info" | "muted";
+
+const PILL_CLASSES: Record<PillVariant, string> = {
+  default: "pill",
+  success: "pill pillSuccess",
+  warning: "pill pillWarning",
+  danger: "pill pillDanger",
+  info: "pill pillInfo",
+  muted: "pill pillMuted"
+};
+
+export function Pill({
+  children,
+  variant = "default",
+  className
+}: {
+  children: React.ReactNode;
+  variant?: PillVariant;
+  className?: string;
+}) {
+  const cls = PILL_CLASSES[variant] + (className ? ` ${className}` : "");
+  return <span className={cls}>{children}</span>;
+}
+
 export function Modal({
   open,
   title,

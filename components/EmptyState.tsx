@@ -9,10 +9,11 @@ import {
   Library,
   Upload,
   Users,
+  Trash2,
   type LucideIcon
 } from "lucide-react";
 
-type Variant = "videos" | "lessons" | "programs" | "library" | "roster" | "generic";
+type Variant = "videos" | "lessons" | "programs" | "library" | "roster" | "trash" | "generic";
 
 const ICONS: Record<Variant, LucideIcon> = {
   videos: Video,
@@ -20,6 +21,7 @@ const ICONS: Record<Variant, LucideIcon> = {
   programs: FolderKanban,
   library: Library,
   roster: Users,
+  trash: Trash2,
   generic: Upload
 };
 
@@ -43,6 +45,10 @@ const DEFAULTS: Record<Variant, { title: string; message: string }> = {
   roster: {
     title: "No players yet",
     message: "Share your invite link to bring players onto your team."
+  },
+  trash: {
+    title: "Trash is empty",
+    message: "Deleted videos will appear here for recovery."
   },
   generic: {
     title: "Nothing here",

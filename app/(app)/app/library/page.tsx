@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, LinkButton } from "@/components/ui";
+import { Card, Pill } from "@/components/ui";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { LocalDateTime } from "@/components/LocalDateTime";
 import { EmptyState } from "@/components/EmptyState";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -33,17 +34,22 @@ export default async function LibraryPage({
   const { data: videos } = await query;
   const pinned = (videos ?? []).filter((v: any) => v.pinned);
   const rest = (videos ?? []).filter((v: any) => !v.pinned);
+  const totalCount = (videos ?? []).length;
 
   return (
     <div className="stack">
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 900 }}>{isCoach ? "Coach library" : "Team library"}</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            Reference videos visible to the whole team.
-          </div>
+      <Breadcrumbs
+        items={[
+          { label: isCoach ? "Dashboard" : "Feed", href: isCoach ? "/app/dashboard" : "/app" },
+          { label: "Library" }
+        ]}
+      />
+
+      <div>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>Team Library</div>
+        <div className="muted" style={{ marginTop: 6 }}>
+          {totalCount} videos shared with the whole team
         </div>
-        <LinkButton href={isCoach ? "/app/dashboard" : "/app"}>Back</LinkButton>
       </div>
 
       <Card>
@@ -82,10 +88,10 @@ export default async function LibraryPage({
                 <div className="card cardInteractive">
                   <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ fontWeight: 800 }}>{v.title}</div>
-                    <div className="row" style={{ alignItems: "center" }}>
-                      <div className="pill pillInfo">LIBRARY</div>
-                      <div className="pill pillWarning">PINNED</div>
-                      <div className="pill">{String(v.category).toUpperCase()}</div>
+                    <div className="row" style={{ alignItems: "center", gap: 6 }}>
+                      <Pill variant="info">LIBRARY</Pill>
+                      <Pill variant="success">PINNED</Pill>
+                      <Pill>{String(v.category).toUpperCase()}</Pill>
                     </div>
                   </div>
                   <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
@@ -108,9 +114,9 @@ export default async function LibraryPage({
               <div className="card cardInteractive">
                 <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ fontWeight: 800 }}>{v.title}</div>
-                  <div className="row" style={{ alignItems: "center" }}>
-                    <div className="pill pillInfo">LIBRARY</div>
-                    <div className="pill">{String(v.category).toUpperCase()}</div>
+                  <div className="row" style={{ alignItems: "center", gap: 6 }}>
+                    <Pill variant="info">LIBRARY</Pill>
+                    <Pill>{String(v.category).toUpperCase()}</Pill>
                   </div>
                 </div>
                 <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
