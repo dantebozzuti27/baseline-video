@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const createSchema = z.object({
-  startAt: z.string().min(1),
-  minutes: z.number().int().min(15).max(24 * 60),
-  timezone: z.string().min(1).max(64).optional(),
-  note: z.string().max(2000).optional()
-});
+const createSchema = z
+  .object({
+    startAt: z.string().min(1),
+    // Either provide minutes (legacy) OR endAt (Outlook-style).
+    minutes: z.number().int().min(15).max(24 * 60).optional(),
+    endAt: z.string().min(1).optional(),
+    timezone: z.string().min(1).max(64).optional(),
+    note: z.string().max(2000).optional()
+  })
+  .superRefine((v, ctx) => {
+    if (!v.minutes && !v.endAt) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Provide minutes or endAt." });
+    }
+  });
 
 const deleteSchema = z.object({
   id: z.string().uuid()
@@ -27,9 +35,21 @@ export async function POST(req: Request) {
   const startAt = new Date(parsed.data.startAt);
   if (!Number.isFinite(startAt.getTime())) return NextResponse.json({ error: "Invalid start time." }, { status: 400 });
 
+  let minutes = parsed.data.minutes ?? null;
+  if (!minutes && parsed.data.endAt) {
+    const endAt = new Date(parsed.data.endAt);
+    if (!Number.isFinite(endAt.getTime()) || endAt <= startAt) {
+      return NextResponse.json({ error: "Invalid end time." }, { status: 400 });
+    }
+    minutes = Math.round((endAt.getTime() - startAt.getTime()) / 60000);
+  }
+  if (!minutes || minutes < 15 || minutes > 24 * 60) {
+    return NextResponse.json({ error: "Block must be between 15 minutes and 24 hours." }, { status: 400 });
+  }
+
   const { data, error } = await supabase.rpc("create_coach_time_block", {
     p_start_at: startAt.toISOString(),
-    p_minutes: parsed.data.minutes,
+    p_minutes: minutes,
     p_timezone: parsed.data.timezone ?? "UTC",
     p_note: parsed.data.note ?? null
   });

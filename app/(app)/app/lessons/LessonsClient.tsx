@@ -124,6 +124,14 @@ export default function LessonsClient({
   const [weekStart, setWeekStart] = React.useState<Date>(() => startOfWeekMonday(new Date()));
   const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
 
+  // Default to Day view on small screens so it fits like Outlook mobile.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth < 760) {
+      setView((v) => (v === "week" ? "day" : v));
+    }
+  }, []);
+
   const [coachUserId, setCoachUserId] = React.useState<string>(coaches[0]?.user_id ?? "");
   const [mode, setMode] = React.useState<"in_person" | "remote">("in_person");
   const [secondPlayerUserId, setSecondPlayerUserId] = React.useState<string>("");
@@ -163,7 +171,12 @@ export default function LessonsClient({
     d.setMinutes(0, 0, 0);
     return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   });
-  const [blockMinutes, setBlockMinutes] = React.useState<number>(60);
+  const [blockEndLocal, setBlockEndLocal] = React.useState<string>(() => {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    d.setMinutes(0, 0, 0);
+    d.setHours(d.getHours() + 1);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  });
   const [blockNote, setBlockNote] = React.useState<string>("");
 
   const pending = lessons.filter((l) => l.status === "requested");
@@ -456,14 +469,16 @@ export default function LessonsClient({
   async function createBlock() {
     setLoading(true);
     try {
-      const start = new Date(blockStartLocal);
-      if (!Number.isFinite(start.getTime())) throw new Error("Choose a valid time.");
+      const start = parseLocalDateTime(blockStartLocal);
+      const end = parseLocalDateTime(blockEndLocal);
+      if (!start || !Number.isFinite(start.getTime())) throw new Error("Choose a valid start time.");
+      if (!end || !Number.isFinite(end.getTime()) || end <= start) throw new Error("Choose a valid end time.");
       const resp = await fetch("/api/lessons/blocks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           startAt: start.toISOString(),
-          minutes: blockMinutes,
+          endAt: end.toISOString(),
           timezone: tz,
           note: blockNote.trim() || undefined
         })
@@ -564,7 +579,7 @@ export default function LessonsClient({
       {view !== "list" ? (
         <div className="bvCalWrap">
           <div className="bvCalGrid">
-            <div className="bvCalHeader">
+            <div className="bvCalHeader" style={{ gridTemplateColumns: `64px repeat(${visibleDays.length}, 1fr)` }}>
               <div className="bvCalHeaderGutter" />
               {visibleDays.map((d) => {
                 const isToday = sameDay(d, new Date());
@@ -735,18 +750,16 @@ export default function LessonsClient({
                       disabled={loading}
                     />
                   </div>
-                  <Select
-                    label="Duration"
-                    name="blockMinutes"
-                    value={String(blockMinutes)}
-                    onChange={(v) => setBlockMinutes(Number(v))}
-                    options={[
-                      { value: "30", label: "30 min" },
-                      { value: "60", label: "60 min" },
-                      { value: "90", label: "90 min" },
-                      { value: "120", label: "120 min" }
-                    ]}
-                  />
+                  <div className="stack" style={{ gap: 6 }}>
+                    <div className="label">End</div>
+                    <input
+                      className="input"
+                      type="datetime-local"
+                      value={blockEndLocal}
+                      onChange={(e) => setBlockEndLocal(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
                   <div className="stack" style={{ gap: 6 }}>
                     <div className="label">Note (optional)</div>
                     <textarea className="textarea" rows={2} value={blockNote} onChange={(e) => setBlockNote(e.target.value)} />

@@ -409,6 +409,7 @@ a {
   grid-template-columns: 1fr 320px;
   gap: 12px;
   align-items: start;
+  min-width: 0;
 }
 
 .bvCalGrid {
@@ -416,11 +417,13 @@ a {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.02);
   overflow: hidden;
+  min-width: 0;
 }
 
 .bvCalHeader {
   display: grid;
-  grid-template-columns: 64px repeat(7, 1fr);
+  /* JS sets exact day column count per view; keep gutter width here */
+  grid-template-columns: 64px 1fr;
   border-bottom: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.25);
 }
@@ -458,7 +461,8 @@ a {
 .bvCalBody {
   display: grid;
   grid-template-columns: 64px 1fr;
-  max-height: 560px;
+  /* Fit on mobile without weird clipping */
+  max-height: min(560px, calc(100dvh - 260px));
   overflow: auto;
 }
 
@@ -483,12 +487,13 @@ a {
 
 .bvCalDays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* JS sets exact day column count per view */
+  grid-template-columns: 1fr;
 }
 
 .bvCalDayCol {
   position: relative;
-  min-width: 140px;
+  min-width: 120px;
   border-right: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.01);
 }
@@ -562,6 +567,31 @@ a {
     grid-template-columns: 1fr;
   }
   .bvCalBody {
-    max-height: 520px;
+    max-height: min(520px, calc(100dvh - 240px));
+  }
+}
+
+@media (max-width: 760px) {
+  .bvCalTitle {
+    min-width: 0;
+  }
+
+  .bvCalHeader {
+    /* narrower gutter on phones */
+    grid-template-columns: 52px 1fr;
+  }
+
+  .bvCalBody {
+    grid-template-columns: 52px 1fr;
+    max-height: calc(100dvh - 220px);
+  }
+
+  .bvCalTimeRow,
+  .bvCalHourLine {
+    height: 50px;
+  }
+
+  .bvCalDayCol {
+    min-width: 0;
   }
 }
