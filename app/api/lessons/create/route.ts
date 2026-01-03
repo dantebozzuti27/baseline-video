@@ -40,20 +40,24 @@ export async function POST(req: Request) {
     console.error("create_lesson_as_coach failed", error);
     const raw = String((error as any)?.message ?? "");
     // Only show safe, user-facing errors. Keep internal diagnostics in server logs.
-    const safeMsg =
-      raw.includes("invalid_primary_player")
-        ? "Choose a valid player on your team."
-        : raw.includes("invalid_second_player")
-          ? "Choose a valid second player."
-          : raw.includes("blocked")
-            ? "That time is blocked off."
-            : raw.includes("conflict")
-              ? "You already have a lesson at that time."
-              : raw.includes("invalid_duration")
-                ? "Choose a duration between 15 and 180 minutes."
-                : raw.includes("forbidden") || raw.includes("permission denied")
-                  ? "You don’t have permission to schedule lessons."
-                  : "Unable to schedule lesson.";
+    let safeMsg = "Unable to schedule lesson.";
+    if (raw.includes("function public.create_lesson_as_coach") || raw.includes("does not exist")) {
+      safeMsg = "Scheduling isn’t enabled yet. Please finish the database setup and try again.";
+    } else if (raw.includes("missing_profile")) {
+      safeMsg = "Your account setup is incomplete. Please sign out/in and try again.";
+    } else if (raw.includes("invalid_primary_player")) {
+      safeMsg = "Choose a valid player on your team.";
+    } else if (raw.includes("invalid_second_player")) {
+      safeMsg = "Choose a valid second player.";
+    } else if (raw.includes("blocked")) {
+      safeMsg = "That time is blocked off.";
+    } else if (raw.includes("conflict")) {
+      safeMsg = "You already have a lesson at that time.";
+    } else if (raw.includes("invalid_duration")) {
+      safeMsg = "Choose a duration between 15 and 180 minutes.";
+    } else if (raw.includes("forbidden") || raw.includes("permission denied")) {
+      safeMsg = "You don’t have permission to schedule lessons.";
+    }
     return NextResponse.json({ error: safeMsg }, { status: 400 });
   }
 
@@ -68,7 +72,7 @@ export async function POST(req: Request) {
   }
   if (!row) {
     console.error("post-create sanity check: lesson not visible/returned", { lessonId });
-    return NextResponse.json({ error: "Unable to schedule lesson." }, { status: 500 });
+    return NextResponse.json({ error: "Scheduling failed due to a permissions issue. Please try again." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, id: lessonId });
