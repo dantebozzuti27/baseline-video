@@ -35,7 +35,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  await logEvent(parsed.data.approve ? "lesson_approved" : "lesson_declined", "lesson_request", params.id, {});
+  await logEvent(parsed.data.approve ? "lesson_approved" : "lesson_declined", "lesson", params.id, {});
   return NextResponse.json({ ok: true });
 }
 

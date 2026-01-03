@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { logEvent } from "@/lib/utils/events";
 
 const schema = z.object({
-  note: z.string().max(2000).optional()
+  playerUserId: z.string().uuid(),
+  present: z.boolean()
 });
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -18,17 +18,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const parsed = schema.safeParse(json);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const { error } = await supabase.rpc("cancel_lesson", {
+  const { error } = await supabase.rpc("coach_set_lesson_participant", {
     p_lesson_id: params.id,
-    p_note: parsed.data.note ?? null
+    p_player_user_id: parsed.data.playerUserId,
+    p_present: parsed.data.present
   });
 
   if (error) {
-    console.error("cancel_lesson failed", error);
-    return NextResponse.json({ error: "Unable to cancel lesson." }, { status: 400 });
+    console.error("coach_set_lesson_participant failed", error);
+    return NextResponse.json({ error: "Unable to update participants." }, { status: 400 });
   }
 
-  await logEvent("lesson_cancelled", "lesson", params.id, {});
   return NextResponse.json({ ok: true });
 }
 

@@ -8,7 +8,8 @@ const schema = z.object({
   startAt: z.string().min(1), // ISO string
   minutes: z.number().int().min(15).max(180),
   timezone: z.string().min(1).max(64).optional(),
-  notes: z.string().max(2000).optional()
+  notes: z.string().max(2000).optional(),
+  secondPlayerUserId: z.string().uuid().optional()
 });
 
 export async function POST(req: Request) {
@@ -31,7 +32,8 @@ export async function POST(req: Request) {
     p_start_at: startAt.toISOString(),
     p_minutes: parsed.data.minutes,
     p_timezone: parsed.data.timezone ?? "UTC",
-    p_notes: parsed.data.notes ?? null
+    p_notes: parsed.data.notes ?? null,
+    p_second_player_user_id: parsed.data.secondPlayerUserId ?? null
   });
 
   if (error) {
@@ -39,6 +41,8 @@ export async function POST(req: Request) {
     const msg =
       (error as any)?.message?.includes("invalid_coach")
         ? "Choose a coach on your team."
+        : (error as any)?.message?.includes("invalid_second_player")
+          ? "Choose a valid second player."
         : (error as any)?.message?.includes("blocked")
           ? "That time is blocked off by the coach."
           : (error as any)?.message?.includes("conflict")

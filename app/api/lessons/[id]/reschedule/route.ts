@@ -42,7 +42,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  await logEvent("lesson_rescheduled", "lesson_request", params.id, {});
+  await logEvent("lesson_rescheduled", "lesson", params.id, {});
   return NextResponse.json({ ok: true });
 }
 
