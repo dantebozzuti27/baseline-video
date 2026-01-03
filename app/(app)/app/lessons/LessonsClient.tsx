@@ -166,6 +166,23 @@ export default function LessonsClient({
     slot_min: 15
   });
 
+  // Coach scheduling form
+  const [schedPrimaryPlayerUserId, setSchedPrimaryPlayerUserId] = React.useState<string>(players[0]?.user_id ?? "");
+  const [schedSecondPlayerUserId, setSchedSecondPlayerUserId] = React.useState<string>("");
+  const [schedMode, setSchedMode] = React.useState<"in_person" | "remote">("in_person");
+  const [schedStartLocal, setSchedStartLocal] = React.useState<string>(() => {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    d.setMinutes(0, 0, 0);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  });
+  const [schedEndLocal, setSchedEndLocal] = React.useState<string>(() => {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    d.setMinutes(0, 0, 0);
+    d.setHours(d.getHours() + 1);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  });
+  const [schedNotes, setSchedNotes] = React.useState<string>("");
+
   const [blockStartLocal, setBlockStartLocal] = React.useState<string>(() => {
     const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
     d.setMinutes(0, 0, 0);
@@ -344,6 +361,49 @@ export default function LessonsClient({
       toast("Working hours saved.");
     } catch (e: any) {
       toast(e?.message ?? "Unable to save working hours.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function coachCreateLesson() {
+    if (!schedPrimaryPlayerUserId) {
+      toast("Choose a player.");
+      return;
+    }
+    const start = parseLocalDateTime(schedStartLocal);
+    const end = parseLocalDateTime(schedEndLocal);
+    if (!start || !end || end <= start) {
+      toast("Choose a valid start/end time.");
+      return;
+    }
+    const minutes = Math.round((end.getTime() - start.getTime()) / 60000);
+    if (minutes < 15 || minutes > 180) {
+      toast("Duration must be 15–180 minutes.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/lessons/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          primaryPlayerUserId: schedPrimaryPlayerUserId,
+          secondPlayerUserId: schedSecondPlayerUserId || undefined,
+          mode: schedMode,
+          startAt: start.toISOString(),
+          minutes,
+          timezone: tz,
+          notes: schedNotes.trim() || undefined
+        })
+      });
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to schedule lesson.");
+      toast("Lesson scheduled.");
+      window.location.reload();
+    } catch (e: any) {
+      toast(e?.message ?? "Unable to schedule lesson.");
     } finally {
       setLoading(false);
     }
@@ -732,6 +792,67 @@ export default function LessonsClient({
                 )}
               </div>
             </Card>
+
+            {role === "coach" ? (
+              <Card>
+                <div className="stack">
+                  <div style={{ fontWeight: 900 }}>Schedule a lesson</div>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Creates an approved lesson immediately. Second player (optional) must accept.
+                  </div>
+
+                  <Select
+                    label="Player"
+                    name="schedPrimaryPlayer"
+                    value={schedPrimaryPlayerUserId}
+                    onChange={(v) => setSchedPrimaryPlayerUserId(v)}
+                    options={players.map((p) => ({ value: p.user_id, label: p.display_name }))}
+                  />
+
+                  <Select
+                    label="Second player (optional)"
+                    name="schedSecondPlayer"
+                    value={schedSecondPlayerUserId}
+                    onChange={(v) => setSchedSecondPlayerUserId(v)}
+                    options={[
+                      { value: "", label: "None" },
+                      ...players
+                        .filter((p) => p.user_id !== schedPrimaryPlayerUserId)
+                        .map((p) => ({ value: p.user_id, label: p.display_name }))
+                    ]}
+                  />
+
+                  <Select
+                    label="Mode"
+                    name="schedMode"
+                    value={schedMode}
+                    onChange={(v) => setSchedMode(v as any)}
+                    options={[
+                      { value: "in_person", label: "In-person" },
+                      { value: "remote", label: "Remote" }
+                    ]}
+                  />
+
+                  <div className="stack" style={{ gap: 6 }}>
+                    <div className="label">Start</div>
+                    <input className="input" type="datetime-local" value={schedStartLocal} onChange={(e) => setSchedStartLocal(e.target.value)} disabled={loading} />
+                  </div>
+                  <div className="stack" style={{ gap: 6 }}>
+                    <div className="label">End</div>
+                    <input className="input" type="datetime-local" value={schedEndLocal} onChange={(e) => setSchedEndLocal(e.target.value)} disabled={loading} />
+                  </div>
+
+                  <div className="stack" style={{ gap: 6 }}>
+                    <div className="label">Note (optional)</div>
+                    <textarea className="textarea" rows={2} value={schedNotes} onChange={(e) => setSchedNotes(e.target.value)} disabled={loading} />
+                  </div>
+
+                  <Button variant="primary" disabled={loading} onClick={coachCreateLesson}>
+                    {loading ? "Saving…" : "Schedule lesson"}
+                  </Button>
+                </div>
+              </Card>
+            ) : null}
 
             {role === "coach" ? (
               <Card>
