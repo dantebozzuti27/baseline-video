@@ -50,6 +50,15 @@ export default function TemplateEditorClient({
   const [assignments, setAssignments] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
+  // Edit settings modal
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [editTitle, setEditTitle] = React.useState(template.title);
+  const [editWeeks, setEditWeeks] = React.useState(template.weeks_count);
+  const [editCycle, setEditCycle] = React.useState(template.cycle_days);
+
+  // Delete confirmation modal
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
   const [weekIdx, setWeekIdx] = React.useState(1);
   const [dayIdx, setDayIdx] = React.useState(1);
 
@@ -64,6 +73,9 @@ export default function TemplateEditorClient({
   const [assignRequiresUpload, setAssignRequiresUpload] = React.useState(false);
   const [assignUploadPrompt, setAssignUploadPrompt] = React.useState("");
   const [assignNotes, setAssignNotes] = React.useState("");
+
+  // Assignment delete confirmation
+  const [deleteAssignId, setDeleteAssignId] = React.useState<string | null>(null);
 
   const weekMap = React.useMemo(() => {
     const m = new Map<number, { goals: string[]; assignments: string[] }>();
@@ -101,6 +113,42 @@ export default function TemplateEditorClient({
     setGoals(listToLines(w?.goals ?? []));
     setAssignments(listToLines(w?.assignments ?? []));
     setOpenWeek(weekIndex);
+  }
+
+  async function saveSettings() {
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/programs/templates/${template.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editTitle, weeksCount: editWeeks, cycleDays: editCycle })
+      });
+      if (resp.ok) {
+        toast("Settings updated.");
+        setSettingsOpen(false);
+        router.refresh();
+      }
+    } catch (e) {
+      console.error("save settings failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteProgram() {
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/programs/templates/${template.id}`, { method: "DELETE" });
+      if (resp.ok) {
+        toast("Program deleted.");
+        router.replace("/app/programs");
+        router.refresh();
+      }
+    } catch (e) {
+      console.error("delete program failed", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function saveDay() {
@@ -166,12 +214,14 @@ export default function TemplateEditorClient({
     }
   }
 
-  async function deleteAssignment(assignmentId: string) {
+  async function confirmDeleteAssignment() {
+    if (!deleteAssignId) return;
     setLoading(true);
     try {
-      const resp = await fetch(`/api/programs/templates/${template.id}/assignments/${assignmentId}`, { method: "DELETE" });
+      const resp = await fetch(`/api/programs/templates/${template.id}/assignments/${deleteAssignId}`, { method: "DELETE" });
       if (resp.ok) {
         toast("Assignment removed.");
+        setDeleteAssignId(null);
         router.refresh();
       }
     } catch (e) {
@@ -204,14 +254,16 @@ export default function TemplateEditorClient({
 
   return (
     <div className="container" style={{ paddingTop: 18, maxWidth: 860 }}>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 900 }}>{template.title}</div>
           <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-            Shared template • {template.weeks_count} weeks
+            Shared template • {template.weeks_count} weeks • {template.cycle_days} day cycle
           </div>
         </div>
-        <div className="row">
+        <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+          <Button onClick={() => setDeleteOpen(true)}>Delete</Button>
+          <Button onClick={() => setSettingsOpen(true)}>Settings</Button>
           <Link className="btn" href="/app/programs">
             Back
           </Link>
@@ -317,7 +369,7 @@ export default function TemplateEditorClient({
                         <Button onClick={() => openAssignmentEditor(a)} disabled={loading}>
                           Edit
                         </Button>
-                        <Button variant="danger" onClick={() => deleteAssignment(a.id)} disabled={loading}>
+                        <Button variant="danger" onClick={() => setDeleteAssignId(a.id)} disabled={loading}>
                           Remove
                         </Button>
                       </div>
@@ -438,6 +490,94 @@ export default function TemplateEditorClient({
               onChange={(e) => setAssignments(e.target.value)}
             />
           </div>
+        </div>
+      </Modal>
+
+      {/* Settings modal */}
+      <Modal
+        open={settingsOpen}
+        title="Program settings"
+        onClose={() => (loading ? null : setSettingsOpen(false))}
+        footer={
+          <>
+            <Button onClick={() => setSettingsOpen(false)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={saveSettings} disabled={loading}>
+              {loading ? "Saving…" : "Save"}
+            </Button>
+          </>
+        }
+      >
+        <div className="stack">
+          <Input label="Program name" name="title" value={editTitle} onChange={setEditTitle} />
+          <div className="row" style={{ gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <Input
+                label="Weeks"
+                name="weeks"
+                type="number"
+                value={String(editWeeks)}
+                onChange={(v) => setEditWeeks(Math.max(1, Math.min(52, Number(v) || 1)))}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Input
+                label="Days per cycle"
+                name="cycle"
+                type="number"
+                value={String(editCycle)}
+                onChange={(v) => setEditCycle(Math.max(1, Math.min(21, Number(v) || 7)))}
+              />
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete program confirmation */}
+      <Modal
+        open={deleteOpen}
+        title="Delete program"
+        onClose={() => (loading ? null : setDeleteOpen(false))}
+        footer={
+          <>
+            <Button onClick={() => setDeleteOpen(false)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={deleteProgram} disabled={loading}>
+              {loading ? "Deleting…" : "Delete program"}
+            </Button>
+          </>
+        }
+      >
+        <div className="stack">
+          <div className="muted" style={{ fontSize: 13 }}>
+            Are you sure you want to delete <strong>{template.title}</strong>?
+          </div>
+          <div className="muted" style={{ fontSize: 13, color: "var(--danger)" }}>
+            This will also delete all enrollments, submissions, and reviews. This cannot be undone.
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete assignment confirmation */}
+      <Modal
+        open={deleteAssignId !== null}
+        title="Remove assignment"
+        onClose={() => (loading ? null : setDeleteAssignId(null))}
+        footer={
+          <>
+            <Button onClick={() => setDeleteAssignId(null)} disabled={loading}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmDeleteAssignment} disabled={loading}>
+              {loading ? "Removing…" : "Remove"}
+            </Button>
+          </>
+        }
+      >
+        <div className="muted" style={{ fontSize: 13 }}>
+          Remove this drill from the day plan?
         </div>
       </Modal>
     </div>

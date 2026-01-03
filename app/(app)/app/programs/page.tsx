@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
-import { Card } from "@/components/ui";
+import ProgramsListClient from "./ProgramsListClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -29,11 +29,34 @@ export default async function ProgramsHomePage() {
 
   const { data: templates } = await db
     .from("program_templates")
-    .select("id, title, weeks_count, created_at")
+    .select("id, title, weeks_count, cycle_days, created_at")
     .eq("team_id", profile.team_id)
     .eq("coach_user_id", profile.user_id)
     .order("created_at", { ascending: false })
     .limit(50);
+
+  // Get enrollment counts per template
+  const templateIds = (templates ?? []).map((t: any) => t.id);
+  const { data: enrollments } = templateIds.length
+    ? await db
+        .from("program_enrollments")
+        .select("template_id")
+        .in("template_id", templateIds)
+        .eq("status", "active")
+    : { data: [] as any[] };
+
+  const countByTemplate: Record<string, number> = {};
+  for (const e of enrollments ?? []) {
+    countByTemplate[e.template_id] = (countByTemplate[e.template_id] ?? 0) + 1;
+  }
+
+  const templatesWithCounts = (templates ?? []).map((t: any) => ({
+    id: t.id,
+    title: t.title,
+    weeks_count: t.weeks_count,
+    cycle_days: t.cycle_days ?? 7,
+    enrollment_count: countByTemplate[t.id] ?? 0
+  }));
 
   return (
     <div className="container" style={{ paddingTop: 18 }}>
@@ -60,53 +83,7 @@ export default async function ProgramsHomePage() {
         </div>
       </div>
 
-      <div className="stack" style={{ marginTop: 14 }}>
-        {(templates ?? []).length ? (
-          (templates ?? []).map((t: any) => (
-            <Card key={t.id}>
-              <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontWeight: 900 }}>{t.title}</div>
-                  <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
-                    {t.weeks_count} weeks
-                  </div>
-                </div>
-                <Link className="btn btnPrimary" href={`/app/programs/${t.id}`}>
-                  Edit
-                </Link>
-              </div>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <div className="stack">
-              <div style={{ fontWeight: 900 }}>No programs yet</div>
-              <div className="muted" style={{ fontSize: 13 }}>
-                Create a week-by-week template, then enroll players into it.
-              </div>
-              <div>
-                <Link className="btn btnPrimary" href="/app/programs/new">
-                  Create your first program
-                </Link>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        <Card>
-          <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontWeight: 900 }}>Program feed</div>
-              <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
-                A dedicated stream of program submissions and reviews (separate from the normal library).
-              </div>
-            </div>
-            <Link className="btn" href="/app/programs/feed">
-              Open feed
-            </Link>
-          </div>
-        </Card>
-      </div>
+      <ProgramsListClient templates={templatesWithCounts} />
     </div>
   );
 }

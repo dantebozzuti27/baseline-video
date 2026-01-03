@@ -74,6 +74,30 @@ export default function LibraryClient({ focuses, drills, media }: { focuses: Foc
   const [mediaUrl, setMediaUrl] = React.useState("");
   const [mediaVideo, setMediaVideo] = React.useState("");
 
+  // Edit focus
+  const [editFocus, setEditFocus] = React.useState<Focus | null>(null);
+  const [editFocusName, setEditFocusName] = React.useState("");
+  const [editFocusDesc, setEditFocusDesc] = React.useState("");
+  const [editFocusCues, setEditFocusCues] = React.useState("");
+
+  // Delete focus
+  const [deleteFocusId, setDeleteFocusId] = React.useState<string | null>(null);
+
+  // Edit drill
+  const [editDrill, setEditDrill] = React.useState<Drill | null>(null);
+  const [editDrillTitle, setEditDrillTitle] = React.useState("");
+  const [editDrillCategory, setEditDrillCategory] = React.useState<Drill["category"]>("hitting");
+  const [editDrillGoal, setEditDrillGoal] = React.useState("");
+  const [editDrillEquipment, setEditDrillEquipment] = React.useState("");
+  const [editDrillCues, setEditDrillCues] = React.useState("");
+  const [editDrillMistakes, setEditDrillMistakes] = React.useState("");
+
+  // Delete drill
+  const [deleteDrillId, setDeleteDrillId] = React.useState<string | null>(null);
+
+  // Delete media
+  const [deleteMediaId, setDeleteMediaId] = React.useState<string | null>(null);
+
   const mediaByDrillId = React.useMemo(() => {
     const m: Record<string, Media[]> = {};
     for (const x of media ?? []) {
@@ -165,6 +189,119 @@ export default function LibraryClient({ focuses, drills, media }: { focuses: Foc
     }
   }
 
+  function openEditFocus(f: Focus) {
+    setEditFocus(f);
+    setEditFocusName(f.name);
+    setEditFocusDesc(f.description ?? "");
+    setEditFocusCues(listToLines(f.cues));
+  }
+
+  async function saveFocus() {
+    if (!editFocus) return;
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/programs/focuses/${editFocus.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editFocusName,
+          description: editFocusDesc.trim() || null,
+          cues: linesToList(editFocusCues)
+        })
+      });
+      if (resp.ok) toast("Focus updated.");
+      setEditFocus(null);
+      router.refresh();
+    } catch (e) {
+      console.error("save focus failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmDeleteFocus() {
+    if (!deleteFocusId) return;
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/programs/focuses/${deleteFocusId}`, { method: "DELETE" });
+      if (resp.ok) toast("Focus deleted.");
+      setDeleteFocusId(null);
+      router.refresh();
+    } catch (e) {
+      console.error("delete focus failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openEditDrill(d: Drill) {
+    setEditDrill(d);
+    setEditDrillTitle(d.title);
+    setEditDrillCategory(d.category);
+    setEditDrillGoal(d.goal ?? "");
+    setEditDrillEquipment(listToLines(d.equipment));
+    setEditDrillCues(listToLines(d.cues));
+    setEditDrillMistakes(listToLines(d.mistakes));
+  }
+
+  async function saveDrill() {
+    if (!editDrill) return;
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/programs/drills/${editDrill.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editDrillTitle,
+          category: editDrillCategory,
+          goal: editDrillGoal.trim() || null,
+          equipment: linesToList(editDrillEquipment),
+          cues: linesToList(editDrillCues),
+          mistakes: linesToList(editDrillMistakes)
+        })
+      });
+      if (resp.ok) toast("Drill updated.");
+      setEditDrill(null);
+      router.refresh();
+    } catch (e) {
+      console.error("save drill failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmDeleteDrill() {
+    if (!deleteDrillId) return;
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/programs/drills/${deleteDrillId}`, { method: "DELETE" });
+      if (resp.ok) {
+        toast("Drill deleted.");
+        setDeleteDrillId(null);
+        router.refresh();
+      }
+    } catch (e) {
+      console.error("delete drill failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmDeleteMedia() {
+    if (!deleteMediaId) return;
+    setLoading(true);
+    try {
+      const resp = await fetch(`/api/programs/drills/media/${deleteMediaId}`, { method: "DELETE" });
+      if (resp.ok) toast("Instruction removed.");
+      setDeleteMediaId(null);
+      router.refresh();
+    } catch (e) {
+      console.error("delete media failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="container" style={{ paddingTop: 18, maxWidth: 980 }}>
       <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
@@ -208,14 +345,20 @@ export default function LibraryClient({ focuses, drills, media }: { focuses: Foc
           (focuses ?? []).length ? (
             focuses.map((f) => (
               <Card key={f.id}>
-                <div className="stack">
-                  <div style={{ fontWeight: 900 }}>{f.name}</div>
-                  {f.description ? <div className="muted" style={{ fontSize: 13 }}>{f.description}</div> : null}
-                  {f.cues?.length ? (
-                    <div className="muted" style={{ fontSize: 13 }}>
-                      Cues: {f.cues.join(" • ")}
-                    </div>
-                  ) : null}
+                <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div className="stack" style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 900 }}>{f.name}</div>
+                    {f.description ? <div className="muted" style={{ fontSize: 13 }}>{f.description}</div> : null}
+                    {f.cues?.length ? (
+                      <div className="muted" style={{ fontSize: 13 }}>
+                        Cues: {f.cues.join(" • ")}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="row" style={{ gap: 8 }}>
+                    <Button onClick={() => openEditFocus(f)} disabled={loading}>Edit</Button>
+                    <Button onClick={() => setDeleteFocusId(f.id)} disabled={loading}>Delete</Button>
+                  </div>
                 </div>
               </Card>
             ))
@@ -236,7 +379,11 @@ export default function LibraryClient({ focuses, drills, media }: { focuses: Foc
                       <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>{String(d.category).toUpperCase()}</div>
                       {d.goal ? <div className="muted" style={{ fontSize: 13, marginTop: 8 }}>{d.goal}</div> : null}
                     </div>
-                    <Button onClick={() => setMediaOpen({ drillId: d.id })}>Add instruction</Button>
+                    <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+                      <Button onClick={() => openEditDrill(d)} disabled={loading}>Edit</Button>
+                      <Button onClick={() => setDeleteDrillId(d.id)} disabled={loading}>Delete</Button>
+                      <Button onClick={() => setMediaOpen({ drillId: d.id })} disabled={loading}>Add instruction</Button>
+                    </div>
                   </div>
 
                   {m.length ? (
@@ -247,15 +394,18 @@ export default function LibraryClient({ focuses, drills, media }: { focuses: Foc
                           <div className="muted" style={{ fontSize: 13 }}>
                             {x.title || (x.kind === "internal_video" ? "Instruction video" : "Instruction link")}
                           </div>
-                          {x.kind === "internal_video" && x.video_id ? (
-                            <Link className="btn" href={`/app/videos/${x.video_id}`}>
-                              Open
-                            </Link>
-                          ) : x.external_url ? (
-                            <a className="btn" href={x.external_url} target="_blank" rel="noreferrer">
-                              Open
-                            </a>
-                          ) : null}
+                          <div className="row" style={{ gap: 8 }}>
+                            {x.kind === "internal_video" && x.video_id ? (
+                              <Link className="btn" href={`/app/videos/${x.video_id}`}>
+                                Open
+                              </Link>
+                            ) : x.external_url ? (
+                              <a className="btn" href={x.external_url} target="_blank" rel="noreferrer">
+                                Open
+                              </a>
+                            ) : null}
+                            <Button onClick={() => setDeleteMediaId(x.id)} disabled={loading}>Remove</Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -371,6 +521,129 @@ export default function LibraryClient({ focuses, drills, media }: { focuses: Foc
           ) : (
             <Input label="Video ID or link" name="videoId" value={mediaVideo} onChange={setMediaVideo} placeholder="/app/videos/…" />
           )}
+        </div>
+      </Modal>
+
+      {/* Edit focus modal */}
+      <Modal
+        open={editFocus !== null}
+        title="Edit focus"
+        onClose={() => (loading ? null : setEditFocus(null))}
+        footer={
+          <>
+            <Button onClick={() => setEditFocus(null)} disabled={loading}>Cancel</Button>
+            <Button variant="primary" onClick={saveFocus} disabled={loading}>{loading ? "Saving…" : "Save"}</Button>
+          </>
+        }
+      >
+        <div className="stack">
+          <Input label="Name" name="focusName" value={editFocusName} onChange={setEditFocusName} />
+          <div>
+            <div className="label">Description (optional)</div>
+            <textarea className="input" style={{ marginTop: 8, minHeight: 90 }} value={editFocusDesc} onChange={(e) => setEditFocusDesc(e.target.value)} />
+          </div>
+          <div>
+            <div className="label">Cues (one per line)</div>
+            <textarea className="input" style={{ marginTop: 8, minHeight: 120 }} value={editFocusCues} onChange={(e) => setEditFocusCues(e.target.value)} />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete focus confirmation */}
+      <Modal
+        open={deleteFocusId !== null}
+        title="Delete focus"
+        onClose={() => (loading ? null : setDeleteFocusId(null))}
+        footer={
+          <>
+            <Button onClick={() => setDeleteFocusId(null)} disabled={loading}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDeleteFocus} disabled={loading}>{loading ? "Deleting…" : "Delete"}</Button>
+          </>
+        }
+      >
+        <div className="muted" style={{ fontSize: 13 }}>
+          Are you sure you want to delete this focus? Days using this focus will have it cleared.
+        </div>
+      </Modal>
+
+      {/* Edit drill modal */}
+      <Modal
+        open={editDrill !== null}
+        title="Edit drill"
+        onClose={() => (loading ? null : setEditDrill(null))}
+        footer={
+          <>
+            <Button onClick={() => setEditDrill(null)} disabled={loading}>Cancel</Button>
+            <Button variant="primary" onClick={saveDrill} disabled={loading}>{loading ? "Saving…" : "Save"}</Button>
+          </>
+        }
+      >
+        <div className="stack">
+          <Input label="Title" name="drillTitle" value={editDrillTitle} onChange={setEditDrillTitle} />
+          <Select
+            label="Category"
+            name="category"
+            value={editDrillCategory}
+            onChange={(v) => setEditDrillCategory(v as any)}
+            options={[
+              { value: "hitting", label: "Hitting" },
+              { value: "throwing", label: "Throwing" },
+              { value: "fielding", label: "Fielding" },
+              { value: "other", label: "Other" }
+            ]}
+          />
+          <div>
+            <div className="label">Goal (optional)</div>
+            <textarea className="input" style={{ marginTop: 8, minHeight: 90 }} value={editDrillGoal} onChange={(e) => setEditDrillGoal(e.target.value)} />
+          </div>
+          <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div className="label">Equipment (one per line)</div>
+              <textarea className="input" style={{ marginTop: 8, minHeight: 120 }} value={editDrillEquipment} onChange={(e) => setEditDrillEquipment(e.target.value)} />
+            </div>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div className="label">Cues (one per line)</div>
+              <textarea className="input" style={{ marginTop: 8, minHeight: 120 }} value={editDrillCues} onChange={(e) => setEditDrillCues(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <div className="label">Common mistakes (one per line)</div>
+            <textarea className="input" style={{ marginTop: 8, minHeight: 120 }} value={editDrillMistakes} onChange={(e) => setEditDrillMistakes(e.target.value)} />
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete drill confirmation */}
+      <Modal
+        open={deleteDrillId !== null}
+        title="Delete drill"
+        onClose={() => (loading ? null : setDeleteDrillId(null))}
+        footer={
+          <>
+            <Button onClick={() => setDeleteDrillId(null)} disabled={loading}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDeleteDrill} disabled={loading}>{loading ? "Deleting…" : "Delete"}</Button>
+          </>
+        }
+      >
+        <div className="muted" style={{ fontSize: 13, color: "var(--danger)" }}>
+          If this drill is used in any assignment, you must remove those assignments first.
+        </div>
+      </Modal>
+
+      {/* Delete media confirmation */}
+      <Modal
+        open={deleteMediaId !== null}
+        title="Remove instruction"
+        onClose={() => (loading ? null : setDeleteMediaId(null))}
+        footer={
+          <>
+            <Button onClick={() => setDeleteMediaId(null)} disabled={loading}>Cancel</Button>
+            <Button variant="danger" onClick={confirmDeleteMedia} disabled={loading}>{loading ? "Removing…" : "Remove"}</Button>
+          </>
+        }
+      >
+        <div className="muted" style={{ fontSize: 13 }}>
+          Remove this instruction from the drill?
         </div>
       </Modal>
     </div>

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const schema = z.object({
-  focusId: z.string().min(1).nullable().optional(),
+  focusId: z.string().nullable().optional(),
   note: z.string().trim().max(2000).optional()
 });
 
@@ -24,11 +24,14 @@ export async function PATCH(req: Request, { params }: { params: { templateId: st
   const parsed = schema.safeParse(json);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
+  // Convert empty string to null for focus_id
+  const focusId = parsed.data.focusId?.trim() || null;
+
   const { error } = await supabase.rpc("set_program_template_day", {
     p_template_id: params.templateId,
     p_week_index: weekIndex,
     p_day_index: dayIndex,
-    p_focus_id: parsed.data.focusId ?? null,
+    p_focus_id: focusId,
     p_note: parsed.data.note ?? null
   });
 
