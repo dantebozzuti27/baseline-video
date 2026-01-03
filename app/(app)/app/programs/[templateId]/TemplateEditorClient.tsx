@@ -321,6 +321,14 @@ export default function TemplateEditorClient({
                     ...(focuses ?? []).map((f) => ({ value: f.id, label: f.name }))
                   ]}
                 />
+                {focuses.length === 0 ? (
+                  <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                    No focuses yet.{" "}
+                    <Link href="/app/programs/library" style={{ color: "var(--primary)" }}>
+                      Create focuses in the Library
+                    </Link>
+                  </div>
+                ) : null}
               </div>
               <Button onClick={saveDay} disabled={loading}>
                 Save day
