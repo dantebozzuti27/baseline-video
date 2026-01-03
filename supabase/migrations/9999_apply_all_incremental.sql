@@ -22,6 +22,7 @@
 --   - 0018_lessons.sql
 --   - 0020_lesson_blocks_and_reschedule.sql
 --   - 0021_group_lessons.sql
+--   - 0022_coach_schedule_settings_and_availability.sql
 
 -- ============================================================
 -- 0006_hotfix_names_and_deletes.sql
@@ -191,6 +192,146 @@ $$;
 
 revoke all on function public.update_my_profile_name(text, text) from public;
 grant execute on function public.update_my_profile_name(text, text) to authenticated;
+
+commit;
+
+
+-- ============================================================
+-- 0022_coach_schedule_settings_and_availability.sql
+-- ============================================================
+-- Coach schedule settings + availability (busy intervals) + stronger holds
+
+begin;
+
+create extension if not exists pgcrypto with schema extensions;
+
+create table if not exists public.coach_schedule_settings (
+  coach_user_id uuid primary key references auth.users(id) on delete cascade,
+  team_id uuid not null references public.teams(id) on delete cascade,
+  work_start_min integer not null default 480,
+  work_end_min integer not null default 1080,
+  slot_min integer not null default 15,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint coach_schedule_bounds_chk check (
+    work_start_min >= 0 and work_end_min <= 1440 and work_end_min > work_start_min
+  ),
+  constraint coach_schedule_slot_chk check (slot_min in (5, 10, 15, 20, 30, 60))
+);
+
+create index if not exists coach_schedule_team_idx on public.coach_schedule_settings (team_id);
+
+drop trigger if exists trg_coach_schedule_settings_updated_at on public.coach_schedule_settings;
+create trigger trg_coach_schedule_settings_updated_at
+before update on public.coach_schedule_settings
+for each row execute function public.set_updated_at();
+
+alter table public.coach_schedule_settings enable row level security;
+
+drop policy if exists coach_schedule_select_team on public.coach_schedule_settings;
+create policy coach_schedule_select_team on public.coach_schedule_settings
+for select
+to authenticated
+using (team_id = public.current_team_id());
+
+revoke insert, update, delete on public.coach_schedule_settings from authenticated;
+grant select on public.coach_schedule_settings to authenticated;
+
+create or replace function public.get_or_create_coach_schedule_settings()
+returns table (work_start_min integer, work_end_min integer, slot_min integer)
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_team_id uuid;
+begin
+  if not public.is_coach() then
+    raise exception 'forbidden';
+  end if;
+
+  v_team_id := public.current_team_id();
+  if v_team_id is null then
+    raise exception 'missing_profile';
+  end if;
+
+  insert into public.coach_schedule_settings (coach_user_id, team_id)
+  values (auth.uid(), v_team_id)
+  on conflict (coach_user_id) do nothing;
+
+  return query
+  select css.work_start_min, css.work_end_min, css.slot_min
+  from public.coach_schedule_settings css
+  where css.coach_user_id = auth.uid();
+end;
+$$;
+
+revoke all on function public.get_or_create_coach_schedule_settings() from public;
+grant execute on function public.get_or_create_coach_schedule_settings() to authenticated;
+
+create or replace function public.set_my_coach_schedule_settings(p_work_start_min integer, p_work_end_min integer, p_slot_min integer)
+returns void
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  v_team_id uuid;
+begin
+  if not public.is_coach() then
+    raise exception 'forbidden';
+  end if;
+  v_team_id := public.current_team_id();
+  if v_team_id is null then
+    raise exception 'missing_profile';
+  end if;
+
+  insert into public.coach_schedule_settings (coach_user_id, team_id, work_start_min, work_end_min, slot_min)
+  values (auth.uid(), v_team_id, p_work_start_min, p_work_end_min, p_slot_min)
+  on conflict (coach_user_id) do update
+    set work_start_min = excluded.work_start_min,
+        work_end_min = excluded.work_end_min,
+        slot_min = excluded.slot_min,
+        team_id = excluded.team_id,
+        updated_at = now();
+end;
+$$;
+
+revoke all on function public.set_my_coach_schedule_settings(integer, integer, integer) from public;
+grant execute on function public.set_my_coach_schedule_settings(integer, integer, integer) to authenticated;
+
+create or replace function public.get_coach_busy(p_coach_user_id uuid, p_start_at timestamptz, p_end_at timestamptz)
+returns table (start_at timestamptz, end_at timestamptz, kind text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with team_ok as (
+    select 1
+    from public.profiles p
+    where p.user_id = p_coach_user_id
+      and p.team_id = public.current_team_id()
+      and p.role = 'coach'
+  )
+  select b.start_at, b.end_at, 'blocked'::text
+  from public.coach_time_blocks b
+  where exists (select 1 from team_ok)
+    and b.coach_user_id = p_coach_user_id
+    and b.start_at < p_end_at
+    and b.end_at > p_start_at
+  union all
+  select l.start_at, l.end_at, case when l.status = 'requested' then 'held' else 'booked' end as kind
+  from public.lessons l
+  where exists (select 1 from team_ok)
+    and l.coach_user_id = p_coach_user_id
+    and l.status in ('approved', 'requested')
+    and l.start_at < p_end_at
+    and l.end_at > p_start_at;
+$$;
+
+revoke all on function public.get_coach_busy(uuid, timestamptz, timestamptz) from public;
+grant execute on function public.get_coach_busy(uuid, timestamptz, timestamptz) to authenticated;
 
 commit;
 

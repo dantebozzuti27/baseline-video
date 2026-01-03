@@ -33,6 +33,9 @@ type Participant = {
   is_primary: boolean;
 };
 
+type BusyInterval = { start_at: string; end_at: string; kind: string };
+type CoachScheduleSettings = { work_start_min: number; work_end_min: number; slot_min: number };
+
 function fmt(dtIso: string) {
   try {
     const d = new Date(dtIso);
@@ -81,6 +84,15 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+function snapMinutes(mins: number, step: number) {
+  const s = Math.max(1, step);
+  return Math.max(0, Math.round(mins / s) * s);
+}
+
+function toLocalInputValue(dt: Date) {
+  return new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
 export default function LessonsClient({
   role,
   myUserId,
@@ -108,7 +120,7 @@ export default function LessonsClient({
     }
   }, []);
 
-  const [view, setView] = React.useState<"week" | "list">("week");
+  const [view, setView] = React.useState<"day" | "3day" | "week" | "list">("week");
   const [weekStart, setWeekStart] = React.useState<Date>(() => startOfWeekMonday(new Date()));
   const [selectedLessonId, setSelectedLessonId] = React.useState<string | null>(null);
 
@@ -125,6 +137,26 @@ export default function LessonsClient({
   const [notes, setNotes] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  const [assistantOpen, setAssistantOpen] = React.useState(false);
+  const [assistantDay, setAssistantDay] = React.useState<Date>(() => {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  const [assistantBusy, setAssistantBusy] = React.useState<BusyInterval[]>([]);
+  const [assistantSettings, setAssistantSettings] = React.useState<CoachScheduleSettings>({
+    work_start_min: 480,
+    work_end_min: 1080,
+    slot_min: 15
+  });
+  const [assistantLoading, setAssistantLoading] = React.useState(false);
+
+  const [mySchedule, setMySchedule] = React.useState<CoachScheduleSettings>({
+    work_start_min: 480,
+    work_end_min: 1080,
+    slot_min: 15
+  });
 
   const [blockStartLocal, setBlockStartLocal] = React.useState<string>(() => {
     const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -179,15 +211,18 @@ export default function LessonsClient({
     return isTwoOnOne ? `2-on-1 with ${coachName}` : `Lesson with ${coachName}`;
   }
 
-  const weekDays = React.useMemo(() => new Array(7).fill(0).map((_, i) => addDays(weekStart, i)), [weekStart]);
+  const visibleDays = React.useMemo(() => {
+    const n = view === "day" ? 1 : view === "3day" ? 3 : 7;
+    return new Array(n).fill(0).map((_, i) => addDays(weekStart, i));
+  }, [weekStart, view]);
 
-  const startHour = 6;
-  const endHour = 21;
-  const hours = React.useMemo(() => new Array(endHour - startHour + 1).fill(0).map((_, i) => startHour + i), []);
+  const startHour = Math.max(0, Math.min(23, Math.floor(mySchedule.work_start_min / 60) - 1));
+  const endHour = Math.max(startHour + 1, Math.min(23, Math.ceil(mySchedule.work_end_min / 60) + 1));
+  const hours = React.useMemo(() => new Array(endHour - startHour + 1).fill(0).map((_, i) => startHour + i), [startHour, endHour]);
 
   const weekLessons = React.useMemo(() => {
     const start = new Date(weekStart);
-    const end = addDays(start, 7);
+    const end = addDays(start, view === "day" ? 1 : view === "3day" ? 3 : 7);
     const a = start.getTime();
     const b = end.getTime();
     return lessons.filter((l) => {
@@ -195,11 +230,11 @@ export default function LessonsClient({
       const e = new Date(l.end_at).getTime();
       return Number.isFinite(s) && Number.isFinite(e) && e > a && s < b && (l.status === "approved" || l.status === "requested");
     });
-  }, [lessons, weekStart]);
+  }, [lessons, weekStart, view]);
 
   const weekBlocks = React.useMemo(() => {
     const start = new Date(weekStart);
-    const end = addDays(start, 7);
+    const end = addDays(start, view === "day" ? 1 : view === "3day" ? 3 : 7);
     const a = start.getTime();
     const b = end.getTime();
     return (blocks ?? []).filter((bl) => {
@@ -207,7 +242,7 @@ export default function LessonsClient({
       const e = new Date(bl.end_at).getTime();
       return Number.isFinite(s) && Number.isFinite(e) && e > a && s < b;
     });
-  }, [blocks, weekStart]);
+  }, [blocks, weekStart, view]);
 
   async function requestLesson() {
     setError(null);
@@ -249,6 +284,53 @@ export default function LessonsClient({
       const msg = e?.message ?? "Unable to request lesson.";
       setError(msg);
       toast(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadAssistant() {
+    setAssistantLoading(true);
+    try {
+      const dayStart = new Date(assistantDay);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = addDays(dayStart, 1);
+      const qs = new URLSearchParams({
+        coachUserId,
+        startAt: dayStart.toISOString(),
+        endAt: dayEnd.toISOString()
+      });
+      const resp = await fetch(`/api/lessons/busy?${qs.toString()}`);
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to load availability.");
+      setAssistantBusy(((json as any)?.busy ?? []) as BusyInterval[]);
+      setAssistantSettings(((json as any)?.settings ?? assistantSettings) as CoachScheduleSettings);
+      setAssistantOpen(true);
+    } catch (e: any) {
+      toast(e?.message ?? "Unable to load availability.");
+    } finally {
+      setAssistantLoading(false);
+    }
+  }
+
+  async function saveMySchedule(next: CoachScheduleSettings) {
+    setLoading(true);
+    try {
+      const resp = await fetch("/api/lessons/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workStartMin: next.work_start_min,
+          workEndMin: next.work_end_min,
+          slotMin: next.slot_min
+        })
+      });
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to save working hours.");
+      setMySchedule(next);
+      toast("Working hours saved.");
+    } catch (e: any) {
+      toast(e?.message ?? "Unable to save working hours.");
     } finally {
       setLoading(false);
     }
@@ -464,6 +546,12 @@ export default function LessonsClient({
             {weekStart.toLocaleDateString(undefined, { month: "short", day: "numeric" })} –{" "}
             {addDays(weekStart, 6).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
           </div>
+          <Button variant={view === "day" ? "primary" : "default"} onClick={() => setView("day")}>
+            Day
+          </Button>
+          <Button variant={view === "3day" ? "primary" : "default"} onClick={() => setView("3day")}>
+            3 days
+          </Button>
           <Button variant={view === "week" ? "primary" : "default"} onClick={() => setView("week")}>
             Week
           </Button>
@@ -473,12 +561,12 @@ export default function LessonsClient({
         </div>
       </div>
 
-      {view === "week" ? (
+      {view !== "list" ? (
         <div className="bvCalWrap">
           <div className="bvCalGrid">
             <div className="bvCalHeader">
               <div className="bvCalHeaderGutter" />
-              {weekDays.map((d) => {
+              {visibleDays.map((d) => {
                 const isToday = sameDay(d, new Date());
                 return (
                   <div key={d.toISOString()} className={isToday ? "bvCalHeaderDay bvCalHeaderDayToday" : "bvCalHeaderDay"}>
@@ -500,8 +588,8 @@ export default function LessonsClient({
                 ))}
               </div>
 
-              <div className="bvCalDays">
-                {weekDays.map((day) => {
+              <div className="bvCalDays" style={{ gridTemplateColumns: `repeat(${visibleDays.length}, 1fr)` }}>
+                {visibleDays.map((day) => {
                   const dayKey = day.toISOString();
                   const dayStart = new Date(day);
                   dayStart.setHours(0, 0, 0, 0);
@@ -669,6 +757,52 @@ export default function LessonsClient({
                 </div>
               </Card>
             ) : null}
+
+            {role === "coach" ? (
+              <Card>
+                <div className="stack">
+                  <div style={{ fontWeight: 900 }}>Working hours</div>
+                  <div className="muted" style={{ fontSize: 12 }}>
+                    Used for the calendar viewport and availability suggestions.
+                  </div>
+
+                  <Select
+                    label="Start"
+                    name="workStart"
+                    value={String(mySchedule.work_start_min)}
+                    onChange={(v) => setMySchedule((p) => ({ ...p, work_start_min: Number(v) }))}
+                    options={new Array(24).fill(0).map((_, h) => ({ value: String(h * 60), label: `${h.toString().padStart(2, "0")}:00` }))}
+                  />
+
+                  <Select
+                    label="End"
+                    name="workEnd"
+                    value={String(mySchedule.work_end_min)}
+                    onChange={(v) => setMySchedule((p) => ({ ...p, work_end_min: Number(v) }))}
+                    options={new Array(24).fill(0).map((_, h) => ({ value: String((h + 1) * 60), label: `${(h + 1).toString().padStart(2, "0")}:00` }))}
+                  />
+
+                  <Select
+                    label="Slot"
+                    name="slotMin"
+                    value={String(mySchedule.slot_min)}
+                    onChange={(v) => setMySchedule((p) => ({ ...p, slot_min: Number(v) }))}
+                    options={[
+                      { value: "5", label: "5 min" },
+                      { value: "10", label: "10 min" },
+                      { value: "15", label: "15 min" },
+                      { value: "20", label: "20 min" },
+                      { value: "30", label: "30 min" },
+                      { value: "60", label: "60 min" }
+                    ]}
+                  />
+
+                  <Button variant="primary" disabled={loading} onClick={() => saveMySchedule(mySchedule)}>
+                    {loading ? "Saving…" : "Save"}
+                  </Button>
+                </div>
+              </Card>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -704,6 +838,92 @@ export default function LessonsClient({
                 Timezone: {tz}
               </div>
             </div>
+
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+              <div className="muted" style={{ fontSize: 12 }}>
+                Pick from open slots (recommended).
+              </div>
+              <Button disabled={assistantLoading} onClick={loadAssistant}>
+                {assistantLoading ? "Loading…" : "Show available times"}
+              </Button>
+            </div>
+
+            {assistantOpen ? (
+              <div className="card">
+                <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontWeight: 900 }}>Scheduling assistant</div>
+                  <Button onClick={() => setAssistantOpen(false)}>Close</Button>
+                </div>
+                <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                  Busy times include coach blocks and existing bookings/holds.
+                </div>
+
+                <div className="row" style={{ alignItems: "end", marginTop: 10 }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div className="label">Day</div>
+                    <input
+                      className="input"
+                      type="date"
+                      value={assistantDay.toISOString().slice(0, 10)}
+                      onChange={(e) => {
+                        const d = new Date(e.target.value + "T00:00:00");
+                        if (Number.isFinite(d.getTime())) setAssistantDay(d);
+                      }}
+                    />
+                  </div>
+                  <Button disabled={assistantLoading} onClick={loadAssistant}>
+                    Refresh
+                  </Button>
+                </div>
+
+                <div className="stack" style={{ marginTop: 12 }}>
+                  <div style={{ fontWeight: 900 }}>Available</div>
+                  {(() => {
+                    const dayStart = new Date(assistantDay);
+                    dayStart.setHours(0, 0, 0, 0);
+                    const slot = Math.max(5, assistantSettings.slot_min || 15);
+                    const startMin = assistantSettings.work_start_min ?? 480;
+                    const endMin = assistantSettings.work_end_min ?? 1080;
+                    const busy = (assistantBusy ?? [])
+                      .map((b) => ({ s: new Date(b.start_at).getTime(), e: new Date(b.end_at).getTime() }))
+                      .filter((x) => Number.isFinite(x.s) && Number.isFinite(x.e));
+
+                    const slots: Array<{ dt: Date; label: string }> = [];
+                    for (let m = startMin; m + minutes <= endMin; m += slot) {
+                      const dt = new Date(dayStart);
+                      dt.setMinutes(m, 0, 0);
+                      const end = new Date(dt.getTime() + minutes * 60000);
+                      const s = dt.getTime();
+                      const e = end.getTime();
+                      const overlaps = busy.some((x) => x.s < e && x.e > s);
+                      if (!overlaps) {
+                        slots.push({ dt, label: dt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) });
+                      }
+                    }
+
+                    if (slots.length === 0) return <div className="muted">No open slots for that day.</div>;
+                    return (
+                      <div className="row" style={{ gap: 8 }}>
+                        {slots.slice(0, 30).map((s) => (
+                          <button
+                            key={s.dt.toISOString()}
+                            type="button"
+                            className="pill"
+                            onClick={() => {
+                              setStartLocal(toLocalInputValue(s.dt));
+                              setAssistantOpen(false);
+                              toast("Time selected.");
+                            }}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : null}
 
             <Select
               label="Duration"

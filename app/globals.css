@@ -493,6 +493,16 @@ a {
   background: rgba(255, 255, 255, 0.01);
 }
 
+.bvCalNowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 107, 107, 0.8);
+  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.15);
+  pointer-events: none;
+}
+
 .bvCalHourLine {
   height: 56px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
