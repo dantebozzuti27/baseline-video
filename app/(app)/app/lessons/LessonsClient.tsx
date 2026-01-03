@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button, Card, Select } from "@/components/ui";
+import { useRouter } from "next/navigation";
 import { toast } from "../../toast";
 
 type Role = "coach" | "player";
@@ -112,6 +113,7 @@ export default function LessonsClient({
   participants: Participant[];
   blocks: Block[];
 }) {
+  const router = useRouter();
   const tz = React.useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -421,8 +423,15 @@ export default function LessonsClient({
       });
       const json = await resp.json().catch(() => ({}));
       if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to schedule lesson.");
+      const newId = (json as any)?.id as string | undefined;
+      // Jump calendar to the scheduled day (common expectation, especially in Day view on mobile).
+      const day = new Date(start);
+      day.setHours(0, 0, 0, 0);
+      setAnchorDate(day);
+      setView((v) => (v === "list" ? "day" : v));
+      if (newId) setSelectedLessonId(newId);
       toast("Lesson scheduled.");
-      window.location.reload();
+      router.refresh();
     } catch (e: any) {
       toast(e?.message ?? "Unable to schedule lesson.");
     } finally {
