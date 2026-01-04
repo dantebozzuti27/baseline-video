@@ -150,7 +150,7 @@ export default function RosterCard({
           <div>
             <div style={{ fontWeight: 900 }}>Roster</div>
             <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-              {players.length} active, {pendingInvites.length} pending
+              {players.length + pendingInvites.length} player{players.length + pendingInvites.length !== 1 ? "s" : ""}
             </div>
           </div>
           <Button onClick={() => setAddOpen(true)}>
@@ -159,75 +159,64 @@ export default function RosterCard({
           </Button>
         </div>
 
-        {/* Pending invites */}
-        {pendingInvites.length > 0 && (
-          <div className="stack" style={{ marginTop: 16 }}>
-            <div className="label">Pending (waiting to claim)</div>
-            <div className="stack">
-              {pendingInvites.map((invite) => {
-                const isWorking = loadingId === invite.id;
-                return (
-                  <div key={invite.id} className="card" style={{ padding: 12 }}>
-                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                      <div className="row" style={{ alignItems: "center", gap: 12 }}>
-                        <Avatar name={invite.display_name} size="md" />
-                        <div>
-                          <div style={{ fontWeight: 800 }}>{invite.display_name}</div>
-                          <Pill variant="warning">Pending</Pill>
-                        </div>
-                      </div>
-                      <div className="row" style={{ gap: 6 }}>
-                        <Button onClick={() => copyClaimLink(invite.claim_token)} disabled={isWorking}>
-                          <Copy size={14} />
-                          Copy link
-                        </Button>
-                        <Button onClick={() => regenerateLink(invite.id)} disabled={isWorking}>
-                          <Link size={14} />
-                        </Button>
-                        <Button variant="danger" onClick={() => setDeleteConfirm(invite)} disabled={isWorking}>
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
+        {/* Combined roster - players and pending invites together */}
+        {(players.length > 0 || pendingInvites.length > 0) ? (
+          <div className="stack bvStagger" style={{ marginTop: 16 }}>
+            {/* Show pending invites as part of the roster */}
+            {pendingInvites.map((invite) => {
+              const isWorking = loadingId === invite.id;
+              return (
+                <div key={`invite-${invite.id}`} className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div className="row" style={{ alignItems: "center", gap: 12 }}>
+                    <Avatar name={invite.display_name} size="md" />
+                    <div>
+                      <div style={{ fontWeight: 800 }}>{invite.display_name}</div>
+                      <Pill variant="warning">Needs to claim</Pill>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Active players */}
-        {players.length > 0 ? (
-          <div className="stack" style={{ marginTop: 16 }}>
-            <div className="label">Active players</div>
-            <div className="stack bvStagger">
-              {players.map((p) => {
-                const active = p.is_active !== false;
-                const isWorking = loadingId === p.user_id;
-                return (
-                  <div key={p.user_id} className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
-                    <div className="row" style={{ alignItems: "center", gap: 12 }}>
-                      <Avatar name={p.display_name} size="md" />
-                      <div>
-                        <div style={{ fontWeight: 800 }}>{p.display_name}</div>
-                        <Pill variant={active ? "success" : "muted"}>
-                          {active ? "Active" : "Inactive"}
-                        </Pill>
-                      </div>
-                    </div>
-                    <Button
-                      variant={active ? "danger" : "primary"}
-                      disabled={isWorking}
-                      onClick={() => setActive(p.user_id, !active)}
-                    >
-                      {isWorking ? "Working…" : active ? "Deactivate" : "Reactivate"}
+                  <div className="row" style={{ gap: 6 }}>
+                    <Button onClick={() => copyClaimLink(invite.claim_token)} disabled={isWorking}>
+                      <Copy size={14} />
+                      Copy link
+                    </Button>
+                    <Button onClick={() => regenerateLink(invite.id)} disabled={isWorking}>
+                      <Link size={14} />
+                    </Button>
+                    <Button variant="danger" onClick={() => setDeleteConfirm(invite)} disabled={isWorking}>
+                      <Trash2 size={14} />
                     </Button>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
+
+            {/* Show active players */}
+            {players.map((p) => {
+              const active = p.is_active !== false;
+              const isWorking = loadingId === p.user_id;
+              return (
+                <div key={p.user_id} className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="row" style={{ alignItems: "center", gap: 12 }}>
+                    <Avatar name={p.display_name} size="md" />
+                    <div>
+                      <div style={{ fontWeight: 800 }}>{p.display_name}</div>
+                      <Pill variant={active ? "success" : "muted"}>
+                        {active ? "Active" : "Inactive"}
+                      </Pill>
+                    </div>
+                  </div>
+                  <Button
+                    variant={active ? "danger" : "primary"}
+                    disabled={isWorking}
+                    onClick={() => setActive(p.user_id, !active)}
+                  >
+                    {isWorking ? "Working…" : active ? "Deactivate" : "Reactivate"}
+                  </Button>
+                </div>
+              );
+            })}
           </div>
-        ) : players.length === 0 && pendingInvites.length === 0 ? (
+        ) : (
           <EmptyState
             variant="roster"
             title="No players yet"
@@ -235,7 +224,7 @@ export default function RosterCard({
             actionLabel="Add player"
             onAction={() => setAddOpen(true)}
           />
-        ) : null}
+        )}
 
         {/* Confirm deactivate modal */}
         <Modal

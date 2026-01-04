@@ -35,13 +35,16 @@ export default async function SettingsPage() {
     players = activePlayers ?? [];
 
     // Get pending invites
-    const { data: invites } = await admin
+    const { data: invites, error: invitesError } = await admin
       .from("pending_player_invites")
       .select("id, display_name, claim_token, claim_token_expires_at, claimed_at")
       .eq("team_id", profile.team_id)
       .is("claimed_at", null)
       .order("created_at", { ascending: false });
     
+    if (invitesError) {
+      console.error("Error fetching pending invites:", invitesError);
+    }
     pendingInvites = invites ?? [];
   }
 

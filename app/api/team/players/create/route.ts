@@ -49,11 +49,13 @@ export async function POST(req: Request) {
       .single();
 
     if (insertError) {
-      console.error("Insert invite error:", insertError);
+      console.error("Insert invite error:", JSON.stringify(insertError, null, 2));
       return NextResponse.json({ 
         error: `Database error: ${insertError.message}` 
       }, { status: 500 });
     }
+
+    console.log("Created pending invite:", invite?.id, "for team:", profile.team_id);
 
     return NextResponse.json({
       inviteId: invite?.id,
