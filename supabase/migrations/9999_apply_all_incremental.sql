@@ -1864,10 +1864,13 @@ grant execute on function public.delete_program_drill_media(uuid) to authenticat
 -- 8. PLAYER RLS: Allow enrolled players to read drills/focuses/media
 -- ============================================================
 
--- Drop old coach-only policies
+-- Drop old coach-only policies AND any existing visible policies (for re-run safety)
 drop policy if exists program_focuses_select_team on public.program_focuses;
 drop policy if exists program_drills_select_team on public.program_drills;
 drop policy if exists program_drill_media_select_team on public.program_drill_media;
+drop policy if exists program_focuses_select_visible on public.program_focuses;
+drop policy if exists program_drills_select_visible on public.program_drills;
+drop policy if exists program_drill_media_select_visible on public.program_drill_media;
 
 -- New policies: coach OR enrolled player on same team
 create policy program_focuses_select_visible on public.program_focuses
