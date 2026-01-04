@@ -20,10 +20,19 @@ export default function AppShell({ role, displayName, children }: Props) {
   const [helpOpen, setHelpOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
 
-  const toggleHelp = React.useCallback(() => setHelpOpen(v => !v), []);
-  const openSearch = React.useCallback(() => setSearchOpen(true), []);
+  const openHelp = React.useCallback(() => {
+    console.log("[AppShell] openHelp called");
+    setHelpOpen(true);
+  }, []);
+  const openSearch = React.useCallback(() => {
+    console.log("[AppShell] openSearch called");
+    setSearchOpen(true);
+  }, []);
   const closeSearch = React.useCallback(() => setSearchOpen(false), []);
-  const closeHelp = React.useCallback(() => setHelpOpen(false), []);
+  const closeHelp = React.useCallback(() => {
+    console.log("[AppShell] closeHelp called");
+    setHelpOpen(false);
+  }, []);
 
   return (
     <div>
@@ -55,7 +64,7 @@ export default function AppShell({ role, displayName, children }: Props) {
       <BottomNav role={role} />
       <ToastClient />
       
-      <GlobalKeyboard onHelp={toggleHelp} onSearch={openSearch} />
+      <GlobalKeyboard onHelp={openHelp} onSearch={openSearch} />
       <KeyboardHelp open={helpOpen} onClose={closeHelp} />
       <SearchCommand isCoach={role === "coach"} open={searchOpen} onClose={closeSearch} />
     </div>
