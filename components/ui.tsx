@@ -235,7 +235,10 @@ export function Modal({
 }) {
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const previouslyFocused = React.useRef<HTMLElement | null>(null);
+  const onCloseRef = React.useRef(onClose);
+  onCloseRef.current = onClose;
 
+  // Save previously focused element and focus modal when opening
   React.useEffect(() => {
     if (!open) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
@@ -243,17 +246,23 @@ export function Modal({
     return () => window.clearTimeout(t);
   }, [open]);
 
+  // Escape key handler - use ref so deps don't change
   React.useEffect(() => {
     if (!open) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     }
     window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      previouslyFocused.current?.focus?.();
-    };
-  }, [open, onClose]);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  // Restore focus when modal closes
+  React.useEffect(() => {
+    if (open) return;
+    // Only restore focus when transitioning from open to closed
+    previouslyFocused.current?.focus?.();
+    previouslyFocused.current = null;
+  }, [open]);
 
   if (!open) return null;
   return (
