@@ -1,15 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { displayNameFromProfile } from "@/lib/utils/name";
-import DrawerNav from "./DrawerNav";
-import BottomNav from "./BottomNav";
-import UploadFAB from "./UploadFAB";
-import SearchCommand from "./SearchCommand";
-import KeyboardHelp from "./KeyboardHelp";
-import GlobalKeyboard from "./GlobalKeyboard";
-import ToastClient from "./ToastClient";
+import AppShell from "./AppShell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createSupabaseServerClient();
@@ -23,32 +16,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if ((profile as any).is_active === false) redirect("/inactive");
 
   return (
-    <div>
-      <a href="#main-content" className="bvSkipLink">Skip to content</a>
-      <div className="nav">
-        <div className="navInner">
-          <div className="bvTopBarLeft">
-            <DrawerNav role={profile.role} displayName={displayNameFromProfile(profile)} />
-            <Link className="brand" href="/app" aria-label="Baseline Video home">
-              <img className="bvAppLogo" src="/brand copy-Photoroom.png" alt="Baseline Video" />
-            </Link>
-          </div>
-          <div className="bvTopBarRight">
-            <SearchCommand isCoach={profile.role === "coach"} />
-            <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
-              Upload
-            </Link>
-          </div>
-        </div>
-      </div>
-      <main id="main-content" className="container">{children}</main>
-      <UploadFAB />
-      <BottomNav role={profile.role} />
-      <ToastClient />
-      <GlobalKeyboard />
-      <KeyboardHelp />
-    </div>
+    <AppShell role={profile.role} displayName={displayNameFromProfile(profile)}>
+      {children}
+    </AppShell>
   );
 }
-
-

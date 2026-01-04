@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Search, Video, User, FolderKanban, X } from "lucide-react";
-import { useSearchCommand } from "./GlobalKeyboard";
 
 type Result = {
   videos: Array<{ id: string; title: string; category: string }>;
@@ -11,59 +10,67 @@ type Result = {
   programs: Array<{ id: string; title: string }>;
 };
 
-export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
+export default function SearchCommand({ 
+  isCoach, 
+  open, 
+  onClose 
+}: { 
+  isCoach: boolean; 
+  open: boolean; 
+  onClose: () => void;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useSearchCommand();
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<Result | null>(null);
   const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Focus input when opened
+  // Focus input when opened, clear when closed
   React.useEffect(() => {
     if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50);
+      inputRef.current?.focus();
     } else {
       setQuery("");
       setResults(null);
     }
   }, [open]);
 
-  // Debounced search
+  // Close on Escape
   React.useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // Search
+  React.useEffect(() => {
     if (query.length < 2) {
       setResults(null);
       return;
     }
-    debounceRef.current = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       setLoading(true);
       try {
         const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        const data = await resp.json();
-        setResults(data);
-      } catch (e) {
-        console.error("search failed", e);
-      } finally {
-        setLoading(false);
-      }
+        setResults(await resp.json());
+      } catch {}
+      setLoading(false);
     }, 200);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
+    return () => clearTimeout(timer);
   }, [query]);
 
-  function navigate(href: string) {
-    setOpen(false);
+  function go(href: string) {
+    onClose();
     router.push(href);
   }
 
-  const hasResults = results && (results.videos.length || results.players.length || results.programs.length);
-
+  // Trigger button when closed
   if (!open) {
     return (
-      <button className="bvSearchTrigger" onClick={() => setOpen(true)} aria-label="Search" type="button">
+      <button className="bvSearchTrigger" onClick={() => {}} aria-label="Search">
         <Search size={18} />
         <span className="bvSearchPlaceholder">Search…</span>
         <kbd className="bvSearchKbd">⌘K</kbd>
@@ -71,90 +78,67 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
     );
   }
 
+  const hasResults = results && (results.videos.length || results.players.length || results.programs.length);
+
   return (
-    <div className="bvSearchBackdrop" onClick={() => setOpen(false)}>
-      <div className="bvSearchModal" onClick={(e) => e.stopPropagation()}>
+    <div className="bvSearchBackdrop" onClick={onClose}>
+      <div className="bvSearchModal" onClick={e => e.stopPropagation()}>
         <div className="bvSearchHeader">
           <Search size={18} className="bvSearchIcon" />
           <input
             ref={inputRef}
             type="text"
             className="bvSearchInput"
-            placeholder="Search videos, players, programs…"
+            placeholder="Search…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
           />
-          <button className="bvSearchClose" onClick={() => setOpen(false)} type="button">
+          <button className="bvSearchClose" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
-
         <div className="bvSearchResults">
           {loading && <div className="bvSearchEmpty">Searching…</div>}
-          
-          {!loading && query.length >= 2 && !hasResults && (
-            <div className="bvSearchEmpty">No results found</div>
-          )}
-
+          {!loading && query.length >= 2 && !hasResults && <div className="bvSearchEmpty">No results</div>}
           {!loading && hasResults && (
             <>
               {results.videos.length > 0 && (
                 <div className="bvSearchGroup">
                   <div className="bvSearchGroupLabel">Videos</div>
-                  {results.videos.map((v) => (
-                    <button
-                      key={v.id}
-                      className="bvSearchItem"
-                      onClick={() => navigate(`/app/videos/${v.id}`)}
-                      type="button"
-                    >
-                      <Video size={16} />
-                      <span>{v.title}</span>
-                      <span className="pill" style={{ marginLeft: "auto" }}>{v.category?.toUpperCase()}</span>
+                  {results.videos.map(v => (
+                    <button key={v.id} className="bvSearchItem" onClick={() => go(`/app/videos/${v.id}`)}>
+                      <Video size={16} /><span>{v.title}</span>
                     </button>
                   ))}
                 </div>
               )}
-
               {isCoach && results.players.length > 0 && (
                 <div className="bvSearchGroup">
                   <div className="bvSearchGroupLabel">Players</div>
-                  {results.players.map((p) => (
-                    <button
-                      key={p.user_id}
-                      className="bvSearchItem"
-                      onClick={() => navigate(`/app/player/${p.user_id}`)}
-                      type="button"
-                    >
-                      <User size={16} />
-                      <span>{p.display_name || `${p.first_name} ${p.last_name}`}</span>
+                  {results.players.map(p => (
+                    <button key={p.user_id} className="bvSearchItem" onClick={() => go(`/app/player/${p.user_id}`)}>
+                      <User size={16} /><span>{p.display_name}</span>
                     </button>
                   ))}
                 </div>
               )}
-
               {isCoach && results.programs.length > 0 && (
                 <div className="bvSearchGroup">
                   <div className="bvSearchGroupLabel">Programs</div>
-                  {results.programs.map((p) => (
-                    <button
-                      key={p.id}
-                      className="bvSearchItem"
-                      onClick={() => navigate(`/app/programs/${p.id}`)}
-                      type="button"
-                    >
-                      <FolderKanban size={16} />
-                      <span>{p.title}</span>
+                  {results.programs.map(p => (
+                    <button key={p.id} className="bvSearchItem" onClick={() => go(`/app/programs/${p.id}`)}>
+                      <FolderKanban size={16} /><span>{p.title}</span>
                     </button>
                   ))}
                 </div>
               )}
             </>
           )}
-
-          {query.length < 2 && (
-            <div className="bvSearchEmpty">Type at least 2 characters to search</div>
-          )}
+          {query.length < 2 && <div className="bvSearchEmpty">Type to search</div>}
         </div>
       </div>
     </div>

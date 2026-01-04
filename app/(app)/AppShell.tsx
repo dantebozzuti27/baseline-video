@@ -1,0 +1,64 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import DrawerNav from "./DrawerNav";
+import BottomNav from "./BottomNav";
+import UploadFAB from "./UploadFAB";
+import SearchCommand from "./SearchCommand";
+import KeyboardHelp from "./KeyboardHelp";
+import GlobalKeyboard from "./GlobalKeyboard";
+import ToastClient from "./ToastClient";
+
+type Props = {
+  role: "coach" | "player";
+  displayName: string;
+  children: React.ReactNode;
+};
+
+export default function AppShell({ role, displayName, children }: Props) {
+  const [helpOpen, setHelpOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+
+  const toggleHelp = React.useCallback(() => setHelpOpen(v => !v), []);
+  const openSearch = React.useCallback(() => setSearchOpen(true), []);
+  const closeSearch = React.useCallback(() => setSearchOpen(false), []);
+  const closeHelp = React.useCallback(() => setHelpOpen(false), []);
+
+  return (
+    <div>
+      <a href="#main-content" className="bvSkipLink">Skip to content</a>
+      
+      <div className="nav">
+        <div className="navInner">
+          <div className="bvTopBarLeft">
+            <DrawerNav role={role} displayName={displayName} />
+            <Link className="brand" href="/app" aria-label="Baseline Video home">
+              <img className="bvAppLogo" src="/brand copy-Photoroom.png" alt="Baseline Video" />
+            </Link>
+          </div>
+          <div className="bvTopBarRight">
+            <button className="bvSearchTrigger" onClick={openSearch} aria-label="Search">
+              <span className="bvSearchPlaceholder">Search…</span>
+              <kbd className="bvSearchKbd">⌘K</kbd>
+            </button>
+            <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
+              Upload
+            </Link>
+          </div>
+        </div>
+      </div>
+      
+      <main id="main-content" className="container">{children}</main>
+      
+      <UploadFAB />
+      <BottomNav role={role} />
+      <ToastClient />
+      
+      <GlobalKeyboard onHelp={toggleHelp} onSearch={openSearch} />
+      <KeyboardHelp open={helpOpen} onClose={closeHelp} />
+      <SearchCommand isCoach={role === "coach"} open={searchOpen} onClose={closeSearch} />
+    </div>
+  );
+}
+
