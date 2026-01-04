@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Search, Video, User, FolderKanban, X } from "lucide-react";
+import { useSearchCommand } from "./GlobalKeyboard";
 
 type Result = {
   videos: Array<{ id: string; title: string; category: string }>;
@@ -12,46 +13,12 @@ type Result = {
 
 export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
   const router = useRouter();
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useSearchCommand();
   const [query, setQuery] = React.useState("");
   const [results, setResults] = React.useState<Result | null>(null);
   const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Stable keyboard handler
-  const handleKeyDown = React.useCallback((e: KeyboardEvent) => {
-    // Cmd+K or Ctrl+K to open
-    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-      e.preventDefault();
-      e.stopPropagation();
-      setOpen(true);
-    }
-  }, []);
-
-  // Escape handler
-  const handleEscape = React.useCallback((e: KeyboardEvent) => {
-    if (e.key === "Escape") {
-      setOpen(prev => {
-        if (prev) {
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-        return prev;
-      });
-    }
-  }, []);
-
-  React.useEffect(() => {
-    // Use capture phase
-    document.addEventListener("keydown", handleKeyDown, true);
-    document.addEventListener("keydown", handleEscape, true);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown, true);
-      document.removeEventListener("keydown", handleEscape, true);
-    };
-  }, [handleKeyDown, handleEscape]);
 
   // Focus input when opened
   React.useEffect(() => {
