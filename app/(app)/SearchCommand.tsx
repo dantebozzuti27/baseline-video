@@ -19,6 +19,12 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
   const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openRef = React.useRef(open);
+
+  // Keep ref in sync
+  React.useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   // Keyboard shortcut: Cmd+K or Ctrl+K
   React.useEffect(() => {
@@ -27,13 +33,13 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
         e.preventDefault();
         setOpen(true);
       }
-      if (e.key === "Escape" && open) {
+      if (e.key === "Escape" && openRef.current) {
         setOpen(false);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, []); // Empty deps - only attach once
 
   // Focus input when opened
   React.useEffect(() => {

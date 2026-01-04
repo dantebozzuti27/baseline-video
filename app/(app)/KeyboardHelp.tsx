@@ -14,6 +14,12 @@ const SHORTCUTS = [
 
 export default function KeyboardHelp() {
   const [open, setOpen] = React.useState(false);
+  const openRef = React.useRef(open);
+  
+  // Keep ref in sync with state
+  React.useEffect(() => {
+    openRef.current = open;
+  }, [open]);
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -25,13 +31,13 @@ export default function KeyboardHelp() {
         e.preventDefault();
         setOpen((prev) => !prev);
       }
-      if (e.key === "Escape" && open) {
+      if (e.key === "Escape" && openRef.current) {
         setOpen(false);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, []); // Empty deps - only attach once
 
   if (!open) return null;
 
