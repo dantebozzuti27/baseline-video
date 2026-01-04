@@ -18,8 +18,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const json = await req.json().catch(() => null);
+  console.log("Reschedule request:", JSON.stringify(json, null, 2));
+  
   const parsed = schema.safeParse(json);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  if (!parsed.success) {
+    console.error("Reschedule validation failed:", parsed.error.errors);
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+  }
 
   const startAt = new Date(parsed.data.startAt);
   if (!Number.isFinite(startAt.getTime())) return NextResponse.json({ error: "Invalid start time." }, { status: 400 });
@@ -31,6 +36,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     p_timezone: parsed.data.timezone ?? "UTC",
     p_note: parsed.data.note ?? null
   });
+  
+  console.log("Reschedule RPC result:", error ? JSON.stringify(error) : "success");
 
   if (error) {
     console.error("reschedule_lesson failed", error);
