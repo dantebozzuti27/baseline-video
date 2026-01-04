@@ -22,7 +22,7 @@ export default async function SettingsPage() {
       ? (
           await supabase
             .from("profiles")
-            .select("user_id, display_name, role, is_active")
+            .select("user_id, display_name, role, is_active, claimed_at, claim_token")
             .eq("team_id", profile.team_id)
             .eq("role", "player")
             .order("display_name", { ascending: true })

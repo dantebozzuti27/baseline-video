@@ -12,7 +12,10 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/sign-up") ||
     pathname.startsWith("/onboarding") ||
     pathname.startsWith("/inactive") ||
+    pathname.startsWith("/join") ||
+    pathname.startsWith("/claim") ||
     pathname.startsWith("/api/health") ||
+    pathname.startsWith("/api/claim") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon")
   );
