@@ -20,20 +20,6 @@ export default function AppShell({ role, displayName, children }: Props) {
   const [helpOpen, setHelpOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
 
-  const openHelp = React.useCallback(() => {
-    console.log("[AppShell] openHelp called");
-    setHelpOpen(true);
-  }, []);
-  const openSearch = React.useCallback(() => {
-    console.log("[AppShell] openSearch called");
-    setSearchOpen(true);
-  }, []);
-  const closeSearch = React.useCallback(() => setSearchOpen(false), []);
-  const closeHelp = React.useCallback(() => {
-    console.log("[AppShell] closeHelp called");
-    setHelpOpen(false);
-  }, []);
-
   return (
     <div>
       <a href="#main-content" className="bvSkipLink">Skip to content</a>
@@ -47,7 +33,7 @@ export default function AppShell({ role, displayName, children }: Props) {
             </Link>
           </div>
           <div className="bvTopBarRight">
-            <button className="bvSearchTrigger" onClick={openSearch} aria-label="Search">
+            <button className="bvSearchTrigger" onClick={() => setSearchOpen(true)} aria-label="Search">
               <span className="bvSearchPlaceholder">Search…</span>
               <kbd className="bvSearchKbd">⌘K</kbd>
             </button>
@@ -64,10 +50,12 @@ export default function AppShell({ role, displayName, children }: Props) {
       <BottomNav role={role} />
       <ToastClient />
       
-      <GlobalKeyboard onHelp={openHelp} onSearch={openSearch} />
-      <KeyboardHelp open={helpOpen} onClose={closeHelp} />
-      <SearchCommand isCoach={role === "coach"} open={searchOpen} onClose={closeSearch} />
+      <GlobalKeyboard 
+        onHelp={() => setHelpOpen(true)} 
+        onSearch={() => setSearchOpen(true)} 
+      />
+      <KeyboardHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <SearchCommand isCoach={role === "coach"} open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }
-
