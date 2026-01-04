@@ -32,15 +32,15 @@ export async function POST(req: Request) {
 
     // Generate claim token
     const claimToken = generateClaimToken();
-    const playerId = crypto.randomUUID();
 
-    // Use admin client to insert (bypasses RLS)
+    // Use admin client to insert
     const admin = createSupabaseAdminClient();
 
-    const { error: insertError } = await admin
+    // Insert with NULL user_id - will be set when player claims account
+    const { data: inserted, error: insertError } = await admin
       .from("profiles")
       .insert({
-        user_id: playerId,
+        user_id: null, // NULL until claimed - no FK violation
         team_id: profile.team_id,
         role: "player",
         first_name: parsed.data.firstName,
@@ -51,7 +51,9 @@ export async function POST(req: Request) {
         claim_token: claimToken,
         claim_token_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         created_by_user_id: user.id
-      });
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
       console.error("Insert player error:", JSON.stringify(insertError, null, 2));
@@ -61,7 +63,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      playerId,
+      playerId: inserted?.id,
       claimToken,
       claimUrl: `/claim/${claimToken}`
     });
