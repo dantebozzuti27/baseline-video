@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Video, User, FolderKanban, X } from "lucide-react";
 
@@ -19,27 +18,40 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
   const [loading, setLoading] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const openRef = React.useRef(open);
 
-  // Keep ref in sync
-  React.useEffect(() => {
-    openRef.current = open;
-  }, [open]);
-
-  // Keyboard shortcut: Cmd+K or Ctrl+K
-  React.useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setOpen(true);
-      }
-      if (e.key === "Escape" && openRef.current) {
-        setOpen(false);
-      }
+  // Stable keyboard handler
+  const handleKeyDown = React.useCallback((e: KeyboardEvent) => {
+    // Cmd+K or Ctrl+K to open
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(true);
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []); // Empty deps - only attach once
+  }, []);
+
+  // Escape handler
+  const handleEscape = React.useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setOpen(prev => {
+        if (prev) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+        return prev;
+      });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    // Use capture phase
+    document.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("keydown", handleEscape, true);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("keydown", handleEscape, true);
+    };
+  }, [handleKeyDown, handleEscape]);
 
   // Focus input when opened
   React.useEffect(() => {
@@ -84,7 +96,7 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
 
   if (!open) {
     return (
-      <button className="bvSearchTrigger" onClick={() => setOpen(true)} aria-label="Search">
+      <button className="bvSearchTrigger" onClick={() => setOpen(true)} aria-label="Search" type="button">
         <Search size={18} />
         <span className="bvSearchPlaceholder">Search…</span>
         <kbd className="bvSearchKbd">⌘K</kbd>
@@ -105,7 +117,7 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <button className="bvSearchClose" onClick={() => setOpen(false)}>
+          <button className="bvSearchClose" onClick={() => setOpen(false)} type="button">
             <X size={18} />
           </button>
         </div>
@@ -127,6 +139,7 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
                       key={v.id}
                       className="bvSearchItem"
                       onClick={() => navigate(`/app/videos/${v.id}`)}
+                      type="button"
                     >
                       <Video size={16} />
                       <span>{v.title}</span>
@@ -144,6 +157,7 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
                       key={p.user_id}
                       className="bvSearchItem"
                       onClick={() => navigate(`/app/player/${p.user_id}`)}
+                      type="button"
                     >
                       <User size={16} />
                       <span>{p.display_name || `${p.first_name} ${p.last_name}`}</span>
@@ -160,6 +174,7 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
                       key={p.id}
                       className="bvSearchItem"
                       onClick={() => navigate(`/app/programs/${p.id}`)}
+                      type="button"
                     >
                       <FolderKanban size={16} />
                       <span>{p.title}</span>
@@ -178,4 +193,3 @@ export default function SearchCommand({ isCoach }: { isCoach: boolean }) {
     </div>
   );
 }
-

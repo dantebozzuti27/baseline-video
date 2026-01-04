@@ -14,37 +14,65 @@ const SHORTCUTS = [
 
 export default function KeyboardHelp() {
   const [open, setOpen] = React.useState(false);
-  const openRef = React.useRef(open);
-  
-  // Keep ref in sync with state
-  React.useEffect(() => {
-    openRef.current = open;
-  }, [open]);
+
+  // Use a stable callback that closes over nothing
+  const handleKeyDown = React.useCallback((e: KeyboardEvent) => {
+    // Ignore if typing in input
+    const target = e.target as HTMLElement;
+    const tag = target?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    if (target?.isContentEditable) return;
+
+    if (e.key === "?" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      setOpen(prev => !prev);
+    }
+  }, []);
+
+  // Escape handler - separate to avoid toggling on Escape
+  const handleEscape = React.useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setOpen(prev => {
+        if (prev) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+        return prev;
+      });
+    }
+  }, []);
 
   React.useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      // Ignore if typing in input
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    // Use capture phase to get events before other handlers
+    document.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("keydown", handleEscape, true);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("keydown", handleEscape, true);
+    };
+  }, [handleKeyDown, handleEscape]);
 
-      if (e.key === "?" && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-      if (e.key === "Escape" && openRef.current) {
-        setOpen(false);
+  // Reset focus when closing
+  React.useEffect(() => {
+    if (!open) {
+      // Blur any focused element to ensure keyboard events work
+      if (document.activeElement instanceof HTMLElement) {
+        const tag = document.activeElement.tagName;
+        if (tag !== "BODY" && tag !== "HTML") {
+          // Don't blur if it's a normal interactive element
+        }
       }
     }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []); // Empty deps - only attach once
+  }, [open]);
 
   if (!open) return null;
 
   return (
     <div
       className="bvModalBackdrop bvFadeIn"
-      onMouseDown={(e) => e.target === e.currentTarget && setOpen(false)}
+      onClick={(e) => e.target === e.currentTarget && setOpen(false)}
     >
       <div className="bvModal bvSlideUp" style={{ maxWidth: 400 }}>
         <div className="bvModalHeader">
@@ -52,7 +80,7 @@ export default function KeyboardHelp() {
             <Keyboard size={18} />
             <div className="bvModalTitle">Keyboard shortcuts</div>
           </div>
-          <button className="bvModalClose" onClick={() => setOpen(false)}>
+          <button className="bvModalClose" onClick={() => setOpen(false)} type="button">
             <X size={20} />
           </button>
         </div>
@@ -79,4 +107,3 @@ export default function KeyboardHelp() {
     </div>
   );
 }
-
