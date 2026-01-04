@@ -3418,6 +3418,28 @@ commit;
 
 
 -- ============================================================
+-- 0016_player_modes.sql
+-- ============================================================
+-- Player modes (in-person / hybrid / remote)
+
+begin;
+
+do $$ begin
+  create type public.player_mode as enum ('in_person', 'hybrid', 'remote');
+exception
+  when duplicate_object then null;
+end $$;
+
+alter table public.profiles
+  add column if not exists player_mode public.player_mode null;
+
+create index if not exists profiles_team_role_mode_idx
+  on public.profiles (team_id, role, player_mode);
+
+commit;
+
+
+-- ============================================================
 -- 0017_set_player_mode.sql
 -- ============================================================
 -- Player modes: coach-only update via RPC (avoid direct profile updates)
@@ -4260,28 +4282,6 @@ alter table public.events
 alter table public.events
   add constraint events_actor_user_id_fkey
   foreign key (actor_user_id) references auth.users(id) on delete set null;
-
-commit;
-
-
--- ============================================================
--- 0016_player_modes.sql
--- ============================================================
--- Player modes (in-person / hybrid / remote)
-
-begin;
-
-do $$ begin
-  create type public.player_mode as enum ('in_person', 'hybrid', 'remote');
-exception
-  when duplicate_object then null;
-end $$;
-
-alter table public.profiles
-  add column if not exists player_mode public.player_mode null;
-
-create index if not exists profiles_team_role_mode_idx
-  on public.profiles (team_id, role, player_mode);
 
 commit;
 
