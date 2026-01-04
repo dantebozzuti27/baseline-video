@@ -4503,3 +4503,57 @@ GRANT EXECUTE ON FUNCTION public.delete_unclaimed_player TO authenticated;
 
 commit;
 
+
+-- ============================================================
+-- 0030_pending_player_invites.sql
+-- ============================================================
+-- Pending player invites - separate from profiles to avoid PK issues
+
+begin;
+
+CREATE TABLE IF NOT EXISTS public.pending_player_invites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id UUID NOT NULL REFERENCES public.teams(id) ON DELETE CASCADE,
+  created_by_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  player_mode public.player_mode DEFAULT 'in_person',
+  claim_token TEXT UNIQUE NOT NULL,
+  claim_token_expires_at TIMESTAMPTZ NOT NULL,
+  claimed_at TIMESTAMPTZ,
+  claimed_by_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pending_invites_claim_token 
+  ON public.pending_player_invites(claim_token) 
+  WHERE claimed_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_pending_invites_team 
+  ON public.pending_player_invites(team_id);
+
+ALTER TABLE public.pending_player_invites ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS pending_invites_select_coach ON public.pending_player_invites;
+CREATE POLICY pending_invites_select_coach ON public.pending_player_invites
+  FOR SELECT TO authenticated
+  USING (team_id = public.current_team_id() AND public.is_coach());
+
+DROP POLICY IF EXISTS pending_invites_insert_coach ON public.pending_player_invites;
+CREATE POLICY pending_invites_insert_coach ON public.pending_player_invites
+  FOR INSERT TO authenticated
+  WITH CHECK (team_id = public.current_team_id() AND public.is_coach());
+
+DROP POLICY IF EXISTS pending_invites_delete_coach ON public.pending_player_invites;
+CREATE POLICY pending_invites_delete_coach ON public.pending_player_invites
+  FOR DELETE TO authenticated
+  USING (team_id = public.current_team_id() AND public.is_coach() AND claimed_at IS NULL);
+
+DROP POLICY IF EXISTS pending_invites_select_by_token ON public.pending_player_invites;
+CREATE POLICY pending_invites_select_by_token ON public.pending_player_invites
+  FOR SELECT TO anon, authenticated
+  USING (claim_token IS NOT NULL);
+
+commit;
+

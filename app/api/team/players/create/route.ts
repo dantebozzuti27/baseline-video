@@ -20,7 +20,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
-      console.error("Validation failed:", parsed.error);
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
@@ -30,40 +29,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Generate claim token
     const claimToken = generateClaimToken();
-
-    // Use admin client to insert
     const admin = createSupabaseAdminClient();
 
-    // Insert with NULL user_id - will be set when player claims account
-    const { data: inserted, error: insertError } = await admin
-      .from("profiles")
+    // Insert into pending_player_invites table
+    const { data: invite, error: insertError } = await admin
+      .from("pending_player_invites")
       .insert({
-        user_id: null, // NULL until claimed - no FK violation
         team_id: profile.team_id,
-        role: "player",
+        created_by_user_id: user.id,
         first_name: parsed.data.firstName,
         last_name: parsed.data.lastName,
         display_name: `${parsed.data.firstName} ${parsed.data.lastName}`,
         player_mode: parsed.data.playerMode ?? "in_person",
-        is_active: true,
         claim_token: claimToken,
-        claim_token_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        created_by_user_id: user.id
+        claim_token_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       })
       .select("id")
       .single();
 
     if (insertError) {
-      console.error("Insert player error:", JSON.stringify(insertError, null, 2));
+      console.error("Insert invite error:", insertError);
       return NextResponse.json({ 
         error: `Database error: ${insertError.message}` 
       }, { status: 500 });
     }
 
     return NextResponse.json({
-      playerId: inserted?.id,
+      inviteId: invite?.id,
       claimToken,
       claimUrl: `/claim/${claimToken}`
     });

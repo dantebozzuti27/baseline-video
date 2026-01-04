@@ -12,8 +12,13 @@ type Player = {
   user_id: string;
   display_name: string;
   is_active?: boolean;
-  claimed_at?: string | null;
-  claim_token?: string | null;
+};
+
+type PendingInvite = {
+  id: string;
+  display_name: string;
+  claim_token: string;
+  claim_token_expires_at: string;
 };
 
 function siteOrigin() {
@@ -21,11 +26,17 @@ function siteOrigin() {
   return "";
 }
 
-export default function RosterCard({ players }: { players: Player[] }) {
+export default function RosterCard({ 
+  players, 
+  pendingInvites 
+}: { 
+  players: Player[];
+  pendingInvites: PendingInvite[];
+}) {
   const router = useRouter();
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
   const [confirm, setConfirm] = React.useState<{ userId: string; nextActive: boolean } | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = React.useState<Player | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = React.useState<PendingInvite | null>(null);
 
   // Add player modal
   const [addOpen, setAddOpen] = React.useState(false);
@@ -50,11 +61,10 @@ export default function RosterCard({ players }: { players: Player[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, active })
       });
-      const json = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error((json as any)?.error ?? "Unable to update player");
+      if (!resp.ok) throw new Error("Failed");
       toast(active ? "Player reactivated." : "Player deactivated.");
       router.refresh();
-    } catch (e: any) {
+    } catch (e) {
       console.error("update player active failed", e);
     } finally {
       setLoadingId(null);
@@ -99,44 +109,39 @@ export default function RosterCard({ players }: { players: Player[] }) {
     try {
       await navigator.clipboard.writeText(url);
       toast("Claim link copied!");
-    } catch {
-      // fallback
-    }
+    } catch {}
   }
 
-  async function regenerateLink(userId: string) {
-    setLoadingId(userId);
+  async function regenerateLink(inviteId: string) {
+    setLoadingId(inviteId);
     try {
-      const resp = await fetch(`/api/team/players/${userId}/claim`, { method: "POST" });
+      const resp = await fetch(`/api/team/players/${inviteId}/claim`, { method: "POST" });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json?.error ?? "Unable to regenerate");
       toast("New claim link generated!");
       router.refresh();
-    } catch (e: any) {
+    } catch (e) {
       console.error("regenerate failed", e);
     } finally {
       setLoadingId(null);
     }
   }
 
-  async function deleteUnclaimed() {
+  async function deletePendingInvite() {
     if (!deleteConfirm) return;
-    setLoadingId(deleteConfirm.user_id);
+    setLoadingId(deleteConfirm.id);
     try {
-      const resp = await fetch(`/api/team/players/${deleteConfirm.user_id}/claim`, { method: "DELETE" });
+      const resp = await fetch(`/api/team/players/${deleteConfirm.id}/claim`, { method: "DELETE" });
       if (!resp.ok) throw new Error("Unable to delete");
-      toast("Player removed.");
+      toast("Invite removed.");
       router.refresh();
-    } catch (e: any) {
+    } catch (e) {
       console.error("delete failed", e);
     } finally {
       setLoadingId(null);
       setDeleteConfirm(null);
     }
   }
-
-  const claimedPlayers = players.filter((p) => p.claimed_at);
-  const unclaimedPlayers = players.filter((p) => !p.claimed_at && p.claim_token);
 
   return (
     <Card>
@@ -145,7 +150,7 @@ export default function RosterCard({ players }: { players: Player[] }) {
           <div>
             <div style={{ fontWeight: 900 }}>Roster</div>
             <div className="muted" style={{ marginTop: 6, fontSize: 13 }}>
-              {players.length} players on your team
+              {players.length} active, {pendingInvites.length} pending
             </div>
           </div>
           <Button onClick={() => setAddOpen(true)}>
@@ -154,32 +159,32 @@ export default function RosterCard({ players }: { players: Player[] }) {
           </Button>
         </div>
 
-        {/* Unclaimed players */}
-        {unclaimedPlayers.length > 0 && (
+        {/* Pending invites */}
+        {pendingInvites.length > 0 && (
           <div className="stack" style={{ marginTop: 16 }}>
             <div className="label">Pending (waiting to claim)</div>
             <div className="stack">
-              {unclaimedPlayers.map((p) => {
-                const isWorking = loadingId === p.user_id;
+              {pendingInvites.map((invite) => {
+                const isWorking = loadingId === invite.id;
                 return (
-                  <div key={p.user_id} className="card" style={{ padding: 12 }}>
-                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <div key={invite.id} className="card" style={{ padding: 12 }}>
+                    <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                       <div className="row" style={{ alignItems: "center", gap: 12 }}>
-                        <Avatar name={p.display_name} size="md" />
+                        <Avatar name={invite.display_name} size="md" />
                         <div>
-                          <div style={{ fontWeight: 800 }}>{p.display_name}</div>
+                          <div style={{ fontWeight: 800 }}>{invite.display_name}</div>
                           <Pill variant="warning">Pending</Pill>
                         </div>
                       </div>
                       <div className="row" style={{ gap: 6 }}>
-                        <Button onClick={() => copyClaimLink(p.claim_token!)} disabled={isWorking}>
+                        <Button onClick={() => copyClaimLink(invite.claim_token)} disabled={isWorking}>
                           <Copy size={14} />
                           Copy link
                         </Button>
-                        <Button onClick={() => regenerateLink(p.user_id)} disabled={isWorking}>
+                        <Button onClick={() => regenerateLink(invite.id)} disabled={isWorking}>
                           <Link size={14} />
                         </Button>
-                        <Button variant="danger" onClick={() => setDeleteConfirm(p)} disabled={isWorking}>
+                        <Button variant="danger" onClick={() => setDeleteConfirm(invite)} disabled={isWorking}>
                           <Trash2 size={14} />
                         </Button>
                       </div>
@@ -191,12 +196,12 @@ export default function RosterCard({ players }: { players: Player[] }) {
           </div>
         )}
 
-        {/* Claimed players */}
-        {claimedPlayers.length > 0 ? (
+        {/* Active players */}
+        {players.length > 0 ? (
           <div className="stack" style={{ marginTop: 16 }}>
             <div className="label">Active players</div>
             <div className="stack bvStagger">
-              {claimedPlayers.map((p) => {
+              {players.map((p) => {
                 const active = p.is_active !== false;
                 const isWorking = loadingId === p.user_id;
                 return (
@@ -222,7 +227,7 @@ export default function RosterCard({ players }: { players: Player[] }) {
               })}
             </div>
           </div>
-        ) : claimedPlayers.length === 0 && unclaimedPlayers.length === 0 ? (
+        ) : players.length === 0 && pendingInvites.length === 0 ? (
           <EmptyState
             variant="roster"
             title="No players yet"
@@ -257,24 +262,24 @@ export default function RosterCard({ players }: { players: Player[] }) {
           </div>
         </Modal>
 
-        {/* Delete unclaimed modal */}
+        {/* Delete pending modal */}
         <Modal
           open={Boolean(deleteConfirm)}
-          title="Delete player"
+          title="Delete invite"
           onClose={() => setDeleteConfirm(null)}
           footer={
             <>
               <Button onClick={() => setDeleteConfirm(null)} disabled={Boolean(loadingId)}>
                 Cancel
               </Button>
-              <Button variant="danger" onClick={deleteUnclaimed} disabled={Boolean(loadingId)}>
+              <Button variant="danger" onClick={deletePendingInvite} disabled={Boolean(loadingId)}>
                 Delete
               </Button>
             </>
           }
         >
           <div className="muted" style={{ fontSize: 13 }}>
-            Remove {deleteConfirm?.display_name} from your roster? They haven't claimed their account yet.
+            Remove the invite for {deleteConfirm?.display_name}?
           </div>
         </Modal>
 

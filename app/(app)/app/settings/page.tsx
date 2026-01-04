@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMyProfile } from "@/lib/auth/profile";
 import { Card } from "@/components/ui";
@@ -17,17 +18,32 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
-  const players =
-    profile.role === "coach"
-      ? (
-          await supabase
-            .from("profiles")
-            .select("user_id, display_name, role, is_active, claimed_at, claim_token")
-            .eq("team_id", profile.team_id)
-            .eq("role", "player")
-            .order("display_name", { ascending: true })
-        ).data
-      : [];
+  let players: any[] = [];
+  let pendingInvites: any[] = [];
+
+  if (profile.role === "coach") {
+    const admin = createSupabaseAdminClient();
+
+    // Get active players
+    const { data: activePlayers } = await admin
+      .from("profiles")
+      .select("user_id, display_name, role, is_active")
+      .eq("team_id", profile.team_id)
+      .eq("role", "player")
+      .order("display_name", { ascending: true });
+    
+    players = activePlayers ?? [];
+
+    // Get pending invites
+    const { data: invites } = await admin
+      .from("pending_player_invites")
+      .select("id, display_name, claim_token, claim_token_expires_at, claimed_at")
+      .eq("team_id", profile.team_id)
+      .is("claimed_at", null)
+      .order("created_at", { ascending: false });
+    
+    pendingInvites = invites ?? [];
+  }
 
   return (
     <div className="stack">
@@ -83,7 +99,7 @@ export default async function SettingsPage() {
               <div className="cardSubtitle">Manage your players</div>
             </div>
             <div style={{ marginTop: 16 }}>
-              <RosterCard players={(players ?? []) as any} />
+              <RosterCard players={players} pendingInvites={pendingInvites} />
             </div>
           </Card>
         </>
@@ -91,5 +107,3 @@ export default async function SettingsPage() {
     </div>
   );
 }
-
-

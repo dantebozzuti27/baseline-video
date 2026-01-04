@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getMyProfile } from "@/lib/auth/profile";
 
-// POST: Regenerate claim token
+// POST: Regenerate claim token for pending invite
 export async function POST(
   req: Request,
   { params }: { params: { userId: string } }
@@ -13,23 +13,37 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = createSupabaseServerClient();
-    const { data, error } = await supabase.rpc("regenerate_claim_token", {
-      p_player_id: params.userId
-    });
+    const admin = createSupabaseAdminClient();
+    
+    // Find the pending invite (userId is actually inviteId for pending invites)
+    const { data: invite } = await admin
+      .from("pending_player_invites")
+      .select("id, team_id, claimed_at")
+      .eq("id", params.userId)
+      .maybeSingle();
 
-    if (error) {
-      console.error("regenerate_claim_token error:", error);
-      const msg = error.message?.toLowerCase() ?? "";
-      if (msg.includes("claimed")) {
-        return NextResponse.json({ error: "Cannot regenerate for claimed account" }, { status: 400 });
-      }
-      return NextResponse.json({ error: "Unable to regenerate token" }, { status: 500 });
+    if (!invite || invite.team_id !== profile.team_id) {
+      return NextResponse.json({ error: "Invite not found" }, { status: 404 });
     }
 
+    if (invite.claimed_at) {
+      return NextResponse.json({ error: "Already claimed" }, { status: 400 });
+    }
+
+    // Generate new token
+    const newToken = generateClaimToken();
+
+    await admin
+      .from("pending_player_invites")
+      .update({
+        claim_token: newToken,
+        claim_token_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      })
+      .eq("id", params.userId);
+
     return NextResponse.json({
-      claimToken: data,
-      claimUrl: `/claim/${data}`
+      claimToken: newToken,
+      claimUrl: `/claim/${newToken}`
     });
   } catch (e) {
     console.error("POST /api/team/players/[userId]/claim error:", e);
@@ -37,7 +51,7 @@ export async function POST(
   }
 }
 
-// DELETE: Delete unclaimed player
+// DELETE: Delete pending invite
 export async function DELETE(
   req: Request,
   { params }: { params: { userId: string } }
@@ -48,18 +62,17 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = createSupabaseServerClient();
-    const { error } = await supabase.rpc("delete_unclaimed_player", {
-      p_player_id: params.userId
-    });
+    const admin = createSupabaseAdminClient();
+
+    const { error } = await admin
+      .from("pending_player_invites")
+      .delete()
+      .eq("id", params.userId)
+      .eq("team_id", profile.team_id);
 
     if (error) {
-      console.error("delete_unclaimed_player error:", error);
-      const msg = error.message?.toLowerCase() ?? "";
-      if (msg.includes("claimed")) {
-        return NextResponse.json({ error: "Cannot delete claimed account" }, { status: 400 });
-      }
-      return NextResponse.json({ error: "Unable to delete player" }, { status: 500 });
+      console.error("Delete invite error:", error);
+      return NextResponse.json({ error: "Unable to delete" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
@@ -69,3 +82,11 @@ export async function DELETE(
   }
 }
 
+function generateClaimToken(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}

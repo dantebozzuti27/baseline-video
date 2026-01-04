@@ -7,33 +7,47 @@ export async function GET(
   { params }: { params: { token: string } }
 ) {
   try {
-    const supabase = createSupabaseAdminClient();
-    const { data, error } = await supabase.rpc("get_claim_info", {
-      p_claim_token: params.token
-    });
+    const admin = createSupabaseAdminClient();
+    
+    // Look up in pending_player_invites
+    const { data: invite, error } = await admin
+      .from("pending_player_invites")
+      .select(`
+        id,
+        first_name,
+        last_name,
+        display_name,
+        claim_token_expires_at,
+        claimed_at,
+        team:teams(name),
+        creator:profiles!pending_player_invites_created_by_user_id_fkey(display_name)
+      `)
+      .eq("claim_token", params.token)
+      .maybeSingle();
 
     if (error) {
       console.error("get_claim_info error:", error);
       return NextResponse.json({ error: "Unable to get claim info" }, { status: 500 });
     }
 
-    const result = Array.isArray(data) ? data[0] : data;
-    if (!result?.is_valid) {
+    if (!invite) {
       return NextResponse.json({ error: "Invalid claim link" }, { status: 404 });
     }
 
+    const isExpired = new Date(invite.claim_token_expires_at) < new Date();
+    const isClaimed = invite.claimed_at !== null;
+
     return NextResponse.json({
-      playerId: result.player_id,
-      firstName: result.first_name,
-      lastName: result.last_name,
-      teamName: result.team_name,
-      coachName: result.coach_name,
-      isExpired: result.is_expired,
-      isClaimed: result.is_claimed
+      inviteId: invite.id,
+      firstName: invite.first_name,
+      lastName: invite.last_name,
+      teamName: (invite.team as any)?.name ?? "Unknown Team",
+      coachName: (invite.creator as any)?.display_name ?? "Your Coach",
+      isExpired,
+      isClaimed
     });
   } catch (e) {
     console.error("GET /api/claim/[token] error:", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
-
