@@ -407,12 +407,48 @@
 
 ---
 
+---
+
+## Session 19 – Feature: Coach-Creates-Player with Claim Links
+
+### Implemented
+1. **Database migration** (`0029_player_claim_tokens.sql`)
+   - Added `claim_token`, `claim_token_expires_at`, `claimed_at`, `created_by_user_id` to profiles
+   - Created `generate_claim_token()` function
+
+2. **RPCs created**
+   - `create_unclaimed_player` – Coach creates player profile with claim token
+   - `get_claim_info` – Get claim details (public, for claim page)
+   - `claim_player_account` – Link new auth user to existing profile
+   - `regenerate_claim_token` – Coach can regenerate expired links
+   - `delete_unclaimed_player` – Coach can remove unclaimed players
+
+3. **API routes**
+   - `POST /api/team/players/create` – Create unclaimed player
+   - `GET /api/claim/[token]` – Get claim info
+   - `POST /api/claim/[token]/complete` – Complete claim
+   - `POST /api/team/players/[userId]/claim` – Regenerate link
+   - `DELETE /api/team/players/[userId]/claim` – Delete unclaimed
+
+4. **UI changes**
+   - Updated `RosterCard` with Add player button, claim link management
+   - Created `/claim/[token]` page for players to claim accounts
+   - Pending players shown separately with copy link, regenerate, delete options
+
+5. **Middleware updates**
+   - Added `/claim`, `/api/claim` to public paths
+
+**Commits:** 22
+**Files changed:** 10 new/modified
+
+---
+
 ## Audit Complete! 🎉
 
 ### Final Stats
-- **Total Sessions:** 18
-- **Total Commits:** 21
-- **Issues Fixed:** 95/95 (100%)
+- **Total Sessions:** 19
+- **Total Commits:** 22
+- **Issues Fixed:** 95/95 + 1 new feature (100%)
 
 ### Component Library (20+ components)
 Button, LinkButton, Card, Input, Textarea, Select, Pill, Modal, Avatar, EmptyState, Breadcrumbs, Spinner, Skeleton, TimeAgo, Tooltip, Badge, Dot, ProgressBar, Kbd, Divider
