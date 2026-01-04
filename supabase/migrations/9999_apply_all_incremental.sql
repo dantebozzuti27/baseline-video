@@ -2944,12 +2944,12 @@ begin
 
   if exists (
     select 1
-    from public.lesson_requests lr
-    where lr.team_id = v_team_id
-      and lr.coach_user_id = p_coach_user_id
-      and lr.status = 'approved'
-      and lr.start_at < v_end_at
-      and lr.end_at > p_start_at
+    from public.lessons l
+    where l.team_id = v_team_id
+      and l.coach_user_id = p_coach_user_id
+      and l.status = 'approved'
+      and l.start_at < v_end_at
+      and l.end_at > p_start_at
   ) then
     raise exception 'conflict';
   end if;
@@ -2965,12 +2965,15 @@ begin
     raise exception 'blocked';
   end if;
 
-  insert into public.lesson_requests (team_id, coach_user_id, player_user_id, mode, start_at, end_at, timezone, status, notes)
+  insert into public.lessons (team_id, coach_user_id, created_by_user_id, mode, start_at, end_at, timezone, status, notes)
   values (v_team_id, p_coach_user_id, auth.uid(), p_mode, p_start_at, v_end_at, coalesce(nullif(trim(p_timezone), ''), 'UTC'), 'requested', nullif(trim(p_notes), ''))
   returning id into v_lesson_id;
 
+  insert into public.lesson_participants (lesson_id, user_id, invite_status, is_primary, invited_by_user_id, invited_at, responded_at)
+  values (v_lesson_id, auth.uid(), 'accepted', true, auth.uid(), now(), now());
+
   begin
-    perform public.log_event('lesson_requested', 'lesson_request', v_lesson_id, jsonb_build_object('mode', p_mode, 'start_at', p_start_at, 'minutes', p_minutes));
+    perform public.log_event('lesson_requested', 'lesson', v_lesson_id, jsonb_build_object('mode', p_mode, 'start_at', p_start_at, 'minutes', p_minutes));
   exception when undefined_function then
     null;
   end;
@@ -2992,7 +2995,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_l public.lesson_requests%rowtype;
+  v_l public.lessons%rowtype;
   v_team_id uuid;
   v_new_status public.lesson_status;
 begin
@@ -3006,7 +3009,7 @@ begin
   end if;
 
   select * into v_l
-  from public.lesson_requests
+  from public.lessons
   where id = p_lesson_id
     and team_id = v_team_id
     and coach_user_id = auth.uid()
@@ -3021,7 +3024,7 @@ begin
   if p_approve then
     if exists (
       select 1
-      from public.lesson_requests lr
+      from public.lessons lr
       where lr.team_id = v_team_id
         and lr.coach_user_id = v_l.coach_user_id
         and lr.status = 'approved'
@@ -3044,13 +3047,13 @@ begin
     end if;
   end if;
 
-  update public.lesson_requests
+  update public.lessons
     set status = v_new_status,
         coach_response_note = nullif(trim(p_note), '')
   where id = v_l.id;
 
   begin
-    perform public.log_event('lesson_' || v_new_status::text, 'lesson_request', v_l.id, jsonb_build_object('status', v_new_status));
+    perform public.log_event('lesson_' || v_new_status::text, 'lesson', v_l.id, jsonb_build_object('status', v_new_status));
   exception when undefined_function then
     null;
   end;
@@ -3282,12 +3285,38 @@ begin
     raise exception 'invalid_coach';
   end if;
 
-  insert into public.lesson_requests (team_id, coach_user_id, player_user_id, mode, start_at, end_at, timezone, status, notes)
+  if exists (
+    select 1
+    from public.lessons l
+    where l.team_id = v_team_id
+      and l.coach_user_id = p_coach_user_id
+      and l.status = 'approved'
+      and l.start_at < v_end_at
+      and l.end_at > p_start_at
+  ) then
+    raise exception 'conflict';
+  end if;
+
+  if exists (
+    select 1
+    from public.coach_time_blocks b
+    where b.team_id = v_team_id
+      and b.coach_user_id = p_coach_user_id
+      and b.start_at < v_end_at
+      and b.end_at > p_start_at
+  ) then
+    raise exception 'blocked';
+  end if;
+
+  insert into public.lessons (team_id, coach_user_id, created_by_user_id, mode, start_at, end_at, timezone, status, notes)
   values (v_team_id, p_coach_user_id, auth.uid(), p_mode, p_start_at, v_end_at, coalesce(nullif(trim(p_timezone), ''), 'UTC'), 'requested', nullif(trim(p_notes), ''))
   returning id into v_lesson_id;
 
+  insert into public.lesson_participants (lesson_id, user_id, invite_status, is_primary, invited_by_user_id, invited_at, responded_at)
+  values (v_lesson_id, auth.uid(), 'accepted', true, auth.uid(), now(), now());
+
   begin
-    perform public.log_event('lesson_requested', 'lesson_request', v_lesson_id, jsonb_build_object('mode', p_mode, 'start_at', p_start_at, 'minutes', p_minutes));
+    perform public.log_event('lesson_requested', 'lesson', v_lesson_id, jsonb_build_object('mode', p_mode, 'start_at', p_start_at, 'minutes', p_minutes));
   exception when undefined_function then
     null;
   end;
@@ -3310,7 +3339,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_l public.lesson_requests%rowtype;
+  v_l public.lessons%rowtype;
   v_team_id uuid;
   v_new_status public.lesson_status;
 begin
@@ -3324,7 +3353,7 @@ begin
   end if;
 
   select * into v_l
-  from public.lesson_requests
+  from public.lessons
   where id = p_lesson_id
     and team_id = v_team_id
     and coach_user_id = auth.uid()
@@ -3339,7 +3368,7 @@ begin
   if p_approve then
     if exists (
       select 1
-      from public.lesson_requests lr
+      from public.lessons lr
       where lr.team_id = v_team_id
         and lr.coach_user_id = v_l.coach_user_id
         and lr.status = 'approved'
@@ -3351,13 +3380,13 @@ begin
     end if;
   end if;
 
-  update public.lesson_requests
+  update public.lessons
     set status = v_new_status,
         coach_response_note = nullif(trim(p_note), '')
   where id = v_l.id;
 
   begin
-    perform public.log_event('lesson_' || v_new_status::text, 'lesson_request', v_l.id, jsonb_build_object('status', v_new_status));
+    perform public.log_event('lesson_' || v_new_status::text, 'lesson', v_l.id, jsonb_build_object('status', v_new_status));
   exception when undefined_function then
     null;
   end;
@@ -3378,7 +3407,8 @@ set search_path = public
 as $$
 declare
   v_team_id uuid;
-  v_l public.lesson_requests%rowtype;
+  v_l public.lessons%rowtype;
+  v_is_primary boolean;
   v_allowed boolean;
 begin
   v_team_id := public.current_team_id();
@@ -3387,7 +3417,7 @@ begin
   end if;
 
   select * into v_l
-  from public.lesson_requests
+  from public.lessons
   where id = p_lesson_id
     and team_id = v_team_id
   for update;
@@ -3396,21 +3426,29 @@ begin
     raise exception 'not_found';
   end if;
 
+  -- Check if user is the coach or a participant
+  select exists (
+    select 1 from public.lesson_participants lp
+    where lp.lesson_id = v_l.id
+      and lp.user_id = auth.uid()
+      and lp.is_primary = true
+  ) into v_is_primary;
+
   v_allowed :=
     (public.is_coach() and v_l.coach_user_id = auth.uid())
-    or (not public.is_coach() and v_l.player_user_id = auth.uid());
+    or v_is_primary;
 
   if not v_allowed then
     raise exception 'forbidden';
   end if;
 
-  update public.lesson_requests
+  update public.lessons
     set status = 'cancelled',
         coach_response_note = coalesce(nullif(trim(p_note), ''), coach_response_note)
   where id = v_l.id;
 
   begin
-    perform public.log_event('lesson_cancelled', 'lesson_request', v_l.id, jsonb_build_object('by', auth.uid()));
+    perform public.log_event('lesson_cancelled', 'lesson', v_l.id, jsonb_build_object('by', auth.uid()));
   exception when undefined_function then
     null;
   end;

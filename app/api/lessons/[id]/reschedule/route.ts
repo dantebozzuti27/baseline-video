@@ -40,12 +40,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   console.log("Reschedule RPC result:", error ? JSON.stringify(error) : "success");
 
   if (error) {
-    console.error("reschedule_lesson failed", error);
-    const msg = (error as any)?.message?.includes("conflict")
-      ? "That coach is already booked at that time."
-      : (error as any)?.message?.includes("blocked")
-        ? "That time is blocked off."
-        : "Unable to reschedule lesson.";
+    console.error("reschedule_lesson failed", JSON.stringify(error, null, 2));
+    const errMsg = (error as any)?.message || "";
+    let msg = "Unable to reschedule lesson.";
+    if (errMsg.includes("conflict")) msg = "That coach is already booked at that time.";
+    else if (errMsg.includes("blocked")) msg = "That time is blocked off.";
+    else if (errMsg.includes("not_found")) msg = "Lesson not found.";
+    else if (errMsg.includes("forbidden")) msg = "You don't have permission.";
+    else if (errMsg.includes("missing_profile")) msg = "Session expired. Please refresh.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
