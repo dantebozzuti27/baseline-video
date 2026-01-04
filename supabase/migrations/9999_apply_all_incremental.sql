@@ -3073,9 +3073,10 @@ set search_path = public, extensions
 as $$
 declare
   v_team_id uuid;
-  v_l public.lesson_requests%rowtype;
+  v_l public.lessons%rowtype;
   v_end_at timestamptz;
   v_is_coach boolean;
+  v_is_participant boolean;
   v_new_status public.lesson_status;
 begin
   v_team_id := public.current_team_id();
@@ -3090,7 +3091,7 @@ begin
   v_end_at := p_start_at + make_interval(mins => p_minutes);
 
   select * into v_l
-  from public.lesson_requests
+  from public.lessons
   where id = p_lesson_id
     and team_id = v_team_id
   for update;
@@ -3100,9 +3101,14 @@ begin
   end if;
 
   v_is_coach := public.is_coach();
+  v_is_participant := exists (
+    select 1 from public.lesson_participants lp
+    where lp.lesson_id = p_lesson_id and lp.user_id = auth.uid()
+  );
+
   if not (
     (v_is_coach and v_l.coach_user_id = auth.uid())
-    or ((not v_is_coach) and v_l.player_user_id = auth.uid())
+    or v_is_participant
   ) then
     raise exception 'forbidden';
   end if;
@@ -3118,7 +3124,7 @@ begin
   end if;
 
   if exists (
-    select 1 from public.lesson_requests lr
+    select 1 from public.lessons lr
     where lr.team_id = v_team_id
       and lr.coach_user_id = v_l.coach_user_id
       and lr.status = 'approved'
@@ -3134,7 +3140,7 @@ begin
     else 'requested'
   end;
 
-  update public.lesson_requests
+  update public.lessons
     set start_at = p_start_at,
         end_at = v_end_at,
         timezone = coalesce(nullif(trim(p_timezone), ''), timezone),
@@ -3143,7 +3149,7 @@ begin
   where id = v_l.id;
 
   begin
-    perform public.log_event('lesson_rescheduled', 'lesson_request', v_l.id, jsonb_build_object('by', auth.uid(), 'start_at', p_start_at, 'minutes', p_minutes, 'status', v_new_status));
+    perform public.log_event('lesson_rescheduled', 'lesson', v_l.id, jsonb_build_object('by', auth.uid(), 'start_at', p_start_at, 'minutes', p_minutes, 'status', v_new_status));
   exception when undefined_function then
     null;
   end;
