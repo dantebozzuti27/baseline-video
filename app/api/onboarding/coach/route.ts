@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { trackEventServer } from "@/lib/analytics";
 
 const bodySchema = z.object({
   teamName: z.string().min(2).max(80),
@@ -81,6 +82,14 @@ export async function POST(req: Request) {
     }
 
     const row = Array.isArray(data) ? data[0] : data;
+
+    // Track coach sign-up
+    await trackEventServer(admin, "sign_up", {
+      userId,
+      teamId: row.team_id,
+      metadata: { role: "coach" }
+    });
+
     return NextResponse.json({ teamId: row.team_id });
   } catch (e: any) {
     console.error("[onboarding/coach] Unhandled", { message: e?.message, stack: e?.stack });

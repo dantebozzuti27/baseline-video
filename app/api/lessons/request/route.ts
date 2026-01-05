@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { trackEventServer } from "@/lib/analytics";
 
 const schema = z.object({
   coachUserId: z.string().uuid(),
@@ -52,6 +54,15 @@ export async function POST(req: Request) {
           : "Unable to request lesson.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
+
+  // Track lesson request event
+  const { data: profile } = await supabase.from("profiles").select("team_id").eq("user_id", user.id).single();
+  const admin = createSupabaseAdminClient();
+  await trackEventServer(admin, "lesson_request", {
+    userId: user.id,
+    teamId: profile?.team_id,
+    metadata: { mode: parsed.data.mode, minutes: parsed.data.minutes }
+  });
 
   return NextResponse.json({ ok: true, id: data });
 }

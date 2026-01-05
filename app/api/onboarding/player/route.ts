@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { trackEventServer } from "@/lib/analytics";
 
 const bodySchema = z.object({
   accessCode: z.string().min(4).max(32),
@@ -82,6 +83,13 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    // Track player sign-up
+    await trackEventServer(admin, "sign_up", {
+      userId,
+      teamId: data,
+      metadata: { role: "player" }
+    });
 
     return NextResponse.json({ teamId: data });
   } catch (e: any) {

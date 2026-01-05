@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { trackEventServer } from "@/lib/analytics";
 
 function normalizeExternalUrl(input: unknown) {
   if (typeof input !== "string") return input;
@@ -133,6 +135,14 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
+  // Track video upload event
+  const admin = createSupabaseAdminClient();
+  await trackEventServer(admin, "video_upload", {
+    userId: user.id,
+    teamId: profile.team_id,
+    metadata: { source, category: parsed.data.category, isLibrary }
+  });
 
   return NextResponse.json({ id, storagePath, source, externalUrl });
 }

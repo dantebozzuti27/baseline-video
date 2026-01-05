@@ -10,6 +10,7 @@ export type Profile = {
   last_name: string;
   player_mode?: "in_person" | "hybrid" | "remote" | null;
   is_active?: boolean | null;
+  is_admin?: boolean;
   last_seen_feed_at?: string | null;
   created_at: string;
 };
