@@ -9,6 +9,7 @@ import SearchCommand from "./SearchCommand";
 import KeyboardHelp from "./KeyboardHelp";
 import GlobalKeyboard from "./GlobalKeyboard";
 import ToastClient from "./ToastClient";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 type Props = {
   role: "coach" | "player";
@@ -44,7 +45,9 @@ export default function AppShell({ role, displayName, children }: Props) {
         </div>
       </div>
       
-      <main id="main-content" className="container">{children}</main>
+      <main id="main-content" className="container">
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </main>
       
       <UploadFAB />
       <BottomNav role={role} />

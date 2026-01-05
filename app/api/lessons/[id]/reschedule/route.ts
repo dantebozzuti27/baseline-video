@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { logEvent } from "@/lib/utils/events";
+import { logErrorServer } from "@/lib/analytics";
 
 const schema = z.object({
   startAt: z.string().min(1),
@@ -48,6 +50,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     else if (errMsg.includes("not_found")) msg = "Lesson not found.";
     else if (errMsg.includes("forbidden")) msg = "You don't have permission.";
     else if (errMsg.includes("missing_profile")) msg = "Session expired. Please refresh.";
+    
+    // Log error to analytics
+    const admin = createSupabaseAdminClient();
+    await logErrorServer(admin, "api", errMsg || "reschedule_lesson failed", {
+      userId: user.id,
+      endpoint: "/api/lessons/reschedule",
+      metadata: { lessonId: params.id, rpcError: errMsg }
+    });
+    
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 

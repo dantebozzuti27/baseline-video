@@ -3,9 +3,9 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Card, Pill, Button, Modal, Select } from "@/components/ui";
-import { EmptyState } from "@/components/EmptyState";
-import { AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { DataTable } from "@/components/DataTable";
 import { formatDate } from "@/lib/utils/datetime";
+import { CheckCircle, X, ExternalLink } from "lucide-react";
 
 type ErrorLog = {
   id: string;
@@ -23,8 +23,8 @@ export default function ErrorsClient({ errors }: { errors: ErrorLog[] }) {
   const router = useRouter();
   const [filter, setFilter] = React.useState<"all" | "unresolved" | "resolved">("unresolved");
   const [typeFilter, setTypeFilter] = React.useState<string>("all");
-  const [expanded, setExpanded] = React.useState<string | null>(null);
-  const [resolving, setResolving] = React.useState<string | null>(null);
+  const [selected, setSelected] = React.useState<ErrorLog | null>(null);
+  const [resolving, setResolving] = React.useState(false);
 
   const filteredErrors = errors.filter((e) => {
     if (filter === "unresolved" && e.resolved_at) return false;
@@ -36,166 +36,251 @@ export default function ErrorsClient({ errors }: { errors: ErrorLog[] }) {
   const errorTypes = Array.from(new Set(errors.map((e) => e.error_type)));
 
   async function resolveError(id: string) {
-    setResolving(id);
+    setResolving(true);
     try {
       await fetch(`/api/admin/errors/${id}/resolve`, { method: "POST" });
       router.refresh();
+      setSelected(null);
     } catch (e) {
       console.error("Failed to resolve error", e);
     } finally {
-      setResolving(null);
+      setResolving(false);
     }
   }
 
+  const columns = [
+    {
+      key: "created_at",
+      header: "Time",
+      width: "140px",
+      render: (row: ErrorLog) => (
+        <span style={{ fontSize: 12 }}>{formatDate(row.created_at)}</span>
+      )
+    },
+    {
+      key: "error_type",
+      header: "Type",
+      width: "100px",
+      render: (row: ErrorLog) => (
+        <Pill
+          variant={
+            row.error_type === "frontend"
+              ? "warning"
+              : row.error_type === "api"
+              ? "danger"
+              : "muted"
+          }
+        >
+          {row.error_type}
+        </Pill>
+      )
+    },
+    {
+      key: "resolved_at",
+      header: "Status",
+      width: "100px",
+      render: (row: ErrorLog) =>
+        row.resolved_at ? (
+          <Pill variant="success">Resolved</Pill>
+        ) : (
+          <Pill variant="danger">Open</Pill>
+        )
+    },
+    {
+      key: "endpoint",
+      header: "Endpoint",
+      width: "180px",
+      render: (row: ErrorLog) => (
+        <code style={{ fontSize: 11 }}>{row.endpoint || "—"}</code>
+      )
+    },
+    {
+      key: "message",
+      header: "Message",
+      render: (row: ErrorLog) => (
+        <span style={{ maxWidth: 300, display: "block", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {row.message}
+        </span>
+      )
+    },
+    {
+      key: "user_id",
+      header: "User",
+      width: "120px",
+      render: (row: ErrorLog) =>
+        row.user_id ? (
+          <code style={{ fontSize: 10 }}>{row.user_id.slice(0, 8)}...</code>
+        ) : (
+          <span className="muted">—</span>
+        )
+    }
+  ];
+
   return (
     <div className="stack">
-      <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
-        <Select
-          label=""
-          name="filter"
-          value={filter}
-          onChange={(v) => setFilter(v as any)}
-          options={[
-            { value: "unresolved", label: "Unresolved" },
-            { value: "resolved", label: "Resolved" },
-            { value: "all", label: "All" }
-          ]}
-        />
-        <Select
-          label=""
-          name="typeFilter"
-          value={typeFilter}
-          onChange={setTypeFilter}
-          options={[{ value: "all", label: "All Types" }, ...errorTypes.map((t) => ({ value: t, label: t }))]}
-        />
-        <div className="muted" style={{ fontSize: 13, alignSelf: "center" }}>
-          {filteredErrors.length} error{filteredErrors.length !== 1 ? "s" : ""}
+      {/* Filters */}
+      <Card>
+        <div className="row" style={{ gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div>
+            <label className="label">Status</label>
+            <Select
+              label=""
+              name="filter"
+              value={filter}
+              onChange={(v) => setFilter(v as any)}
+              options={[
+                { value: "unresolved", label: "Unresolved" },
+                { value: "resolved", label: "Resolved" },
+                { value: "all", label: "All" }
+              ]}
+            />
+          </div>
+          <div>
+            <label className="label">Type</label>
+            <Select
+              label=""
+              name="typeFilter"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[
+                { value: "all", label: "All Types" },
+                ...errorTypes.map((t) => ({ value: t, label: t }))
+              ]}
+            />
+          </div>
         </div>
-      </div>
+      </Card>
 
-      {filteredErrors.length === 0 ? (
-        <EmptyState variant="generic" title="No errors" message="No errors match your filters." />
-      ) : (
-        <div className="stack">
-          {filteredErrors.map((error) => {
-            const isExpanded = expanded === error.id;
-            return (
-              <Card key={error.id} className="cardInteractive">
-                <div
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setExpanded(isExpanded ? null : error.id)}
+      {/* Data Table */}
+      <Card>
+        <DataTable
+          data={filteredErrors}
+          columns={columns}
+          pageSize={50}
+          searchable={true}
+          searchKeys={["message", "endpoint", "error_type", "user_id"]}
+          exportFilename="error-logs"
+          onRowClick={setSelected}
+          emptyMessage="No errors match your filters"
+        />
+      </Card>
+
+      {/* Detail Modal */}
+      <Modal
+        open={Boolean(selected)}
+        title="Error Details"
+        onClose={() => setSelected(null)}
+        footer={
+          selected && !selected.resolved_at ? (
+            <div className="row" style={{ gap: 8 }}>
+              <Button onClick={() => setSelected(null)}>Close</Button>
+              <Button
+                variant="primary"
+                onClick={() => resolveError(selected.id)}
+                disabled={resolving}
+              >
+                <CheckCircle size={14} />
+                {resolving ? "Resolving..." : "Mark Resolved"}
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={() => setSelected(null)}>Close</Button>
+          )
+        }
+      >
+        {selected && (
+          <div className="stack" style={{ gap: 16 }}>
+            {/* Summary */}
+            <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+              <Pill
+                variant={
+                  selected.error_type === "frontend"
+                    ? "warning"
+                    : selected.error_type === "api"
+                    ? "danger"
+                    : "muted"
+                }
+              >
+                {selected.error_type}
+              </Pill>
+              {selected.resolved_at ? (
+                <Pill variant="success">Resolved</Pill>
+              ) : (
+                <Pill variant="danger">Open</Pill>
+              )}
+              <span className="muted" style={{ fontSize: 12 }}>
+                {formatDate(selected.created_at, "long")}
+              </span>
+            </div>
+
+            {/* Message */}
+            <div>
+              <div className="label">Message</div>
+              <div style={{ fontWeight: 600, marginTop: 4, wordBreak: "break-word" }}>
+                {selected.message}
+              </div>
+            </div>
+
+            {/* Endpoint */}
+            {selected.endpoint && (
+              <div>
+                <div className="label">Endpoint</div>
+                <code style={{ fontSize: 13 }}>{selected.endpoint}</code>
+              </div>
+            )}
+
+            {/* User ID */}
+            {selected.user_id && (
+              <div>
+                <div className="label">User ID</div>
+                <code style={{ fontSize: 12 }}>{selected.user_id}</code>
+              </div>
+            )}
+
+            {/* Stack Trace */}
+            {selected.stack && (
+              <div>
+                <div className="label">Stack Trace</div>
+                <pre
+                  style={{
+                    background: "rgba(0,0,0,0.3)",
+                    padding: 12,
+                    borderRadius: 6,
+                    fontSize: 11,
+                    overflow: "auto",
+                    maxHeight: 200,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                    marginTop: 8
+                  }}
                 >
-                  <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="row" style={{ gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-                        <Pill variant={error.error_type === "frontend" ? "warning" : error.error_type === "api" ? "danger" : "muted"}>
-                          {error.error_type}
-                        </Pill>
-                        {error.resolved_at ? (
-                          <Pill variant="success">Resolved</Pill>
-                        ) : (
-                          <Pill variant="danger">Open</Pill>
-                        )}
-                        {error.endpoint && (
-                          <span className="muted" style={{ fontSize: 12 }}>
-                            {error.endpoint}
-                          </span>
-                        )}
-                      </div>
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 14,
-                          wordBreak: "break-word",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "-webkit-box",
-                          WebkitLineClamp: isExpanded ? "unset" : 2,
-                          WebkitBoxOrient: "vertical"
-                        }}
-                      >
-                        {error.message}
-                      </div>
-                      <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                        {formatDate(error.created_at)}
-                      </div>
-                    </div>
-                    <div style={{ flexShrink: 0 }}>
-                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </div>
-                  </div>
-                </div>
+                  {selected.stack}
+                </pre>
+              </div>
+            )}
 
-                {isExpanded && (
-                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-                    {error.stack && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div className="label" style={{ marginBottom: 8 }}>
-                          Stack Trace
-                        </div>
-                        <pre
-                          style={{
-                            background: "var(--bg-subtle, #111)",
-                            padding: 12,
-                            borderRadius: 6,
-                            fontSize: 11,
-                            overflow: "auto",
-                            maxHeight: 200,
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word"
-                          }}
-                        >
-                          {error.stack}
-                        </pre>
-                      </div>
-                    )}
-
-                    {error.user_id && (
-                      <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>
-                        User ID: {error.user_id}
-                      </div>
-                    )}
-
-                    {Object.keys(error.metadata || {}).length > 0 && (
-                      <div style={{ marginBottom: 16 }}>
-                        <div className="label" style={{ marginBottom: 8 }}>
-                          Metadata
-                        </div>
-                        <pre
-                          style={{
-                            background: "var(--bg-subtle, #111)",
-                            padding: 12,
-                            borderRadius: 6,
-                            fontSize: 11,
-                            overflow: "auto",
-                            maxHeight: 150
-                          }}
-                        >
-                          {JSON.stringify(error.metadata, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-
-                    {!error.resolved_at && (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="primary"
-                          onClick={() => resolveError(error.id)}
-                          disabled={resolving === error.id}
-                        >
-                          <CheckCircle size={14} />
-                          {resolving === error.id ? "Resolving..." : "Mark Resolved"}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      )}
+            {/* Metadata */}
+            {Object.keys(selected.metadata || {}).length > 0 && (
+              <div>
+                <div className="label">Metadata</div>
+                <pre
+                  style={{
+                    background: "rgba(0,0,0,0.3)",
+                    padding: 12,
+                    borderRadius: 6,
+                    fontSize: 11,
+                    overflow: "auto",
+                    maxHeight: 150,
+                    marginTop: 8
+                  }}
+                >
+                  {JSON.stringify(selected.metadata, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
-

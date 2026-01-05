@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { logErrorServer } from "@/lib/analytics";
 
 const schema = z.object({
   primaryPlayerUserId: z.string().uuid(),
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
     // Only show safe, user-facing errors. Keep internal diagnostics in server logs.
     let safeMsg = "Unable to schedule lesson.";
     if (raw.includes("function public.create_lesson_as_coach") || raw.includes("does not exist")) {
-      safeMsg = "Scheduling isn’t enabled yet. Please finish the database setup and try again.";
+      safeMsg = "Scheduling isn't enabled yet. Please finish the database setup and try again.";
     } else if (raw.includes("missing_profile")) {
       safeMsg = "Your account setup is incomplete. Please sign out/in and try again.";
     } else if (raw.includes("invalid_primary_player")) {
@@ -56,8 +58,17 @@ export async function POST(req: Request) {
     } else if (raw.includes("invalid_duration")) {
       safeMsg = "Choose a duration between 15 and 180 minutes.";
     } else if (raw.includes("forbidden") || raw.includes("permission denied")) {
-      safeMsg = "You don’t have permission to schedule lessons.";
+      safeMsg = "You don't have permission to schedule lessons.";
     }
+    
+    // Log error to analytics
+    const admin = createSupabaseAdminClient();
+    await logErrorServer(admin, "api", raw || "create_lesson_as_coach failed", {
+      userId: user.id,
+      endpoint: "/api/lessons/create",
+      metadata: { primaryPlayer: parsed.data.primaryPlayerUserId, rpcError: raw }
+    });
+    
     return NextResponse.json({ error: safeMsg }, { status: 400 });
   }
 

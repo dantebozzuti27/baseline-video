@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { trackEventServer } from "@/lib/analytics";
+import { trackEventServer, logErrorServer } from "@/lib/analytics";
 
 function normalizeExternalUrl(input: unknown) {
   if (typeof input !== "string") return input;
@@ -128,6 +128,13 @@ export async function POST(req: Request) {
 
   if (insertError) {
     console.error("video insert failed", insertError);
+    // Log error to analytics
+    const admin = createSupabaseAdminClient();
+    await logErrorServer(admin, "api", insertError.message || "video insert failed", {
+      userId: user.id,
+      endpoint: "/api/videos",
+      metadata: { source, category: parsed.data.category }
+    });
     return NextResponse.json(
       {
         error: "Unable to create video."
