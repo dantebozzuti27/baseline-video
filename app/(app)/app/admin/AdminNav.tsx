@@ -2,14 +2,31 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, AlertCircle, BarChart3, TrendingUp, Activity, Users } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  AlertCircle, 
+  BarChart3, 
+  TrendingUp, 
+  Activity, 
+  Users, 
+  RefreshCw,
+  Filter,
+  Video,
+  Heart,
+  Trophy
+} from "lucide-react";
 
 const navItems = [
   { href: "/app/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/app/admin/errors", label: "Errors", icon: AlertCircle },
-  { href: "/app/admin/events", label: "Events", icon: Activity },
-  { href: "/app/admin/users", label: "Users", icon: Users },
   { href: "/app/admin/usage", label: "Usage", icon: BarChart3 },
+  { href: "/app/admin/retention", label: "Retention", icon: RefreshCw },
+  { href: "/app/admin/funnels", label: "Funnels", icon: Filter },
+  { href: "/app/admin/content", label: "Content", icon: Video },
+  { href: "/app/admin/teams", label: "Teams", icon: Trophy },
+  { href: "/app/admin/users", label: "Users", icon: Users },
+  { href: "/app/admin/events", label: "Events", icon: Activity },
+  { href: "/app/admin/errors", label: "Errors", icon: AlertCircle },
+  { href: "/app/admin/health", label: "Health", icon: Heart },
   { href: "/app/admin/business", label: "Business", icon: TrendingUp }
 ];
 

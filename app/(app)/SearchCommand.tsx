@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Search, Video, User, FolderKanban, X } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 type Result = {
   videos: Array<{ id: string; title: string; category: string }>;
@@ -55,10 +56,16 @@ export default function SearchCommand({
       setLoading(true);
       try {
         const resp = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-        setResults(await resp.json());
+        const data = await resp.json();
+        setResults(data);
+        // Track search event
+        trackEvent("search", { 
+          query, 
+          resultsCount: (data?.videos?.length || 0) + (data?.players?.length || 0) + (data?.programs?.length || 0)
+        });
       } catch {}
       setLoading(false);
-    }, 200);
+    }, 400); // Slightly longer debounce to reduce event noise
     return () => clearTimeout(timer);
   }, [query]);
 

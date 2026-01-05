@@ -10,6 +10,7 @@ import KeyboardHelp from "./KeyboardHelp";
 import GlobalKeyboard from "./GlobalKeyboard";
 import ToastClient from "./ToastClient";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
 type Props = {
   role: "coach" | "player";
@@ -59,6 +60,7 @@ export default function AppShell({ role, displayName, children }: Props) {
       />
       <KeyboardHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
       <SearchCommand isCoach={role === "coach"} open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <AnalyticsTracker />
     </div>
   );
 }
