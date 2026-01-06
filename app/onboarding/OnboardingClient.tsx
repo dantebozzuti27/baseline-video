@@ -81,19 +81,31 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
   // Check if user already has a profile - if so, redirect to app
   React.useEffect(() => {
     async function checkProfile() {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'OnboardingClient.tsx:checkProfile-start',message:'Starting profile check',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
       try {
         const supabase = createSupabaseBrowserClient();
         const { data: { user } } = await supabase.auth.getUser();
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'OnboardingClient.tsx:auth-result',message:'Auth result',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
+        
         if (!user) {
           setCheckingProfile(false);
           return;
         }
         
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("role")
           .eq("user_id", user.id)
           .maybeSingle();
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'OnboardingClient.tsx:profile-result',message:'Profile query result',data:{hasProfile:!!profile,profile,error:profileError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         
         if (profile) {
           // User already has a profile, redirect to app
@@ -101,7 +113,10 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
           window.location.href = destination;
           return;
         }
-      } catch (e) {
+      } catch (e: any) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'OnboardingClient.tsx:error',message:'Error checking profile',data:{error:e?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         console.error("Error checking profile:", e);
       }
       setCheckingProfile(false);

@@ -23,6 +23,11 @@ function isPublicPath(pathname: string) {
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
+  const pathname = request.nextUrl.pathname;
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:entry',message:'Middleware called',data:{pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+  // #endregion
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
@@ -45,7 +50,8 @@ export async function middleware(request: NextRequest) {
     data: { user }
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:auth',message:'Auth check',data:{hasUser:!!user,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
 
   // Gate non-public routes for signed-out users.
   if (!user && !isPublicPath(pathname)) {
@@ -61,14 +67,25 @@ export async function middleware(request: NextRequest) {
 
   // Fast pre-checks for /app routes (layout also enforces this, but middleware keeps things tight).
   if (user && pathname.startsWith("/app")) {
-    const { data: profile } = await supabase
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:profile-query-start',message:'Querying profile',data:{userId:user.id},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
+    
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role, is_active")
       .eq("user_id", user.id)
       .maybeSingle();
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:profile-query-result',message:'Profile query result',data:{hasProfile:!!profile,profile,error:profileError?.message,errorCode:profileError?.code},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+    // #endregion
+
     // Signed-in but no profile: send to onboarding (avoid bouncing to /sign-up which expects creating auth user).
     if (!profile) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/f72cf29f-8061-4fcb-b3d1-b93f609f8eb2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'middleware.ts:redirect-onboarding',message:'Redirecting to onboarding',data:{reason:profileError?'error':'no-profile'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+      // #endregion
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       url.searchParams.set("next", pathname);
