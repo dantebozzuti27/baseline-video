@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getMyProfile } from "@/lib/auth/profile";
-import { Card } from "@/components/ui";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { EmptyState } from "@/components/EmptyState";
-import VideoClient from "../../videos/[id]/videoClient";
+import CompareClient from "./CompareClient";
+
+export const dynamic = "force-dynamic";
 
 export default async function ComparePage({
   searchParams
@@ -12,6 +13,8 @@ export default async function ComparePage({
   searchParams: { left?: string; right?: string };
 }) {
   const supabase = createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
+  
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -24,9 +27,10 @@ export default async function ComparePage({
   const left = searchParams.left ?? "";
   const right = searchParams.right ?? "";
 
+  // Get videos for selection
   const { data: vids } = await supabase
     .from("videos")
-    .select("id, title, created_at, owner_user_id, is_library")
+    .select("id, title, created_at, owner_user_id, is_library, storage_path, external_url, source")
     .eq("team_id", profile.team_id)
     .is("deleted_at", null)
     .order("is_library", { ascending: false })
@@ -40,8 +44,33 @@ export default async function ComparePage({
   const ownerMap = new Map<string, string>();
   for (const o of owners ?? []) ownerMap.set(o.user_id, o.display_name);
 
-  const library = (vids ?? []).filter((v: any) => v.is_library);
-  const rest = (vids ?? []).filter((v: any) => !v.is_library);
+  // Get signed URLs for selected videos
+  const selectedIds = [left, right].filter(Boolean);
+  const signedUrls: Record<string, string> = {};
+
+  for (const vid of vids ?? []) {
+    if (selectedIds.includes(vid.id)) {
+      if (vid.source === "link" && vid.external_url) {
+        signedUrls[vid.id] = vid.external_url;
+      } else if (vid.storage_path) {
+        const { data: signedData } = await admin.storage
+          .from("videos")
+          .createSignedUrl(vid.storage_path, 3600);
+        if (signedData?.signedUrl) {
+          signedUrls[vid.id] = signedData.signedUrl;
+        }
+      }
+    }
+  }
+
+  // Format videos for client
+  const videos = (vids ?? []).map((v: any) => ({
+    id: v.id,
+    title: v.title,
+    owner_name: ownerMap.get(v.owner_user_id) ?? (v.is_library ? "Library" : "Player"),
+    created_at: v.created_at,
+    signed_url: signedUrls[v.id] || undefined
+  }));
 
   return (
     <div className="stack">
@@ -53,88 +82,19 @@ export default async function ComparePage({
       />
 
       <div>
-        <div style={{ fontSize: 18, fontWeight: 900 }}>Side-by-Side Compare</div>
-        <div className="muted" style={{ marginTop: 6 }}>
-          Select two videos to compare swings, mechanics, or progress over time
-        </div>
+        <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>
+          Side-by-Side Compare
+        </h1>
+        <p className="muted">
+          Compare swings, mechanics, or track progress over time
+        </p>
       </div>
 
-      <Card className="cardInteractive">
-        <div className="cardHeader">
-          <div className="cardTitle">Select Videos</div>
-          <div className="cardSubtitle">Choose from library or player uploads</div>
-        </div>
-        <form className="stack" style={{ marginTop: 16 }} action="/app/compare" method="get">
-          <div className="row" style={{ alignItems: "end" }}>
-            <div style={{ flex: 1, minWidth: 260 }}>
-              <div className="label">Left</div>
-              <select className="select" name="left" defaultValue={left}>
-                <option value="">Select a video…</option>
-                {library.length ? <optgroup label="Library" /> : null}
-                {library.map((v: any) => (
-                  <option key={v.id} value={v.id}>
-                    {v.title} • {ownerMap.get(v.owner_user_id) ?? "Team"} • {new Date(v.created_at).toLocaleDateString()}
-                  </option>
-                ))}
-                {rest.length ? <optgroup label="Team (recent)" /> : null}
-                {rest.map((v: any) => (
-                  <option key={v.id} value={v.id}>
-                    {v.title} • {ownerMap.get(v.owner_user_id) ?? "Player"} • {new Date(v.created_at).toLocaleDateString()}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ flex: 1, minWidth: 260 }}>
-              <div className="label">Right</div>
-              <select className="select" name="right" defaultValue={right}>
-                <option value="">Select a video…</option>
-                {library.length ? <optgroup label="Library" /> : null}
-                {library.map((v: any) => (
-                  <option key={v.id} value={v.id}>
-                    {v.title} • {ownerMap.get(v.owner_user_id) ?? "Team"} • {new Date(v.created_at).toLocaleDateString()}
-                  </option>
-                ))}
-                {rest.length ? <optgroup label="Team (recent)" /> : null}
-                {rest.map((v: any) => (
-                  <option key={v.id} value={v.id}>
-                    {v.title} • {ownerMap.get(v.owner_user_id) ?? "Player"} • {new Date(v.created_at).toLocaleDateString()}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button className="btn btnPrimary" type="submit">
-              Compare
-            </button>
-          </div>
-        </form>
-      </Card>
-
-      {left && right ? (
-        <div className="bvCompareGrid">
-          <div className="bvComparePane">
-            <div className="bvComparePaneHeader">
-              <span className="pill pillInfo">LEFT</span>
-            </div>
-            <VideoClient videoId={left} />
-          </div>
-          <div className="bvComparePane">
-            <div className="bvComparePaneHeader">
-              <span className="pill pillWarning">RIGHT</span>
-            </div>
-            <VideoClient videoId={right} />
-          </div>
-        </div>
-      ) : (
-        <EmptyState
-          variant="videos"
-          title="Select two videos"
-          message="Pick a video for left and right to start comparing."
-        />
-      )}
+      <CompareClient 
+        videos={videos} 
+        initialLeft={left} 
+        initialRight={right} 
+      />
     </div>
   );
 }
-
-
