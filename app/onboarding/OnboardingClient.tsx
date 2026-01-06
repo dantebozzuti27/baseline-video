@@ -68,6 +68,7 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
   const router = useRouter();
   const [step, setStep] = React.useState<Step>("role");
   const [role, setRole] = React.useState<Role>("player");
+  const [checkingProfile, setCheckingProfile] = React.useState(true);
 
   const [teamName, setTeamName] = React.useState("");
   const [invite, setInvite] = React.useState("");
@@ -77,10 +78,50 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
   const [loading, setLoading] = React.useState(false);
   const [inviteUrl, setInviteUrl] = React.useState<string | null>(null);
 
+  // Check if user already has a profile - if so, redirect to app
+  React.useEffect(() => {
+    async function checkProfile() {
+      try {
+        const supabase = createSupabaseBrowserClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setCheckingProfile(false);
+          return;
+        }
+        
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        if (profile) {
+          // User already has a profile, redirect to app
+          const destination = profile.role === "coach" ? "/app/dashboard" : "/app";
+          window.location.href = destination;
+          return;
+        }
+      } catch (e) {
+        console.error("Error checking profile:", e);
+      }
+      setCheckingProfile(false);
+    }
+    checkProfile();
+  }, []);
+
   async function getAccessToken() {
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase.auth.getSession();
     return data.session?.access_token ?? null;
+  }
+  
+  // Show loading while checking profile
+  if (checkingProfile) {
+    return (
+      <div className="container" style={{ maxWidth: 520, paddingTop: 80, textAlign: "center" }}>
+        <p className="muted">Loading...</p>
+      </div>
+    );
   }
 
   async function handleContinue() {
