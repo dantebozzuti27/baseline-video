@@ -7,6 +7,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import InviteCard from "../../settings/InviteCard";
 import RosterCard from "../../settings/RosterCard";
 import ProfileClient from "../../profile/ProfileClient";
+import ScheduleSettings from "../../settings/ScheduleSettings";
 
 export default async function SettingsPage() {
   const profile = await getMyProfile();
@@ -84,6 +85,17 @@ export default async function SettingsPage() {
 
       {profile.role === "coach" && (
         <>
+          {/* Schedule Settings Section */}
+          <Card className="cardInteractive">
+            <div className="cardHeader">
+              <div className="cardTitle">Lesson Scheduling</div>
+              <div className="cardSubtitle">Set your availability and booking preferences</div>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <ScheduleSettings />
+            </div>
+          </Card>
+
           {/* Invite Section */}
           <Card className="cardInteractive">
             <div className="cardHeader">
