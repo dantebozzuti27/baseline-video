@@ -159,13 +159,15 @@ export default function OnboardingClient({ nextPath }: { nextPath: string }) {
   }
 
   function handleComplete() {
+    console.log("[Onboarding] handleComplete called, role:", role);
     const destination = role === "coach" 
       ? "/app/dashboard" 
       : role === "parent" 
         ? "/app/parent" 
         : "/app";
-    router.replace(destination);
-    router.refresh();
+    console.log("[Onboarding] Navigating to:", destination);
+    // Use window.location for a hard navigation to ensure it works
+    window.location.href = destination;
   }
 
   async function copyInviteLink() {
