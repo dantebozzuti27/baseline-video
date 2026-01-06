@@ -4,6 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Download, SkipBack, SkipForward, Play, Pause } from "lucide-react";
 import { Button, Card } from "@/components/ui";
+import VideoAnnotationCanvas from "@/components/VideoAnnotationCanvas";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function parseSeekSecondsFromHash() {
   const hash = window.location.hash || "";
@@ -24,7 +26,29 @@ export default function VideoClient({ videoId }: { videoId: string }) {
   const [failed, setFailed] = React.useState(false);
   const [speed, setSpeed] = React.useState<number>(1);
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isCoach, setIsCoach] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Check if user is a coach
+  React.useEffect(() => {
+    async function checkRole() {
+      const supabase = createSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (profile?.role === "coach") {
+        setIsCoach(true);
+      }
+    }
+    checkRole();
+  }, []);
 
   function getYoutubeEmbed(u: string) {
     try {
@@ -262,15 +286,27 @@ export default function VideoClient({ videoId }: { videoId: string }) {
 
   return (
     <Card>
-      <video
-        ref={videoRef}
-        src={url ?? undefined}
-        controls
-        playsInline
-        style={{ width: "100%", borderRadius: 12 }}
-        onPlay={handleVideoPlay}
-        onPause={handleVideoPause}
-      />
+      <div 
+        ref={containerRef} 
+        style={{ position: "relative", width: "100%" }}
+      >
+        <video
+          ref={videoRef}
+          src={url ?? undefined}
+          controls
+          playsInline
+          style={{ width: "100%", borderRadius: 12, display: "block" }}
+          onPlay={handleVideoPlay}
+          onPause={handleVideoPause}
+        />
+        
+        {/* Annotation Canvas Overlay */}
+        <VideoAnnotationCanvas
+          videoId={videoId}
+          videoElement={videoRef.current}
+          isCoach={isCoach}
+        />
+      </div>
 
       {/* Playback Controls */}
       <div className="bvVideoControls">
