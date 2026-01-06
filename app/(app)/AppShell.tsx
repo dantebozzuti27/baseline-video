@@ -9,6 +9,7 @@ import KeyboardHelp from "./KeyboardHelp";
 import GlobalKeyboard from "./GlobalKeyboard";
 import ToastClient from "./ToastClient";
 import MoreSheet from "@/components/MoreSheet";
+import NotificationBell from "@/components/NotificationBell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
@@ -43,6 +44,7 @@ export default function AppShell({ role, displayName, isAdmin, children }: Props
               <span className="bvSearchPlaceholder">Search…</span>
               <kbd className="bvSearchKbd">⌘K</kbd>
             </button>
+            <NotificationBell />
             {showUpload && (
               <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
                 Upload

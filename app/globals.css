@@ -1285,6 +1285,188 @@ a {
   }
 }
 
+/* Notification Bell */
+.bvNotificationBell {
+  position: relative;
+}
+
+.bvNotificationButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.bvNotificationButton:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.bvNotificationBadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.bvNotificationPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-width: 90vw;
+  max-height: 480px;
+  background: #0d1420;
+  border: 1px solid #1a2436;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  z-index: 60;
+  animation: bvSlideUp 0.2s ease-out;
+}
+
+.bvNotificationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1a2436;
+}
+
+.bvNotificationMarkAll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.bvNotificationMarkAll:hover {
+  background: rgba(99, 179, 255, 0.1);
+}
+
+.bvNotificationList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.bvNotificationEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.bvNotificationItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.bvNotificationItem:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bvNotificationUnread {
+  background: rgba(99, 179, 255, 0.05);
+}
+
+.bvNotificationIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(99, 179, 255, 0.15);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bvNotificationContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.bvNotificationTitle {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.bvNotificationBody {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bvNotificationTime {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.bvNotificationDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.bvNotificationViewAll {
+  display: block;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  border-top: 1px solid #1a2436;
+  text-decoration: none;
+}
+
+.bvNotificationViewAll:hover {
+  background: rgba(99, 179, 255, 0.05);
+}
+
 .bvSearchBackdrop {
   position: fixed;
   inset: 0;
