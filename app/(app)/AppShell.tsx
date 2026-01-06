@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import BottomNav from "./BottomNav";
+import DesktopSidebar from "./DesktopSidebar";
 import UploadFAB from "./UploadFAB";
 import SearchCommand from "./SearchCommand";
 import KeyboardHelp from "./KeyboardHelp";
@@ -29,34 +30,40 @@ export default function AppShell({ role, displayName, isAdmin, children }: Props
   const showUpload = role !== "parent";
 
   return (
-    <div>
+    <div className="bvAppLayout">
       <a href="#main-content" className="bvSkipLink">Skip to content</a>
       
-      <div className="nav">
-        <div className="navInner">
-          <div className="bvTopBarLeft">
-            <Link className="brand" href="/app" aria-label="Baseline Video home">
-              <img className="bvAppLogo" src="/brand copy-Photoroom.png" alt="Baseline Video" />
-            </Link>
-          </div>
-          <div className="bvTopBarRight">
-            <button className="bvSearchTrigger" onClick={() => setSearchOpen(true)} aria-label="Search">
-              <span className="bvSearchPlaceholder">Search…</span>
-              <kbd className="bvSearchKbd">⌘K</kbd>
-            </button>
-            <NotificationBell />
-            {showUpload && (
-              <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
-                Upload
+      {/* Desktop sidebar - hidden on mobile */}
+      <DesktopSidebar role={role} isAdmin={isAdmin} />
+      
+      <div className="bvAppMain">
+        {/* Top bar */}
+        <div className="nav">
+          <div className="navInner">
+            <div className="bvTopBarLeft bvMobileOnly">
+              <Link className="brand" href="/app" aria-label="Baseline Video home">
+                <img className="bvAppLogo" src="/brand copy-Photoroom.png" alt="Baseline Video" />
               </Link>
-            )}
+            </div>
+            <div className="bvTopBarRight">
+              <button className="bvSearchTrigger" onClick={() => setSearchOpen(true)} aria-label="Search">
+                <span className="bvSearchPlaceholder">Search…</span>
+                <kbd className="bvSearchKbd">⌘K</kbd>
+              </button>
+              <NotificationBell />
+              {showUpload && (
+                <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
+                  Upload
+                </Link>
+              )}
+            </div>
           </div>
         </div>
+        
+        <main id="main-content" className="container">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </main>
       </div>
-      
-      <main id="main-content" className="container">
-        <ErrorBoundary>{children}</ErrorBoundary>
-      </main>
       
       {showUpload && <UploadFAB />}
       <BottomNav role={role} onMoreClick={() => setMoreOpen(true)} />

@@ -2584,3 +2584,110 @@ select:focus-visible {
   font-size: 11px;
   font-family: ui-monospace, monospace;
 }
+
+/* ========================================
+   Desktop Sidebar
+   ======================================== */
+
+.bvAppLayout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.bvAppMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.bvDesktopSidebar {
+  display: none;
+}
+
+.bvMobileOnly {
+  display: block;
+}
+
+/* Desktop: show sidebar, hide mobile elements */
+@media (min-width: 1024px) {
+  .bvDesktopSidebar {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    min-width: 240px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .bvSidebarLogo {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bvSidebarLogo img {
+    height: 28px;
+    width: auto;
+  }
+
+  .bvSidebarNav {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bvSidebarSection {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .bvSidebarDivider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+  }
+
+  .bvSidebarItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all 0.15s ease;
+    text-decoration: none;
+  }
+
+  .bvSidebarItem:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+  }
+
+  .bvSidebarItemActive {
+    background: rgba(99, 179, 255, 0.12);
+    color: var(--primary);
+  }
+
+  .bvSidebarItemActive:hover {
+    background: rgba(99, 179, 255, 0.16);
+  }
+
+  .bvMobileOnly {
+    display: none !important;
+  }
+
+  .bvBottomNav {
+    display: none !important;
+  }
+
+  /* Adjust top bar for desktop - no logo needed since sidebar has it */
+  .nav .navInner {
+    justify-content: flex-end;
+  }
+}
