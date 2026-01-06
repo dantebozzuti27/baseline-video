@@ -11,17 +11,17 @@ Video feedback, lesson booking, and remote training programs — all in one plac
 
 ---
 
-## 🎯 What is Baseline Video?
+## What is Baseline Video?
 
 Baseline Video solves a common problem for sports coaches: managing players across video review, lesson scheduling, and remote training is fragmented across WhatsApp, Dropbox, and spreadsheets.
 
 **Our solution:**
-- 📹 **Video Feedback** — Players upload, coaches comment at exact timestamps
-- 📅 **Lesson Booking** — Players request, coaches approve, calendar syncs
-- 📋 **Remote Programs** — Week-by-week training plans with drills and daily checklists
-- 👥 **Team Management** — Roster, player modes, invite links
+- **Video Feedback** — Players upload, coaches comment at exact timestamps
+- **Lesson Booking** — Players request, coaches approve, calendar syncs
+- **Remote Programs** — Week-by-week training plans with drills and daily checklists
+- **Team Management** — Roster, player modes, invite links
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |---------|-------------|
@@ -34,7 +34,7 @@ Baseline Video solves a common problem for sports coaches: managing players acro
 | **Player Modes** | In-person, Hybrid, or Remote categorization |
 | **Admin Dashboard** | Usage analytics, retention, funnels, error monitoring |
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
@@ -47,7 +47,7 @@ Baseline Video solves a common problem for sports coaches: managing players acro
 | Hosting | Vercel |
 | Language | TypeScript |
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 baseline-video/
@@ -70,7 +70,7 @@ baseline-video/
 └── public/                 # Static assets
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js 18+
@@ -123,7 +123,7 @@ baseline-video/
 3. Sign up as a **Player** using the invite link
 4. Upload a video and test the feedback flow
 
-## 📊 Admin Dashboard
+## Admin Dashboard
 
 Access at `/app/admin` (requires `is_admin = true` in profiles table).
 
@@ -139,17 +139,17 @@ Access at `/app/admin` (requires `is_admin = true` in profiles table).
 | **Errors** | Error logs with stack traces |
 | **Health** | System status, database stats |
 
-## ⌨️ Keyboard Shortcuts
+## Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
-| `⌘K` | Open search |
+| `Cmd+K` | Open search |
 | `?` | Keyboard help |
 | `Esc` | Close modal |
 | `Space` | Play/pause video |
-| `←` `→` | Frame step |
+| `Arrow Left/Right` | Frame step |
 
-## 🚢 Deployment
+## Deployment
 
 ### Vercel (Recommended)
 1. Connect GitHub repo to Vercel
@@ -164,7 +164,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
 ```
 
-## 📚 Documentation
+## Documentation
 
 See [DOCUMENTATION.md](./DOCUMENTATION.md) for:
 - Complete feature list
@@ -173,7 +173,7 @@ See [DOCUMENTATION.md](./DOCUMENTATION.md) for:
 - UI components
 - Security details
 
-## 📝 Other Docs
+## Other Docs
 
 | File | Description |
 |------|-------------|
@@ -182,7 +182,7 @@ See [DOCUMENTATION.md](./DOCUMENTATION.md) for:
 | [AUDIT_LOG.md](./AUDIT_LOG.md) | Implementation log |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Deployment notes |
 
-## 🗺 Roadmap
+## Roadmap
 
 - [ ] Push notifications
 - [ ] Mobile app (React Native)
@@ -193,4 +193,4 @@ See [DOCUMENTATION.md](./DOCUMENTATION.md) for:
 
 ---
 
-Built with ❤️ for coaches who want to scale their impact.
+Built for coaches who want to scale their impact.
