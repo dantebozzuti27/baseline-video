@@ -56,6 +56,21 @@ export default async function AdminUsersPage() {
       return { data: counts };
     });
 
+  // Get last active time per user from analytics events
+  const { data: lastActiveData } = await admin
+    .from("analytics_events")
+    .select("user_id, created_at")
+    .not("user_id", "is", null)
+    .order("created_at", { ascending: false });
+
+  // Build map of user_id -> most recent activity
+  const lastActiveMap: Record<string, string> = {};
+  (lastActiveData || []).forEach((event: any) => {
+    if (event.user_id && !lastActiveMap[event.user_id]) {
+      lastActiveMap[event.user_id] = event.created_at;
+    }
+  });
+
   const users = (profiles || []).map((p: any) => ({
     user_id: p.user_id,
     display_name: p.display_name,
@@ -66,7 +81,8 @@ export default async function AdminUsersPage() {
     team_name: p.teams?.name || "—",
     video_count: videoCounts?.[p.user_id] || 0,
     lesson_count: lessonCounts?.[p.user_id] || 0,
-    created_at: p.created_at
+    created_at: p.created_at,
+    last_active_at: lastActiveMap[p.user_id] || null
   }));
 
   return (

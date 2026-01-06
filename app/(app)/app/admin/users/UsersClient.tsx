@@ -4,7 +4,7 @@ import * as React from "react";
 import { Card, Pill, Modal, Select } from "@/components/ui";
 import { DataTable } from "@/components/DataTable";
 import { Avatar } from "@/components/Avatar";
-import { formatDate } from "@/lib/utils/datetime";
+import { formatDate, formatRelative } from "@/lib/utils/datetime";
 
 type User = {
   user_id: string;
@@ -17,17 +17,52 @@ type User = {
   video_count: number;
   lesson_count: number;
   created_at: string;
+  last_active_at: string | null;
 };
+
+function getActivityStatus(lastActiveAt: string | null): { label: string; variant: "success" | "warning" | "danger" | "muted" } {
+  if (!lastActiveAt) return { label: "Never", variant: "muted" };
+  
+  const now = new Date();
+  const lastActive = new Date(lastActiveAt);
+  const diffMs = now.getTime() - lastActive.getTime();
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  
+  if (diffDays < 1) return { label: "Today", variant: "success" };
+  if (diffDays < 7) return { label: formatRelative(lastActive), variant: "success" };
+  if (diffDays < 30) return { label: formatRelative(lastActive), variant: "warning" };
+  return { label: formatRelative(lastActive), variant: "danger" };
+}
 
 export default function UsersClient({ users }: { users: User[] }) {
   const [roleFilter, setRoleFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
+  const [activityFilter, setActivityFilter] = React.useState<string>("all");
   const [selected, setSelected] = React.useState<User | null>(null);
+
+  const now = new Date();
 
   const filteredUsers = users.filter((u) => {
     if (roleFilter !== "all" && u.role !== roleFilter) return false;
     if (statusFilter === "active" && !u.is_active) return false;
     if (statusFilter === "inactive" && u.is_active) return false;
+    
+    // Activity filter
+    if (activityFilter !== "all") {
+      if (!u.last_active_at) {
+        if (activityFilter !== "never") return false;
+      } else {
+        const lastActive = new Date(u.last_active_at);
+        const diffDays = (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (activityFilter === "today" && diffDays >= 1) return false;
+        if (activityFilter === "week" && diffDays >= 7) return false;
+        if (activityFilter === "month" && diffDays >= 30) return false;
+        if (activityFilter === "churned" && diffDays < 30) return false;
+        if (activityFilter === "never") return false;
+      }
+    }
+    
     return true;
   });
 
@@ -85,6 +120,15 @@ export default function UsersClient({ users }: { users: User[] }) {
       )
     },
     {
+      key: "last_active_at",
+      header: "Last Active",
+      width: "120px",
+      render: (row: User) => {
+        const status = getActivityStatus(row.last_active_at);
+        return <Pill variant={status.variant}>{status.label}</Pill>;
+      }
+    },
+    {
       key: "created_at",
       header: "Joined",
       width: "120px",
@@ -124,6 +168,23 @@ export default function UsersClient({ users }: { users: User[] }) {
                 { value: "all", label: "All" },
                 { value: "active", label: "Active" },
                 { value: "inactive", label: "Inactive" }
+              ]}
+            />
+          </div>
+          <div>
+            <label className="label">Last Active</label>
+            <Select
+              label=""
+              name="activityFilter"
+              value={activityFilter}
+              onChange={setActivityFilter}
+              options={[
+                { value: "all", label: "Any Time" },
+                { value: "today", label: "Today" },
+                { value: "week", label: "This Week" },
+                { value: "month", label: "This Month" },
+                { value: "churned", label: "30+ Days (Churned)" },
+                { value: "never", label: "Never Active" }
               ]}
             />
           </div>
@@ -189,6 +250,24 @@ export default function UsersClient({ users }: { users: User[] }) {
               <div>
                 <div className="label">Joined</div>
                 <div style={{ marginTop: 4 }}>{formatDate(selected.created_at, "long")}</div>
+              </div>
+              <div>
+                <div className="label">Last Active</div>
+                <div style={{ marginTop: 4 }}>
+                  {(() => {
+                    const status = getActivityStatus(selected.last_active_at);
+                    return (
+                      <div>
+                        <Pill variant={status.variant}>{status.label}</Pill>
+                        {selected.last_active_at && (
+                          <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+                            {formatDate(selected.last_active_at, "long")}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
 
