@@ -16,7 +16,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if ((profile as any).is_active === false) redirect("/inactive");
 
   return (
-    <AppShell role={profile.role} displayName={displayNameFromProfile(profile)}>
+    <AppShell 
+      role={profile.role} 
+      displayName={displayNameFromProfile(profile)}
+      isAdmin={(profile as any).is_admin === true}
+    >
       {children}
     </AppShell>
   );

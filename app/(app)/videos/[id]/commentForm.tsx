@@ -22,7 +22,7 @@ export default function CommentForm({ videoId }: { videoId: string }) {
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState<string | null>(null);
 
-  const [role, setRole] = React.useState<"coach" | "player" | null>(null);
+  const [role, setRole] = React.useState<"coach" | "player" | "parent" | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;

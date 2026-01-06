@@ -136,7 +136,7 @@ export default async function LessonsPage() {
     ? await db.from("profiles").select("user_id, display_name, role").in("user_id", ids)
     : { data: [] as any[] };
 
-  const peopleById: Record<string, { display_name: string; role: "coach" | "player" }> = {};
+  const peopleById: Record<string, { display_name: string; role: "coach" | "player" | "parent" }> = {};
   for (const p of people ?? []) {
     peopleById[p.user_id] = { display_name: p.display_name, role: p.role };
   }

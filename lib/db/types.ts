@@ -1,4 +1,4 @@
-export type Role = "coach" | "player";
+export type Role = "coach" | "player" | "parent";
 export type VideoCategory = "game" | "training";
 
 export type Profile = {

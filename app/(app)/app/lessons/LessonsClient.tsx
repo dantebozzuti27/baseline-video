@@ -5,7 +5,7 @@ import { Button, Card, Modal, Select } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { toast } from "../../toast";
 
-type Role = "coach" | "player";
+type Role = "coach" | "player" | "parent";
 type Lesson = {
   id: string;
   coach_user_id: string | null;

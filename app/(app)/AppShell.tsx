@@ -2,25 +2,30 @@
 
 import * as React from "react";
 import Link from "next/link";
-import DrawerNav from "./DrawerNav";
 import BottomNav from "./BottomNav";
 import UploadFAB from "./UploadFAB";
 import SearchCommand from "./SearchCommand";
 import KeyboardHelp from "./KeyboardHelp";
 import GlobalKeyboard from "./GlobalKeyboard";
 import ToastClient from "./ToastClient";
+import MoreSheet from "@/components/MoreSheet";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
 type Props = {
-  role: "coach" | "player";
+  role: "coach" | "player" | "parent";
   displayName: string;
+  isAdmin?: boolean;
   children: React.ReactNode;
 };
 
-export default function AppShell({ role, displayName, children }: Props) {
+export default function AppShell({ role, displayName, isAdmin, children }: Props) {
   const [helpOpen, setHelpOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const [moreOpen, setMoreOpen] = React.useState(false);
+
+  // Parents don't upload, so hide FAB and upload button for them
+  const showUpload = role !== "parent";
 
   return (
     <div>
@@ -29,7 +34,6 @@ export default function AppShell({ role, displayName, children }: Props) {
       <div className="nav">
         <div className="navInner">
           <div className="bvTopBarLeft">
-            <DrawerNav role={role} displayName={displayName} />
             <Link className="brand" href="/app" aria-label="Baseline Video home">
               <img className="bvAppLogo" src="/brand copy-Photoroom.png" alt="Baseline Video" />
             </Link>
@@ -39,9 +43,11 @@ export default function AppShell({ role, displayName, children }: Props) {
               <span className="bvSearchPlaceholder">Search…</span>
               <kbd className="bvSearchKbd">⌘K</kbd>
             </button>
-            <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
-              Upload
-            </Link>
+            {showUpload && (
+              <Link className="btn btnPrimary bvDesktopOnly" href="/app/upload">
+                Upload
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -50,8 +56,8 @@ export default function AppShell({ role, displayName, children }: Props) {
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>
       
-      <UploadFAB />
-      <BottomNav role={role} />
+      {showUpload && <UploadFAB />}
+      <BottomNav role={role} onMoreClick={() => setMoreOpen(true)} />
       <ToastClient />
       
       <GlobalKeyboard 
@@ -60,6 +66,13 @@ export default function AppShell({ role, displayName, children }: Props) {
       />
       <KeyboardHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
       <SearchCommand isCoach={role === "coach"} open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <MoreSheet 
+        open={moreOpen} 
+        onClose={() => setMoreOpen(false)} 
+        role={role} 
+        displayName={displayName}
+        isAdmin={isAdmin}
+      />
       <AnalyticsTracker />
     </div>
   );
