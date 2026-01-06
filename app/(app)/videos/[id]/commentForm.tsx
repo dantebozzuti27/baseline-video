@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { toast } from "../../toast";
+import { Eye, EyeOff } from "lucide-react";
 
 function getCurrentVideoTimeSeconds(): number | null {
   const el = document.querySelector("video");
@@ -18,7 +19,8 @@ export default function CommentForm({ videoId }: { videoId: string }) {
   const router = useRouter();
   const [body, setBody] = React.useState("");
   const [timestampSeconds, setTimestampSeconds] = React.useState<string>("");
-  const [visibility, setVisibility] = React.useState<"team" | "player_private" | "coach_only">("team");
+  // Simplified visibility: either shared with player (team) or coach-only
+  const [coachOnly, setCoachOnly] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [success, setSuccess] = React.useState<string | null>(null);
 
@@ -58,6 +60,10 @@ export default function CommentForm({ videoId }: { videoId: string }) {
       return;
     }
 
+    // Map simplified toggle to visibility value
+    // Coaches can choose coach_only, everyone else uses team (visible to player + coach)
+    const visibility = role === "coach" && coachOnly ? "coach_only" : "team";
+
     setLoading(true);
     try {
       const resp = await fetch(`/api/videos/${videoId}/comments`, {
@@ -70,7 +76,7 @@ export default function CommentForm({ videoId }: { videoId: string }) {
 
       setBody("");
       setTimestampSeconds("");
-      setVisibility("team");
+      setCoachOnly(false);
       setSuccess("Posted.");
       toast("Comment posted.");
       setTimeout(() => setSuccess(null), 2000);
@@ -96,74 +102,52 @@ export default function CommentForm({ videoId }: { videoId: string }) {
           />
         </div>
 
-        <div className="row">
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <div className="label">Timestamp seconds (optional)</div>
-            <input
-              className="input"
-              inputMode="numeric"
-              value={timestampSeconds}
-              onChange={(e) => setTimestampSeconds(e.target.value)}
-              placeholder="e.g. 12"
-            />
-            <div style={{ marginTop: 8 }}>
+        <div className="row" style={{ alignItems: "flex-end", gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <div className="label">Timestamp (optional)</div>
+            <div className="row" style={{ gap: 8 }}>
+              <input
+                className="input"
+                inputMode="numeric"
+                value={timestampSeconds}
+                onChange={(e) => setTimestampSeconds(e.target.value)}
+                placeholder="sec"
+                style={{ width: 70 }}
+              />
               <Button
+                type="button"
                 onClick={() => {
                   const sec = getCurrentVideoTimeSeconds();
                   if (sec !== null) setTimestampSeconds(String(sec));
                 }}
               >
-                Use current time
+                Now
               </Button>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "end" }}>
-            <Button variant="primary" type="submit" disabled={loading}>
-              {loading ? "Posting…" : "Post"}
-            </Button>
-          </div>
+          
+          <Button variant="primary" type="submit" disabled={loading}>
+            {loading ? "Posting…" : "Post"}
+          </Button>
         </div>
 
-        {role ? (
-          <div className="row" style={{ alignItems: "center" }}>
-            <div className="muted" style={{ fontSize: 12 }}>
-              Visibility:
-            </div>
-            <label className="pill" style={{ cursor: "pointer" }}>
-              <input
-                type="radio"
-                name="visibility"
-                checked={visibility === "team"}
-                onChange={() => setVisibility("team")}
-                style={{ marginRight: 8 }}
-              />
-              Team
-            </label>
-            {role === "player" ? (
-              <label className="pill" style={{ cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="visibility"
-                  checked={visibility === "player_private"}
-                  onChange={() => setVisibility("player_private")}
-                  style={{ marginRight: 8 }}
-                />
-                Private note (only you)
-              </label>
-            ) : (
-              <label className="pill" style={{ cursor: "pointer" }}>
-                <input
-                  type="radio"
-                  name="visibility"
-                  checked={visibility === "coach_only"}
-                  onChange={() => setVisibility("coach_only")}
-                  style={{ marginRight: 8 }}
-                />
-                Coach note (coach-only)
-              </label>
-            )}
-          </div>
-        ) : null}
+        {/* Simplified visibility toggle - only shown for coaches */}
+        {role === "coach" && (
+          <button
+            type="button"
+            className={coachOnly ? "pill" : "btn"}
+            onClick={() => setCoachOnly(!coachOnly)}
+            style={{ 
+              display: "inline-flex", 
+              alignItems: "center", 
+              gap: 6,
+              alignSelf: "flex-start"
+            }}
+          >
+            {coachOnly ? <EyeOff size={14} /> : <Eye size={14} />}
+            {coachOnly ? "Coach note (only you)" : "Share with player"}
+          </button>
+        )}
 
         {success ? <div style={{ color: "var(--primary)", fontSize: 13 }}>{success}</div> : null}
       </form>
