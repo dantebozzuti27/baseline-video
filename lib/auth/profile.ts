@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@supabase/supabase-js";
 import type { Profile } from "@/lib/db/types";
 
 export async function getMyProfile(): Promise<Profile | null> {
@@ -11,16 +11,35 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   if (!user) return null;
 
-  // Use admin client to bypass RLS - this ensures we always get the profile
-  // regardless of RLS policy issues
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+  // Try with server client first (respects RLS)
+  const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
 
-  if (error) {
-    console.error("[getMyProfile] Error fetching profile:", error);
-    return null;
+  if (data) return data as Profile;
+
+  // If RLS blocked the read, try with admin client
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (url && serviceRoleKey) {
+    try {
+      const admin = createClient(url, serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+      const { data: adminData, error: adminError } = await admin
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (adminData) return adminData as Profile;
+      if (adminError) console.error("[getMyProfile] Admin query error:", adminError);
+    } catch (e) {
+      console.error("[getMyProfile] Admin client error:", e);
+    }
   }
-  return data as Profile | null;
+
+  if (error) console.error("[getMyProfile] Server query error:", error);
+  return null;
 }
 
 
