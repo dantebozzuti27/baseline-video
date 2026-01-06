@@ -57,6 +57,19 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if user already has a profile
+    const { data: existingProfile } = await admin
+      .from("profiles")
+      .select("team_id, role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingProfile?.team_id) {
+      // User already has a profile, return their existing team
+      console.log("[onboarding/coach] User already has profile, returning existing team");
+      return NextResponse.json({ teamId: existingProfile.team_id, existing: true });
+    }
+
     const { data, error } = await admin.rpc("create_team_for_coach", {
       p_team_name: parsed.data.teamName,
       p_coach_user_id: userId,
