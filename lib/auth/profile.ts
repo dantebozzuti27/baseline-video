@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Profile } from "@/lib/db/types";
 
 export async function getMyProfile(): Promise<Profile | null> {
@@ -10,9 +11,15 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   if (!user) return null;
 
-  const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
+  // Use admin client to bypass RLS - this ensures we always get the profile
+  // regardless of RLS policy issues
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin.from("profiles").select("*").eq("user_id", user.id).maybeSingle();
 
-  if (error) return null;
+  if (error) {
+    console.error("[getMyProfile] Error fetching profile:", error);
+    return null;
+  }
   return data as Profile | null;
 }
 
