@@ -4,6 +4,12 @@
 
 begin;
 
+-- Add is_library column to videos table
+alter table public.videos
+  add column if not exists is_library boolean not null default false;
+
+create index if not exists videos_team_library_idx on public.videos (team_id, is_library) where is_library = true;
+
 -- 1) Update can_read_video to include coach-upload + library visibility (and still hide deleted).
 create or replace function public.can_read_video(p_video_id uuid)
 returns boolean

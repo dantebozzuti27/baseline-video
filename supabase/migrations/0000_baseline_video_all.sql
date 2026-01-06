@@ -214,18 +214,18 @@ declare
   v_code text;
 begin
   if not public.is_coach() then
-    raise exception "forbidden";
+    raise exception 'forbidden';
   end if;
 
   v_team_id := public.current_team_id();
   if v_team_id is null then
-    raise exception "missing_profile";
+    raise exception 'missing_profile';
   end if;
 
-  v_code := upper(substr(replace(gen_random_uuid()::text, "-", ""), 1, 8));
+  v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
 
   update public.teams
-    set access_code_hash = extensions.crypt(v_code, extensions.gen_salt("bf"))
+    set access_code_hash = extensions.crypt(v_code, extensions.gen_salt('bf'))
   where id = v_team_id;
 
   return v_code;

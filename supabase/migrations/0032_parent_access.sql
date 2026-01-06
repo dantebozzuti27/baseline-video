@@ -2,11 +2,11 @@
 -- Allows parents to view their children's videos, lessons, and progress
 -- Run in Supabase SQL Editor
 
-begin;
-
--- 1. Extend user_role enum to include 'parent'
--- We need to add the value to the existing enum
+-- IMPORTANT: Adding enum value must be outside transaction and committed
+-- before the value can be used in functions
 alter type public.user_role add value if not exists 'parent';
+
+begin;
 
 -- 2. Create parent-player links table
 create table if not exists public.parent_player_links (
