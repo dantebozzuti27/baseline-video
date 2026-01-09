@@ -95,12 +95,15 @@ export default function UploadClient({ players, opponents }: Props) {
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("dataCategory", dataCategory);
-      if (dataCategory === "own_team") {
+      if (dataCategory === "own_team" && playerUserId) {
         formData.append("playerUserId", playerUserId);
       } else {
         if (opponentName) formData.append("opponentName", opponentName);
         if (opponentContext) formData.append("opponentContext", opponentContext);
       }
+
+      setUploadState("processing");
+      setProcessingStatus("Uploading and analyzing with AI...");
 
       const response = await fetch("/api/team-mode/upload", {
         method: "POST",
@@ -114,11 +117,18 @@ export default function UploadClient({ players, opponents }: Props) {
       }
 
       setUploadedFileId(data.fileId);
-      setUploadState("processing");
-      setProcessingStatus("Processing started...");
-
-      // Poll for completion
-      pollProcessingStatus(data.fileId);
+      
+      if (data.status === "completed") {
+        setUploadState("success");
+        setProcessingStatus(data.message || `Completed! ${data.rowCount} rows analyzed.`);
+      } else if (data.status === "failed") {
+        setError(data.message || "Processing failed");
+        setUploadState("error");
+      } else {
+        // Fallback to polling if needed
+        setProcessingStatus("Processing...");
+        pollProcessingStatus(data.fileId);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
       setUploadState("error");

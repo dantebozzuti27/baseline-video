@@ -186,19 +186,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Start processing in background (fire and forget for initial response)
-    // In production, you might use a queue like Inngest or Trigger.dev
-    processPerformanceFile(fileRecord.id).catch((err) => {
-      console.error("Background processing error:", err);
-    });
-
-    return NextResponse.json({
-      success: true,
-      fileId: fileRecord.id,
-      fileName: file.name,
-      status: "pending",
-      message: "File uploaded successfully. Processing started.",
-    });
+    // Process synchronously (Vercel Hobby has 10s timeout for background tasks)
+    console.log("[team-mode/upload] Starting synchronous processing...");
+    
+    try {
+      const result = await processPerformanceFile(fileRecord.id);
+      console.log("[team-mode/upload] Processing complete:", result);
+      
+      return NextResponse.json({
+        success: true,
+        fileId: fileRecord.id,
+        fileName: file.name,
+        status: result.status,
+        rowCount: result.rowCount,
+        insightCount: result.insightCount,
+        message: result.success 
+          ? `Processed ${result.rowCount} rows, generated ${result.insightCount} insights.`
+          : `Processing completed with errors: ${result.errors.join(", ")}`,
+      });
+    } catch (processingError) {
+      console.error("[team-mode/upload] Processing error:", processingError);
+      // File was uploaded, but processing failed - return partial success
+      return NextResponse.json({
+        success: true,
+        fileId: fileRecord.id,
+        fileName: file.name,
+        status: "failed",
+        message: processingError instanceof Error ? processingError.message : "Processing failed",
+      });
+    }
   } catch (error) {
     console.error("Upload error:", error);
     const errorMessage = error instanceof Error ? error.message : "Failed to upload file";
