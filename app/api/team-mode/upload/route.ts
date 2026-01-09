@@ -77,13 +77,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate required fields based on category
-    if (dataCategory === "own_team" && !playerUserId) {
-      return NextResponse.json(
-        { error: "Player selection required for team data" },
-        { status: 400 }
-      );
-    }
+    // Player selection is optional for own_team data (supports team-wide uploads)
 
     // Generate storage path
     const timestamp = Date.now();
@@ -180,10 +174,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Upload error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to upload file";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Full error details:", { message: errorMessage, stack: errorStack });
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to upload file",
+        error: errorMessage,
+        details: process.env.NODE_ENV === "development" ? errorStack : undefined,
       },
       { status: 500 }
     );
