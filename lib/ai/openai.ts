@@ -158,7 +158,7 @@ Analyze this data and return a JSON object with:
 }`;
 
   const response = await getOpenAI().chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini", // Fast model for column interpretation
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
     temperature: 0.3,
@@ -268,7 +268,7 @@ Generate 5-10 actionable insights. Return JSON array of insights:
 }`;
 
   const response = await getOpenAI().chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini", // Fast model for insights
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
     temperature: 0.5,
