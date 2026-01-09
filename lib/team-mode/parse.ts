@@ -37,17 +37,17 @@ export function parseCSV(csvContent: string): ParsedData {
 }
 
 /**
- * Parse an Excel file from an ArrayBuffer
+ * Parse an Excel file from an ArrayBuffer - ALL SHEETS
  */
 export function parseExcel(buffer: ArrayBuffer): ParsedData {
   const errors: string[] = [];
+  const allRows: Record<string, unknown>[] = [];
+  let allHeaders: string[] = [];
 
   try {
     const workbook = XLSX.read(buffer, { type: "array" });
 
-    // Get the first sheet
-    const firstSheetName = workbook.SheetNames[0];
-    if (!firstSheetName) {
+    if (workbook.SheetNames.length === 0) {
       return {
         headers: [],
         rows: [],
@@ -56,57 +56,69 @@ export function parseExcel(buffer: ArrayBuffer): ParsedData {
       };
     }
 
-    const worksheet = workbook.Sheets[firstSheetName];
-    if (!worksheet) {
-      return {
-        headers: [],
-        rows: [],
-        rowCount: 0,
-        errors: ["Could not read worksheet"],
-      };
-    }
+    // Process ALL sheets
+    for (const sheetName of workbook.SheetNames) {
+      const worksheet = workbook.Sheets[sheetName];
+      if (!worksheet) continue;
 
-    // Convert to JSON with headers
-    const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-      worksheet,
-      {
-        defval: null,
-        raw: false,
+      // Convert to JSON with headers
+      const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+        worksheet,
+        {
+          defval: null,
+          raw: false,
+        }
+      );
+
+      if (jsonData.length === 0) continue;
+
+      // Get headers from this sheet
+      const sheetHeaders = Object.keys(jsonData[0]);
+      
+      // Merge headers (union of all sheets)
+      for (const h of sheetHeaders) {
+        if (!allHeaders.includes(h)) {
+          allHeaders.push(h);
+        }
       }
-    );
 
-    // Extract headers from the first row's keys
-    const headers = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
-
-    // Convert values to appropriate types
-    const rows = jsonData.map((row) => {
-      const typedRow: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(row)) {
-        if (value === null || value === undefined || value === "") {
-          typedRow[key] = null;
-        } else if (typeof value === "string") {
-          // Try to parse as number
-          const numValue = parseFloat(value);
-          if (!isNaN(numValue) && isFinite(numValue)) {
-            typedRow[key] = numValue;
-          } else if (value.toLowerCase() === "true") {
-            typedRow[key] = true;
-          } else if (value.toLowerCase() === "false") {
-            typedRow[key] = false;
+      // Convert values to appropriate types and add sheet name
+      const rows = jsonData.map((row) => {
+        const typedRow: Record<string, unknown> = { _sheet: sheetName };
+        for (const [key, value] of Object.entries(row)) {
+          if (value === null || value === undefined || value === "") {
+            typedRow[key] = null;
+          } else if (typeof value === "string") {
+            // Try to parse as number
+            const numValue = parseFloat(value);
+            if (!isNaN(numValue) && isFinite(numValue)) {
+              typedRow[key] = numValue;
+            } else if (value.toLowerCase() === "true") {
+              typedRow[key] = true;
+            } else if (value.toLowerCase() === "false") {
+              typedRow[key] = false;
+            } else {
+              typedRow[key] = value;
+            }
           } else {
             typedRow[key] = value;
           }
-        } else {
-          typedRow[key] = value;
         }
-      }
-      return typedRow;
-    });
+        return typedRow;
+      });
+
+      allRows.push(...rows);
+    }
+
+    // Add _sheet to headers if we have multiple sheets
+    if (workbook.SheetNames.length > 1 && !allHeaders.includes("_sheet")) {
+      allHeaders = ["_sheet", ...allHeaders];
+    }
 
     return {
-      headers,
-      rows,
-      rowCount: rows.length,
+      headers: allHeaders,
+      rows: allRows,
+      rowCount: allRows.length,
       errors,
     };
   } catch (e) {

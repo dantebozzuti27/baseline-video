@@ -2,9 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { parseFile, calculateAggregates, type ParsedData } from "./parse";
 import {
   interpretColumns,
-  extractRowData,
   generateInsights,
-  type ColumnInterpretation,
   type InsightResult,
 } from "@/lib/ai/openai";
 
@@ -112,84 +110,56 @@ export async function processPerformanceFile(
       })
       .eq("id", fileId);
 
-    // Step 5: Process rows (batch for efficiency)
-    progress(5, `Processing ${parsedData.rowCount} data rows...`);
+    // Step 5: Store rows directly (NO per-row AI - much faster!)
+    progress(5, `Storing ${parsedData.rowCount} data rows...`);
 
-    const batchSize = 10;
-    const allMetrics: Array<{
-      data_file_id: string;
-      player_user_id: string | null;
-      is_opponent_data: boolean;
-      opponent_name: string | null;
-      metric_date: string | null;
-      raw_data: Record<string, unknown>;
-      ai_interpreted_data: Record<string, unknown>;
-    }> = [];
+    // Detect date column from interpretation
+    const dateColumn = Object.entries(columnInterpretation.column_interpretations)
+      .find(([, interp]) => interp.data_type === "date")?.[0];
 
-    for (let i = 0; i < parsedData.rows.length; i += batchSize) {
-      const batch = parsedData.rows.slice(i, i + batchSize);
-
-      const batchResults = await Promise.all(
-        batch.map(async (row) => {
-          try {
-            const extracted = await extractRowData(
-              row,
-              columnInterpretation.column_interpretations
-            );
-
-            return {
-              data_file_id: fileId,
-              player_user_id: fileRecord.is_opponent_data
-                ? null
-                : fileRecord.player_user_id,
-              is_opponent_data: fileRecord.is_opponent_data,
-              opponent_name: fileRecord.opponent_name,
-              metric_date: extracted.date,
-              raw_data: row,
-              ai_interpreted_data: {
-                metrics: extracted.metrics,
-                calculated_metrics: extracted.calculated_metrics,
-                confidence: extracted.confidence,
-                notes: extracted.notes,
-              },
-            };
-          } catch (e) {
-            const errorMsg = e instanceof Error ? e.message : "Unknown error";
-            errors.push(`Row processing error: ${errorMsg}`);
-            return {
-              data_file_id: fileId,
-              player_user_id: fileRecord.is_opponent_data
-                ? null
-                : fileRecord.player_user_id,
-              is_opponent_data: fileRecord.is_opponent_data,
-              opponent_name: fileRecord.opponent_name,
-              metric_date: null,
-              raw_data: row,
-              ai_interpreted_data: { error: errorMsg },
-            };
+    // Map rows to metrics (no AI call per row - just use column interpretation)
+    const allMetrics = parsedData.rows.map((row) => {
+      // Extract date if we found a date column
+      let metricDate: string | null = null;
+      if (dateColumn && row[dateColumn]) {
+        const dateVal = row[dateColumn];
+        if (typeof dateVal === "string") {
+          // Try to parse as date
+          const parsed = new Date(dateVal);
+          if (!isNaN(parsed.getTime())) {
+            metricDate = parsed.toISOString().split("T")[0];
           }
-        })
-      );
+        }
+      }
 
-      allMetrics.push(...batchResults);
+      return {
+        data_file_id: fileId,
+        player_user_id: fileRecord.is_opponent_data ? null : fileRecord.player_user_id,
+        is_opponent_data: fileRecord.is_opponent_data,
+        opponent_name: fileRecord.opponent_name,
+        metric_date: metricDate,
+        raw_data: row,
+        ai_interpreted_data: {}, // Column interpretation provides meaning
+      };
+    });
+
+    // Batch insert for speed (1000 at a time)
+    const batchSize = 1000;
+    for (let i = 0; i < allMetrics.length; i += batchSize) {
+      const batch = allMetrics.slice(i, i + batchSize);
+      const { error: insertError } = await supabase
+        .from("performance_metrics")
+        .insert(batch);
+
+      if (insertError) {
+        errors.push(`Failed to insert metrics batch: ${insertError.message}`);
+      }
     }
 
-    // Insert all metrics
-    const { error: insertError } = await supabase
-      .from("performance_metrics")
-      .insert(allMetrics);
-
-    if (insertError) {
-      errors.push(`Failed to insert metrics: ${insertError.message}`);
-    }
-
-    // Step 6: Calculate aggregates
+    // Step 6: Calculate aggregates from raw data
     progress(6, "Calculating aggregate statistics...");
 
     const aggregates = calculateAggregates(parsedData.rows, parsedData.headers);
-
-    // Also calculate aggregates from AI-interpreted data
-    const interpretedAggregates = calculateInterpretedAggregates(allMetrics);
 
     // Step 7: Generate insights
     progress(7, "Generating AI insights...");
@@ -197,10 +167,10 @@ export async function processPerformanceFile(
     try {
       const insightsResult = await generateInsights(
         {
-          raw_aggregates: aggregates,
-          interpreted_aggregates: interpretedAggregates,
+          aggregates,
           column_interpretations: columnInterpretation.column_interpretations,
           recommended_metrics: columnInterpretation.recommended_metrics,
+          sample_rows: parsedData.rows.slice(0, 10),
         },
         columnInterpretation.column_interpretations,
         {
@@ -250,35 +220,6 @@ export async function processPerformanceFile(
     // Step 8: Complete processing
     progress(8, "Finalizing...");
 
-    const successRate =
-      allMetrics.filter((m) => !("error" in (m.ai_interpreted_data as Record<string, unknown>))).length /
-      allMetrics.length;
-
-    if (successRate < 0.3) {
-      // Less than 30% success rate = failed
-      await supabase
-        .from("performance_data_files")
-        .update({
-          processing_status: "failed",
-          processed_at: new Date().toISOString(),
-          metadata: {
-            ...((fileRecord.metadata as Record<string, unknown>) || {}),
-            errors,
-            success_rate: successRate,
-          },
-        })
-        .eq("id", fileId);
-
-      return {
-        success: false,
-        fileId,
-        status: "failed",
-        rowCount: parsedData.rowCount,
-        insightCount: 0,
-        errors,
-      };
-    }
-
     await supabase
       .from("performance_data_files")
       .update({
@@ -287,8 +228,7 @@ export async function processPerformanceFile(
         metadata: {
           ...((fileRecord.metadata as Record<string, unknown>) || {}),
           errors: errors.length > 0 ? errors : undefined,
-          success_rate: successRate,
-          aggregates: interpretedAggregates,
+          aggregates,
         },
       })
       .eq("id", fileId);
@@ -350,54 +290,3 @@ async function getPlayerName(
   );
 }
 
-/**
- * Calculate aggregates from AI-interpreted data
- */
-function calculateInterpretedAggregates(
-  metrics: Array<{
-    ai_interpreted_data: Record<string, unknown>;
-  }>
-): Record<string, unknown> {
-  const allMetricValues: Record<string, number[]> = {};
-
-  for (const metric of metrics) {
-    const interpreted = metric.ai_interpreted_data;
-    if ("error" in interpreted) continue;
-
-    const metricsData = (interpreted.metrics || {}) as Record<string, number>;
-    const calculatedData = (interpreted.calculated_metrics || {}) as Record<string, number>;
-
-    for (const [key, value] of Object.entries({
-      ...metricsData,
-      ...calculatedData,
-    })) {
-      if (typeof value === "number" && !isNaN(value)) {
-        if (!allMetricValues[key]) allMetricValues[key] = [];
-        allMetricValues[key].push(value);
-      }
-    }
-  }
-
-  const aggregates: Record<string, {
-    count: number;
-    sum: number;
-    avg: number;
-    min: number;
-    max: number;
-  }> = {};
-
-  for (const [key, values] of Object.entries(allMetricValues)) {
-    if (values.length > 0) {
-      const sum = values.reduce((a, b) => a + b, 0);
-      aggregates[key] = {
-        count: values.length,
-        sum,
-        avg: sum / values.length,
-        min: Math.min(...values),
-        max: Math.max(...values),
-      };
-    }
-  }
-
-  return aggregates;
-}
