@@ -87,11 +87,7 @@ export default function UploadClient({ players, opponents }: Props) {
   const handleUpload = async () => {
     if (!selectedFile) return;
 
-    if (dataCategory === "own_team" && !playerUserId) {
-      setError("Please select a player");
-      return;
-    }
-
+    // Player selection is now optional - allow team-wide uploads
     setError(null);
     setUploadState("uploading");
 
@@ -302,7 +298,7 @@ export default function UploadClient({ players, opponents }: Props) {
 
           {dataCategory === "own_team" ? (
             <div className="bvFormGroup">
-              <label htmlFor="player">Which player is this data for?</label>
+              <label htmlFor="player">Which player is this data for? <span className="bvOptional">(optional)</span></label>
               <select
                 id="player"
                 value={playerUserId}
@@ -310,13 +306,17 @@ export default function UploadClient({ players, opponents }: Props) {
                 disabled={uploadState === "uploading" || uploadState === "processing"}
                 className="bvSelect"
               >
-                <option value="">Select a player...</option>
+                <option value="">Team-wide / AI will detect</option>
                 {players.map((player) => (
                   <option key={player.user_id} value={player.user_id}>
                     {getPlayerName(player)}
                   </option>
                 ))}
               </select>
+              <p className="bvHelpText">
+                Leave blank for team-wide stats or if the file contains multiple players. 
+                AI will attempt to identify players from the data.
+              </p>
             </div>
           ) : (
             <>
@@ -425,11 +425,7 @@ export default function UploadClient({ players, opponents }: Props) {
           <button
             className="btn btnPrimary btnLarge"
             onClick={handleUpload}
-            disabled={
-              uploadState === "uploading" ||
-              uploadState === "processing" ||
-              (dataCategory === "own_team" && !playerUserId)
-            }
+            disabled={uploadState === "uploading" || uploadState === "processing"}
           >
             {uploadState === "uploading" ? (
               <>
@@ -629,6 +625,19 @@ export default function UploadClient({ players, opponents }: Props) {
           margin-bottom: 8px;
           font-size: 14px;
           font-weight: 500;
+        }
+
+        .bvOptional {
+          font-weight: 400;
+          color: var(--muted);
+          font-size: 12px;
+        }
+
+        .bvHelpText {
+          margin: 8px 0 0;
+          font-size: 13px;
+          color: var(--muted);
+          line-height: 1.4;
         }
 
         .bvSelect,
