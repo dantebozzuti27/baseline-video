@@ -117,43 +117,47 @@ export async function interpretColumns(
     playerOrOpponentName?: string;
   }
 ): Promise<ColumnInterpretationResult> {
-  const prompt = `You are analyzing a sports performance data CSV file. Your job is to understand what each column represents, even if the headers are unclear or use non-standard names.
+  const prompt = `You are a sports data scientist analyzing performance data. Understand each column and identify what analytics are possible.
 
-CSV Headers:
-${JSON.stringify(headers)}
+## RAW DATA
+Headers: ${JSON.stringify(headers)}
 
-Sample Data (first 5 rows):
+Sample Rows (first 5):
 ${JSON.stringify(sampleRows.slice(0, 5), null, 2)}
 
 Context:
-- Data Category: ${context.dataCategory}
-- Sport: ${context.sport || "unknown"}
-- ${context.dataCategory === "own_team" ? `Player: ${context.playerOrOpponentName || "unknown"}` : `Opponent: ${context.playerOrOpponentName || "unknown"}`}
+- Category: ${context.dataCategory}
+- Sport: ${context.sport || "auto-detect from data"}
+- Subject: ${context.playerOrOpponentName || "unknown"}
 
-Analyze this data and return a JSON object with:
+## ANALYZE AND RETURN:
 
 {
-  "detected_sport": "baseball|softball|tennis|golf|basketball|unknown",
+  "detected_sport": "baseball|softball|tennis|golf|basketball|soccer|hockey|volleyball|football|track|swimming|other",
   "confidence": 0.0-1.0,
   "column_interpretations": {
     "original_column_name": {
-      "interpreted_as": "standardized name (e.g., 'batting_average', 'opponent_name', 'game_date')",
+      "interpreted_as": "standardized metric name",
       "data_type": "date|number|text|boolean",
-      "description": "what this column represents",
+      "description": "what this measures and why it matters",
       "is_key_metric": true|false,
-      "sample_values": ["example1", "example2"]
+      "sample_values": ["val1", "val2"]
     }
   },
   "recommended_metrics": [
     {
-      "name": "metric name",
-      "description": "why this is important",
-      "columns_used": ["col1", "col2"]
+      "name": "Derived metric name",
+      "description": "What insight this provides",
+      "columns_used": ["col1", "col2"],
+      "formula": "how to calculate (e.g., hits/at_bats)"
     }
   ],
-  "data_quality_notes": ["any issues or observations"],
-  "suggested_report_sections": [
-    "section name that would be relevant for this data"
+  "key_questions_answerable": [
+    "What specific coaching questions can this data answer?"
+  ],
+  "data_quality_notes": ["Any data issues, missing fields, or anomalies"],
+  "suggested_analysis": [
+    "Specific analysis to run on this data (e.g., 'Compare performance by count situation')"
   ]
 }`;
 
@@ -217,7 +221,7 @@ Extract and return:
 }
 
 /**
- * Generate insights from aggregated data
+ * Generate insights from aggregated data - Data Scientist approach
  */
 export async function generateInsights(
   aggregatedMetrics: Record<string, unknown>,
@@ -228,44 +232,59 @@ export async function generateInsights(
     rowCount: number;
   }
 ): Promise<{ insights: InsightResult[] }> {
-  const focusArea = context.dataCategory === "own_team"
-    ? `For own team data, focus on:
-- Strengths to leverage
-- Weaknesses to address
-- Trends over time
-- Specific recommendations`
-    : `For opponent data, focus on:
-- Tendencies to exploit
-- Patterns to prepare for
-- Strategic recommendations
-- Matchup advantages`;
+  const isOwnTeam = context.dataCategory === "own_team";
+  
+  const prompt = `You are an elite sports performance data scientist. Analyze this data like you're presenting to a professional coaching staff who needs SPECIFIC, ACTIONABLE intelligence they can use in practice TODAY.
 
-  const prompt = `You've analyzed ${context.rowCount} rows of performance data.
+## DATA CONTEXT
+- Subject: ${isOwnTeam ? `Player: ${context.playerOrOpponentName}` : `Opponent: ${context.playerOrOpponentName}`}
+- Data Type: ${isOwnTeam ? "Own Team Performance Data" : "Opponent Scouting Data"}  
+- Sample Size: ${context.rowCount} observations
 
-Data Summary:
+## RAW STATISTICS
 ${JSON.stringify(aggregatedMetrics, null, 2)}
 
-Column Interpretations:
+## COLUMN MEANINGS
 ${JSON.stringify(columnInterpretations, null, 2)}
 
-Data Category: ${context.dataCategory}
-${context.dataCategory === "own_team" ? `Player: ${context.playerOrOpponentName}` : `Opponent: ${context.playerOrOpponentName}`}
+## YOUR ANALYSIS REQUIREMENTS
 
-${focusArea}
+${isOwnTeam ? `
+**OWN PLAYER ANALYSIS - Focus on development:**
+1. IDENTIFY PATTERNS: What situations produce best/worst performance? (counts, pitch types, game situations)
+2. FIND THE EDGE: What's this player's unfair advantage? Be specific with numbers.
+3. EXPOSE WEAKNESSES: What's the glaring hole? Don't sugarcoat - coaches need truth.
+4. TREND ANALYSIS: Is performance improving, declining, or inconsistent? Over what timeframe?
+5. PRACTICE PRESCRIPTION: What SPECIFIC drill or adjustment would move the needle most?
+` : `
+**OPPONENT SCOUTING - Focus on exploitation:**
+1. TENDENCIES: What does this opponent do 60%+ of the time in specific situations?
+2. TELLS: Any patterns that predict what's coming next?
+3. WEAKNESSES TO ATTACK: Where do they struggle? Be ruthlessly specific.
+4. DANGER ZONES: When are they most dangerous? What to avoid?
+5. GAME PLAN: Give me 2-3 specific tactical adjustments to beat this opponent.
+`}
 
-Generate 5-10 actionable insights. Return JSON array of insights:
+## OUTPUT FORMAT
+Return 5-8 insights. Each must be:
+- SPECIFIC (include exact numbers, percentages, situations)
+- ACTIONABLE (coach can implement in next practice/game)
+- EVIDENCE-BASED (cite the data that supports this)
+
 {
   "insights": [
     {
       "type": "strength|weakness|trend|recommendation|tendency|alert",
-      "title": "short headline",
-      "description": "detailed explanation",
+      "title": "Punchy headline with a number (e.g., '73% Success Rate on First-Pitch Fastballs')",
+      "description": "2-3 sentences explaining the insight with specific data points. Include context like 'This is above/below average' or 'This represents a 15% improvement'.",
       "confidence": 0.0-1.0,
-      "supporting_data": {relevant metrics},
-      "action_items": ["specific action 1", "specific action 2"]
+      "supporting_data": {"metric_name": value, "comparison": "context"},
+      "action_items": ["Specific drill: [name] focusing on [specific thing]", "In-game adjustment: [exact tactic]"]
     }
   ]
-}`;
+}
+
+BE BOLD. Coaches don't want hedging - they want clear direction. If the data shows something, say it directly.`;
 
   const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini", // Fast model for insights
