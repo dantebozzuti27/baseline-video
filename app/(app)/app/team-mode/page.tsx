@@ -146,14 +146,30 @@ export default async function TeamModePage() {
     .order("created_at", { ascending: false })
     .limit(10);
 
+  // Transform the data to flatten the player relation (Supabase returns arrays for joins)
+  const transformedFiles = (recentFiles || []).map((f: any) => ({
+    ...f,
+    player: Array.isArray(f.player) ? f.player[0] || null : f.player,
+  }));
+
+  const transformedInsights = (recentInsights || []).map((i: any) => ({
+    ...i,
+    player: Array.isArray(i.player) ? i.player[0] || null : i.player,
+  }));
+
+  const transformedReports = (recentReports || []).map((r: any) => ({
+    ...r,
+    player: Array.isArray(r.player) ? r.player[0] || null : r.player,
+  }));
+
   return (
     <div className="container bvAnimSlideUp">
       <TeamModeDashboard
         isCoach={isCoach}
         stats={stats}
-        recentFiles={recentFiles || []}
-        recentInsights={recentInsights || []}
-        recentReports={recentReports || []}
+        recentFiles={transformedFiles}
+        recentInsights={transformedInsights}
+        recentReports={transformedReports}
       />
     </div>
   );

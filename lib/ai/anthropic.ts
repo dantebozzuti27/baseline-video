@@ -1,9 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Lazy-load Anthropic client to avoid build-time errors
+let anthropicInstance: Anthropic | null = null;
+
+function getAnthropic(): Anthropic {
+  if (!anthropicInstance) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY environment variable is not set");
+    }
+    anthropicInstance = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+  }
+  return anthropicInstance;
+}
 
 /**
  * Enhance report prose using Claude
@@ -27,7 +37,7 @@ Rewrite each section to be:
 
 Maintain the exact JSON structure but improve all text content. Return the complete JSON with enhanced text.`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 8192,
     messages: [{ role: "user", content: prompt }],
@@ -77,7 +87,7 @@ The summary should:
 
 Return only the summary text, no JSON.`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 1024,
     messages: [{ role: "user", content: prompt }],
@@ -126,7 +136,7 @@ Return JSON array with same structure:
   }
 ]`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropic().messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],
@@ -151,4 +161,4 @@ Return JSON array with same structure:
   }
 }
 
-export default anthropic;
+export { getAnthropic };

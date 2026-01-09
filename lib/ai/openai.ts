@@ -1,9 +1,19 @@
 import OpenAI from "openai";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy-load OpenAI client to avoid build-time errors
+let openaiInstance: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiInstance) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY environment variable is not set");
+    }
+    openaiInstance = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiInstance;
+}
 
 export type ColumnInterpretation = {
   interpreted_as: string;
@@ -147,7 +157,7 @@ Analyze this data and return a JSON object with:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
@@ -193,7 +203,7 @@ Extract and return:
   "notes": "any interpretation issues"
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
@@ -257,7 +267,7 @@ Generate 5-10 actionable insights. Return JSON array of insights:
   ]
 }`;
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
@@ -406,7 +416,7 @@ Return JSON with the same structure as an own-team report but focused on:
 - suggested_visualizations: Charts showing opponent patterns`;
   }
 
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o",
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
@@ -419,4 +429,4 @@ Return JSON with the same structure as an own-team report but focused on:
   return JSON.parse(content) as ReportGenerationResult;
 }
 
-export default openai;
+export { getOpenAI };

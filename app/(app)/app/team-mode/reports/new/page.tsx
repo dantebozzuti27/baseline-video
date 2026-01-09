@@ -69,12 +69,18 @@ export default async function NewReportPage() {
     .eq("processing_status", "completed")
     .order("created_at", { ascending: false });
 
+  // Transform data to flatten relations (Supabase returns arrays for joins)
+  const transformedFiles = (files || []).map((f: any) => ({
+    ...f,
+    player: Array.isArray(f.player) ? f.player[0] || null : f.player,
+  }));
+
   return (
     <div className="container bvAnimSlideUp">
       <ReportWizard
         players={players || []}
         opponents={opponents || []}
-        files={files || []}
+        files={transformedFiles}
       />
     </div>
   );

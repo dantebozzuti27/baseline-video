@@ -79,11 +79,24 @@ export default async function ReportViewPage({
     .eq("user_id", user.id)
     .single();
 
+  // Transform data to flatten relations (Supabase returns arrays for joins)
+  const transformedReport = {
+    ...report,
+    player: Array.isArray(report.player) ? report.player[0] || null : report.player,
+    creator: Array.isArray(report.creator) ? report.creator[0] || null : report.creator,
+    opponent: Array.isArray(report.opponent) ? report.opponent[0] || null : report.opponent,
+  };
+
+  const transformedDataSources = (dataSources || []).map((ds: any) => ({
+    ...ds,
+    data_file: Array.isArray(ds.data_file) ? ds.data_file[0] || null : ds.data_file,
+  }));
+
   return (
     <div className="container bvAnimSlideUp">
       <ReportViewClient
-        report={report}
-        dataSources={dataSources || []}
+        report={transformedReport}
+        dataSources={transformedDataSources}
         isCoach={profile?.role === "coach"}
         currentUserId={user.id}
       />
