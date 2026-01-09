@@ -236,12 +236,21 @@ export async function generateInsights(
 ): Promise<{ insights: InsightResult[] }> {
   const isOwnTeam = context.dataCategory === "own_team";
   
+  // Extract benchmark context if provided
+  const benchmarkContext = (aggregatedMetrics as Record<string, unknown>).benchmark_context as string || "";
+  const leagueComparisons = (aggregatedMetrics as Record<string, unknown>).league_comparisons || [];
+  
   const prompt = `You are an elite sports performance data scientist. Analyze this data like you're presenting to a professional coaching staff who needs SPECIFIC, ACTIONABLE intelligence they can use in practice TODAY.
 
 ## DATA CONTEXT
 - Subject: ${isOwnTeam ? `Player: ${context.playerOrOpponentName}` : `Opponent: ${context.playerOrOpponentName}`}
 - Data Type: ${isOwnTeam ? "Own Team Performance Data" : "Opponent Scouting Data"}  
 - Sample Size: ${context.rowCount} observations
+
+${benchmarkContext}
+
+## LEAGUE COMPARISONS (pre-calculated)
+${JSON.stringify(leagueComparisons, null, 2)}
 
 ## RAW STATISTICS
 ${JSON.stringify(aggregatedMetrics, null, 2)}

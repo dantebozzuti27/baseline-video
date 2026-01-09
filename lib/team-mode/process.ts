@@ -5,6 +5,7 @@ import {
   generateInsights,
   type InsightResult,
 } from "@/lib/ai/openai";
+import { generateBenchmarkContext, compareToLeague } from "@/lib/ai/baseball-data";
 
 export type ProcessingStatus = "pending" | "processing" | "completed" | "failed";
 
@@ -161,8 +162,23 @@ export async function processPerformanceFile(
 
     const aggregates = calculateAggregates(parsedData.rows, parsedData.headers);
 
-    // Step 7: Generate insights
-    progress(7, "Generating AI insights...");
+    // Step 7: Generate insights with league benchmarks
+    progress(7, "Generating AI insights with league benchmarks...");
+
+    // Detect if this is baseball data and add benchmarks
+    const isBaseball = columnInterpretation.detected_sport?.toLowerCase().includes("baseball") ||
+                       columnInterpretation.detected_sport?.toLowerCase().includes("softball");
+    
+    // Calculate league comparisons for numeric aggregates
+    const numericAggregates: Record<string, number> = {};
+    for (const [key, value] of Object.entries(aggregates)) {
+      if (typeof value === "object" && value && "avg" in value) {
+        numericAggregates[key] = (value as { avg: number }).avg;
+      }
+    }
+    
+    const leagueComparisons = isBaseball ? compareToLeague(numericAggregates, "ncaa") : [];
+    const benchmarkContext = isBaseball ? generateBenchmarkContext(Object.keys(numericAggregates), "ncaa") : "";
 
     try {
       const insightsResult = await generateInsights(
@@ -171,6 +187,8 @@ export async function processPerformanceFile(
           column_interpretations: columnInterpretation.column_interpretations,
           recommended_metrics: columnInterpretation.recommended_metrics,
           sample_rows: parsedData.rows.slice(0, 10),
+          league_comparisons: leagueComparisons,
+          benchmark_context: benchmarkContext,
         },
         columnInterpretation.column_interpretations,
         {
