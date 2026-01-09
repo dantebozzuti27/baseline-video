@@ -159,7 +159,9 @@ Context:
   "suggested_analysis": [
     "Specific analysis to run on this data (e.g., 'Compare performance by count situation')"
   ]
-}`;
+}
+
+Return valid JSON only.`;
 
   const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini", // Fast model for column interpretation
@@ -284,7 +286,9 @@ Return 5-8 insights. Each must be:
   ]
 }
 
-BE BOLD. Coaches don't want hedging - they want clear direction. If the data shows something, say it directly.`;
+BE BOLD. Coaches don't want hedging - they want clear direction. If the data shows something, say it directly.
+
+Return valid JSON only.`;
 
   const response = await getOpenAI().chat.completions.create({
     model: "gpt-4o-mini", // Fast model for insights
