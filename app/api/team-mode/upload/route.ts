@@ -8,14 +8,30 @@ export const maxDuration = 300; // 5 minute timeout for processing
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[team-mode/upload] Starting upload...");
+    
     const supabase = await createSupabaseServerClient();
-    const adminSupabase = createSupabaseAdminClient();
+    console.log("[team-mode/upload] Supabase client created");
+    
+    let adminSupabase;
+    try {
+      adminSupabase = createSupabaseAdminClient();
+      console.log("[team-mode/upload] Admin client created");
+    } catch (adminError) {
+      console.error("[team-mode/upload] Admin client error:", adminError);
+      return NextResponse.json(
+        { error: "Server configuration error - missing admin credentials" },
+        { status: 500 }
+      );
+    }
 
     // Get current user
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
+
+    console.log("[team-mode/upload] Auth check:", { userId: user?.id, authError: authError?.message });
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,6 +43,8 @@ export async function POST(request: NextRequest) {
       .select("team_id, role")
       .eq("user_id", user.id)
       .single();
+
+    console.log("[team-mode/upload] Profile check:", { profile, profileError: profileError?.message });
 
     if (profileError || !profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
@@ -84,9 +102,13 @@ export async function POST(request: NextRequest) {
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const category = dataCategory === "opponent" ? "opponent" : "player";
     const storagePath = `${profile.team_id}/${category}/${timestamp}_${sanitizedFileName}`;
+    
+    console.log("[team-mode/upload] Storage path:", storagePath);
 
     // Upload file to storage
     const arrayBuffer = await file.arrayBuffer();
+    console.log("[team-mode/upload] File size:", arrayBuffer.byteLength);
+    
     const { error: uploadError } = await adminSupabase.storage
       .from("performance-data")
       .upload(storagePath, arrayBuffer, {
@@ -95,20 +117,23 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error("Storage upload error:", uploadError);
+      console.error("[team-mode/upload] Storage upload error:", uploadError);
       return NextResponse.json(
         { error: `Failed to upload file: ${uploadError.message}` },
         { status: 500 }
       );
     }
+    
+    console.log("[team-mode/upload] File uploaded to storage successfully");
 
     // Create file record
+    console.log("[team-mode/upload] Creating file record...");
     const { data: fileRecord, error: insertError } = await adminSupabase
       .from("performance_data_files")
       .insert({
         team_id: profile.team_id,
         uploader_user_id: user.id,
-        player_user_id: dataCategory === "own_team" ? playerUserId : null,
+        player_user_id: dataCategory === "own_team" ? playerUserId || null : null,
         is_opponent_data: dataCategory === "opponent",
         opponent_name: dataCategory === "opponent" ? opponentName : null,
         file_name: file.name,
@@ -126,7 +151,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !fileRecord) {
-      console.error("Insert error:", insertError);
+      console.error("[team-mode/upload] Insert error:", insertError);
       // Clean up uploaded file
       await adminSupabase.storage
         .from("performance-data")
@@ -136,6 +161,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    
+    console.log("[team-mode/upload] File record created:", fileRecord.id);
 
     // If opponent data and opponent doesn't exist, create it
     if (dataCategory === "opponent" && opponentName) {
