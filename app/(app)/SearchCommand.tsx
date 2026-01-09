@@ -74,15 +74,9 @@ export default function SearchCommand({
     router.push(href);
   }
 
-  // Trigger button when closed
+  // Don't render anything when closed (AppShell has the trigger)
   if (!open) {
-    return (
-      <button className="bvSearchTrigger" onClick={() => {}} aria-label="Search">
-        <Search size={18} />
-        <span className="bvSearchPlaceholder">Search…</span>
-        <kbd className="bvSearchKbd">⌘K</kbd>
-      </button>
-    );
+    return null;
   }
 
   const hasResults = results && (results.videos.length || results.players.length || results.programs.length);

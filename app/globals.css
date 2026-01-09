@@ -1243,45 +1243,56 @@ a {
   color: var(--text);
 }
 
-/* Command palette / search */
-.bvSearchTrigger {
+/* Search button in header */
+.bvSearchBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
   color: var(--muted);
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.bvSearchTrigger:hover {
+.bvSearchBtn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
+  color: var(--text);
 }
 
-.bvSearchPlaceholder {
+.bvSearchBtnText,
+.bvSearchBtnKbd {
   display: none;
 }
 
-.bvSearchKbd {
-  display: none;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 11px;
-  font-family: inherit;
-}
-
-@media (min-width: 640px) {
-  .bvSearchPlaceholder {
+/* Desktop: pill-shaped with text */
+@media (min-width: 768px) {
+  .bvSearchBtn {
+    width: auto;
+    height: auto;
+    padding: 10px 14px;
+    border-radius: 10px;
+  }
+  
+  .bvSearchBtnText {
     display: inline;
   }
-  .bvSearchKbd {
+  
+  .bvSearchBtnKbd {
     display: inline;
+    padding: 3px 6px;
+    margin-left: 8px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 11px;
+    font-family: inherit;
   }
 }
 
@@ -1471,20 +1482,28 @@ a {
   position: fixed;
   inset: 0;
   z-index: 70;
-  background: rgba(5, 10, 18, 0.85);
+  background: rgba(5, 10, 18, 0.9);
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 80px 16px 16px;
+  padding: 16px;
+  padding-top: 60px;
   animation: bvFadeIn 0.15s ease-out;
 }
 
+@media (min-width: 640px) {
+  .bvSearchBackdrop {
+    padding-top: 100px;
+  }
+}
+
 .bvSearchModal {
-  width: min(560px, 100%);
-  background: #0b1220;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75);
+  width: 100%;
+  max-width: 520px;
+  background: #0a0f18;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8);
   overflow: hidden;
   animation: bvSlideUp 0.2s ease-out;
 }
