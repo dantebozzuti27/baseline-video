@@ -207,6 +207,65 @@ export function getPreview(
 }
 
 /**
+ * Clean and normalize data before analysis
+ */
+export function cleanData(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  return rows.map(row => {
+    const cleanedRow: Record<string, unknown> = {};
+    
+    for (const [key, value] of Object.entries(row)) {
+      // Clean the key (trim whitespace, normalize)
+      const cleanKey = key.trim();
+      
+      // Clean the value
+      let cleanValue = value;
+      
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        
+        // Handle empty/null-like values
+        if (trimmed === "" || trimmed === "-" || trimmed === "N/A" || trimmed === "n/a" || trimmed === "null" || trimmed === "NULL") {
+          cleanValue = null;
+        }
+        // Handle percentages (e.g., "45.5%" -> 45.5)
+        else if (trimmed.endsWith("%")) {
+          const num = parseFloat(trimmed.slice(0, -1));
+          cleanValue = isNaN(num) ? trimmed : num;
+        }
+        // Handle currency (e.g., "$1,234.56" -> 1234.56)
+        else if (trimmed.startsWith("$")) {
+          const num = parseFloat(trimmed.slice(1).replace(/,/g, ""));
+          cleanValue = isNaN(num) ? trimmed : num;
+        }
+        // Handle numbers with commas (e.g., "1,234" -> 1234)
+        else if (/^[\d,]+\.?\d*$/.test(trimmed)) {
+          const num = parseFloat(trimmed.replace(/,/g, ""));
+          cleanValue = isNaN(num) ? trimmed : num;
+        }
+        // Handle boolean-like values
+        else if (["yes", "y", "true", "1"].includes(trimmed.toLowerCase())) {
+          cleanValue = true;
+        }
+        else if (["no", "n", "false", "0"].includes(trimmed.toLowerCase())) {
+          cleanValue = false;
+        }
+        // Handle common date formats
+        else if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(trimmed)) {
+          cleanValue = trimmed; // Keep as string but validated as date format
+        }
+        else {
+          cleanValue = trimmed;
+        }
+      }
+      
+      cleanedRow[cleanKey] = cleanValue;
+    }
+    
+    return cleanedRow;
+  });
+}
+
+/**
  * Calculate aggregate statistics for numeric columns
  */
 export function calculateAggregates(

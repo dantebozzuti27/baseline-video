@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { parseFile, calculateAggregates, type ParsedData } from "./parse";
+import { parseFile, calculateAggregates, cleanData, type ParsedData } from "./parse";
 import {
   interpretColumns,
   generateInsights,
@@ -78,6 +78,11 @@ export async function processPerformanceFile(
     if (parsedData.rows.length === 0) {
       throw new Error("No data rows found in file");
     }
+
+    // Step 2.5: Clean and normalize data
+    progress(2, "Cleaning and normalizing data...");
+    const cleanedRows = cleanData(parsedData.rows);
+    parsedData.rows = cleanedRows;
 
     // Step 3: AI Column Interpretation
     progress(3, "Analyzing column structure with AI...");

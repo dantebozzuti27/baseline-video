@@ -158,8 +158,23 @@ Context:
   "data_quality_notes": ["Any data issues, missing fields, or anomalies"],
   "suggested_analysis": [
     "Specific analysis to run on this data (e.g., 'Compare performance by count situation')"
+  ],
+  "data_cleaning_notes": [
+    "Any issues with the data that required interpretation or cleaning"
+  ],
+  "confidence_warnings": [
+    "Any reasons the analysis might be less reliable (small sample, inconsistent data, etc.)"
   ]
 }
+
+## HANDLING UNSTRUCTURED/MESSY DATA
+- Column names may be abbreviated, misspelled, or non-standard - interpret based on values
+- Look at the ACTUAL VALUES to understand what a column represents, not just the header
+- If a column has mixed data types, note it and decide how to handle
+- If values look like codes (1/2/3 or Y/N), try to decode the meaning from context
+- Dates may be in various formats - identify the format being used
+- Numbers may include commas, dollar signs, or percentages - extract the numeric value
+- Empty cells, "N/A", "-", "0", and blank strings all mean different things - be explicit
 
 Return valid JSON only.`;
 
@@ -296,6 +311,27 @@ Return 5-8 insights. Each must be:
 }
 
 BE BOLD. Coaches don't want hedging - they want clear direction. If the data shows something, say it directly.
+
+## VERIFICATION REQUIREMENTS (CRITICAL)
+Before stating ANY number or percentage:
+1. SHOW YOUR MATH: State the exact values you're using and how you calculated
+2. VERIFY: Double-check that your calculation matches the raw data provided
+3. NO HALLUCINATING: If the data doesn't support a claim, don't make it
+4. CITE SOURCE: Reference the specific column/metric you're using
+
+Example of GOOD insight:
+"73% First-Pitch Strike Rate" 
+- Calculation: 22 first-pitch strikes / 30 total first pitches = 0.733
+- This is VERIFIED against the raw data showing count=30, sum=22 for the first_pitch_strike column
+
+Example of BAD insight (NEVER DO THIS):
+"Player has excellent plate discipline" with no numbers or made-up statistics
+
+## HANDLING MESSY DATA
+- If column names are unclear, state your interpretation
+- If data has gaps/nulls, note the sample size you're actually using
+- If values seem inconsistent, flag it rather than guessing
+- Round percentages to 1 decimal place, averages to 3 decimals
 
 Return valid JSON only.`;
 
