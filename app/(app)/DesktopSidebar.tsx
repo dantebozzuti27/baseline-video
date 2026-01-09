@@ -16,6 +16,7 @@ import {
   BookOpen,
   Shield,
   Users,
+  BarChart3,
   type LucideIcon
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ export default function DesktopSidebar({ role, isAdmin }: Props) {
         { label: "Lessons", href: "/app/lessons", icon: Calendar, match: "prefix" },
         { label: "Upload", href: "/app/upload", icon: Upload, match: "prefix" },
         { label: "Programs", href: "/app/programs", icon: FolderKanban, match: "prefix" },
+        { label: "Team Mode", href: "/app/team-mode", icon: BarChart3, match: "prefix" },
         { label: "Video Library", href: "/app/library", icon: Library, match: "prefix" },
         { label: "Compare", href: "/app/compare", icon: Columns2, match: "prefix" }
       ];

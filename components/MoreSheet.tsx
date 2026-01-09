@@ -12,7 +12,8 @@ import {
   Columns2,
   Library,
   BookOpen,
-  Shield
+  Shield,
+  BarChart3
 } from "lucide-react";
 
 type Role = "coach" | "player" | "parent";
@@ -39,6 +40,7 @@ export default function MoreSheet({ open, onClose, role, displayName, isAdmin }:
   const isCoach = role === "coach";
 
   const items: NavItem[] = [
+    { label: "Team Mode", href: "/app/team-mode", icon: <BarChart3 size={20} />, coachOnly: true },
     { label: "Settings", href: "/app/settings", icon: <Settings size={20} /> },
     { label: "Compare Videos", href: "/app/compare", icon: <Columns2 size={20} />, coachOnly: true },
     { label: "Program Library", href: "/app/programs/library", icon: <BookOpen size={20} />, coachOnly: true },
