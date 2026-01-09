@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import FileDetailClient from "./FileDetailClient";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "File Details | Team Mode",
 };

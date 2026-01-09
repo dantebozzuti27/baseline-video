@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import TeamModeDashboard from "./TeamModeDashboard";
 
+export const dynamic = "force-dynamic"; // Always fetch fresh data
+
 export const metadata: Metadata = {
   title: "Team Mode | Baseline Video",
 };

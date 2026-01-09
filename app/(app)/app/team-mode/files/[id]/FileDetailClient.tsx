@@ -153,8 +153,10 @@ export default function FileDetailClient({
 
       if (response.ok) {
         router.push("/app/team-mode");
+        router.refresh(); // Force refresh to clear cached data
       } else {
-        alert("Failed to delete file");
+        const data = await response.json();
+        alert(data.error || "Failed to delete file");
       }
     } catch {
       alert("Failed to delete file");
